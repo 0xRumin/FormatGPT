@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FormatGPT v5</title>
+
+<!-- Type: headers (Sora), UI/body (IBM Plex Mono look) -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+/* ===============================
+   Design tokens
+   =============================== */
+:root{
+  --bg:#06080c;
+  --ink:#e6edf3;
+  --muted:#9fb0c6;
+  --panel:#11151b;
+  --line:#1b2330;
+
+  /* Accents */
+  --accent:#22d3ee;
+  --accent-2:#38bdf8;
+  --accent-3:#a78bfa;
+
+  /* Buttons / states */
+  --ok:#16a34a;
+  --bad:#ef4444;
+
+  /* Header palette (for animated wordmark) */
+  --c1:#22d3ee; /* cyan */
+  --c2:#38bdf8; /* sky */
+  --c3:#a78bfa; /* violet */
+  --c4:#7dd3fc; /* light cyan */
+}
+
+/* ===============================
+   Base layout
+   =============================== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:14px/1.6 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ===============================
+   PREMIUM COMPACT HEADER
+   =============================== */
+header.hero{
+  position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.06);
+  padding:16px 12px; /* compact */
+  background:
+    radial-gradient(60% 40% at 15% 0%, rgba(34,211,238,.18), transparent 70%),
+    radial-gradient(60% 40% at 85% 0%, rgba(167,139,250,.16), transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+}
+.hero__inner{max-width:1100px; margin:0 auto; display:flex; justify-content:center}
+.brand{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:12px 16px; border-radius:16px;
+  background:linear-gradient(180deg, rgba(20,26,34,.72), rgba(20,26,34,.46));
+  border:1px solid rgba(255,255,255,.06);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 28px rgba(0,0,0,.45);
+  position:relative;
+}
+/* animated border glow */
+.brand::after{
+  content:""; position:absolute; inset:-1px; border-radius:16px; padding:1px; pointer-events:none;
+  background:linear-gradient(120deg, var(--c1), var(--c2), var(--c3), var(--c1));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  animation:borderFlow 7s linear infinite; opacity:.9;
+}
+@keyframes borderFlow{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+
+/* Wordmark (liquid gradient + sheen) */
+.brand h1{
+  margin:0; font-family:"Sora", system-ui, sans-serif; font-weight:800;
+  letter-spacing:.4px; line-height:1.05;
+  font-size:clamp(30px,5.6vw,46px);
+  position:relative; display:inline-block;
+  background:
+    radial-gradient(120% 140% at 10% 10%, var(--c1), transparent 60%),
+    radial-gradient(120% 140% at 90% 20%, var(--c3), transparent 60%),
+    conic-gradient(from 180deg at 50% 50%, var(--c4), var(--c2), var(--c3), var(--c1), var(--c4));
+  background-size:230% 230%, 230% 230%, 180% 180%;
+  background-position:0% 0%, 100% 0%, 50% 50%;
+  background-blend-mode:screen;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:flowA 12s ease-in-out infinite alternate, flowB 20s linear infinite;
+  text-shadow:0 0 18px rgba(110,231,255,.18);
+}
+.brand h1::after{
+  /* sweeping specular highlight */
+  content:""; position:absolute; inset:-8% -12%;
+  background:linear-gradient(120deg, transparent 15%, rgba(255,255,255,.85) 35%, transparent 55%);
+  mix-blend-mode:overlay; filter:blur(6px); opacity:.35;
+  transform:translateX(-120%) rotate(8deg);
+  animation:shine 3.8s cubic-bezier(.4,.0,.2,1) infinite;
+}
+.brand .under{
+  height:2px; width:100%; border-radius:2px; opacity:.85;
+  background:linear-gradient(90deg, transparent, var(--c1), var(--c3), transparent);
+  filter:drop-shadow(0 0 8px rgba(110,231,255,.6));
+  animation:pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes flowA{
+  0%{background-position:0% 0%, 100% 0%, 50% 50%}
+  50%{background-position:35% 65%, 70% 30%, 55% 45%}
+  100%{background-position:80% 20%, 30% 70%, 50% 50%}
+}
+@keyframes flowB{
+  0%{background-size:230% 230%, 230% 230%, 180% 180%}
+  100%{background-size:210% 210%, 250% 250%, 200% 200%}
+}
+@keyframes shine{
+  0%{transform:translateX(-120%) rotate(8deg); opacity:0}
+  12%{opacity:.35}
+  50%{transform:translateX(0%) rotate(8deg); opacity:.25}
+  88%{opacity:.35}
+  100%{transform:translateX(120%) rotate(8deg); opacity:0}
+}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .brand h1, .brand h1::after, .brand::after, .brand .under{animation:none}
+}
+
+/* ===============================
+   Main page UI
+   =============================== */
+main{padding:14px;display:grid;gap:12px}
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+  position:relative;
+  box-shadow:0 0 0 1px rgba(34,211,238,.06), 0 10px 30px rgba(2,6,23,.4)
+}
+.card h2{
+  margin:0 0 10px; font-size:14px; color:#c6d4e2;
+  display:flex; justify-content:space-between; align-items:center; font-family:"Sora", system-ui, sans-serif;
+}
+textarea{
+  width:100%; min-height:160px; background:#0b1220; color:#d6e3f5;
+  border:1px solid #203047; border-radius:10px; padding:10px; outline:none; resize:vertical
+}
+.controls{
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px; 
+  margin-top:8px; margin-bottom:8px;
+}
+.controls > *{flex:0 0 auto}      /* keep items inline by default */
+.add-mail{white-space:nowrap}      /* prevent wrap splitting label */
+
+/* PASTE / CLEAR / COPY */
+#pasteBtn{
+  position:absolute; bottom:12px; right:12px;
+  background:var(--ok); color:#fff; border-radius:8px; font-size:12px; opacity:.94;
+  border:none; padding:8px 12px; cursor:pointer; font-weight:700;
+}
+#clearBtn{
+  background:transparent; color:var(--bad); border:1px solid var(--bad);
+  padding:8px 12px; border-radius:10px; font-weight:700; cursor:pointer;
+}
+#copyBtn{
+  background:transparent; border:1px solid var(--accent); color:var(--accent);
+  padding:4px 10px; font-size:12px; border-radius:8px; cursor:pointer;
+}
+#copyBtn:hover{background:var(--accent); color:#0b0d10}
+
+/* Select */
+select{
+  background:#1a2230; color:#d6e3f5; border-radius:10px; border:1px solid #203047; padding:6px; min-width:180px
+}
+.hint{color:var(--muted); font-size:12px; margin-top:4px}
+pre{
+  background:#0b1220; color:#d6e3f5; border:1px solid #203047; border-radius:10px;
+  padding:12px; white-space:pre-wrap; word-break:break-word; min-height:160px
+}
+.footer{color:#8aa2bf;font-size:12px;text-align:center;padding:12px}
+.settings-icon{width:20px;height:20px;cursor:pointer;fill:none;stroke:#a8b3c7;stroke-width:2}
+
+/* ===============================
+   BLUE BUTTON (inline slider)
+   =============================== */
+.blue-btn{
+  display:inline-flex; align-items:center; gap:10px;
+  padding:10px 16px; border-radius:14px; border:1px solid #233147;
+  background:#0e1625; color:var(--accent);
+  font-weight:800; letter-spacing:.3px; cursor:pointer; user-select:none;
+  transition: background .35s ease, color .35s ease, border-color .35s ease, box-shadow .35s ease, transform .08s ease;
+  box-shadow:inset 0 0 0 1px rgba(34,211,238,.06);
+  font-family:"Sora", system-ui, sans-serif;
+}
+.blue-btn:active{ transform:translateY(1px) }
+.blue-btn .label{ transition:color .35s ease }
+
+/* mini slider */
+.blue-btn .slider{
+  width:44px; height:24px; border-radius:999px; position:relative;
+  background:#cfd7e6; transition: background .35s ease, box-shadow .35s ease;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.25)
+}
+.blue-btn .knob{
+  position:absolute; inset:3px auto 3px 3px; width:18px; height:18px;
+  border-radius:50%; background:#0b0d10;  /* OFF = dark */
+  transition: transform .35s ease, background .35s ease, box-shadow .35s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,.35)
+}
+/* ON state */
+.blue-btn.is-on{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  box-shadow:0 0 12px rgba(110,231,255,.6), 0 0 22px rgba(167,139,250,.25);
+}
+.blue-btn.is-on .slider{ background:#0d2530; box-shadow:inset 0 2px 5px rgba(0,0,0,.35) }
+.blue-btn.is-on .knob{ transform:translateX(20px); background:#fff; box-shadow:0 0 10px #bff2ff }
+.blue-btn.is-on .label{ color:#fff }
+
+/* Add Mail checkbox */
+.add-mail{
+  display:inline-flex; align-items:center; gap:8px; color:#d6e3f5; font-family:"Sora", system-ui, sans-serif;
+}
+.add-mail input{ width:16px; height:16px; }
+
+/* Settings gear placement in the first card title */
+#settingsIcon{margin-left:8px}
+#out .settings-icon, section.card .settings-icon:not(:first-of-type){display:none!important}
+</style>
+</head>
+<body>
+
+<!-- HEADER (subtitle removed) -->
+<header class="hero">
+  <div class="hero__inner">
+    <div class="brand">
+      <h1>FormatGPT</h1>
+      <div class="under"></div>
+    </div>
+  </div>
+</header>
+
+<!-- APP -->
+<main>
+  <section class="card">
+    <h2>
+      Paste Input (multi-line supported)
+      <svg class="settings-icon" id="settingsIcon" viewBox="0 0 24 24" aria-label="Settings">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 4.2 17.8l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.8 4.2l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 19.8 6.2l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </h2>
+
+    <div style="position:relative">
+      <textarea id="inp" placeholder="Paste any lines here"></textarea>
+      <button id="pasteBtn" onclick="pasteFromClipboard()">Paste</button>
+    </div>
+
+    <div class="controls">
+      <!-- Keep Add Mail inline with the dropdown -->
+      <select id="moreOptions" onchange="handleOption(this.value)">
+        <option value="standard">Standard</option>
+        <option value="xfly">Xfly</option>
+        <option value="reverse">Reverse</option>
+        <option value="plinksWith">Plinks with counts</option>
+        <option value="plinksWithout">Plinks without counts</option>
+      </select>
+
+      <!-- Blue toggle -->
+      <button id="blueBtn" class="blue-btn" type="button" aria-pressed="false" onclick="toggleBlue()">
+        <span class="label">Blue</span>
+        <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+      </button>
+
+      <button id="clearBtn" onclick="clearAll()">Clear</button>
+
+      <!-- Add Mail checkbox -->
+      <label class="add-mail">
+        <input type="checkbox" id="addMailChk" onchange="rerun()">
+        <span>Add Mail</span>
+      </label>
+    </div>
+
+    <div class="hint">Use the Blue toggle, dropdown for extra options, and the gear to set the Mail Access link.</div>
+  </section>
+
+  <section class="card">
+    <h2>
+      Output
+      <button id="copyBtn" onclick="copyOutput()">Copy</button>
+    </h2>
+    <pre id="out"></pre>
+    <div class="hint">Plinks show follower count if 30. Values wrapped in backticks except 2FA/Joined/Plink.</div>
+  </section>
+
+  <div class="footer">All processing happens locally in your browser. © FormatGPT v5</div>
+</main>
+
+<script>
+/* ===============================
+   Utility / state
+   =============================== */
+const isHex40 = s => /^[a-f0-9]{40}$/.test(s||"");
+const is2FAKey = s => /^[A-Z0-9]{16}$/.test(s||"");
+const isEmail  = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s||"");
+const isYear   = s => /^(2007|2008|2009|201\d|202\d|2025)$/.test(s||"");
+const stripLeadingNumbers = s => (s||"").replace(/^\d+/, "");
+const extract2FAFromLink = s => {
+  const m = String(s||"").match(/2fa\.fb\.rip\/([A-Z0-9]{16})/i);
+  return m ? m[1].toUpperCase() : "";
+};
+
+/* Mail Access setting with auto-https */
+function normalizeMailAccess(s){
+  const v = (s || "").trim();
+  if (!v) return "https://firstmail.ltd/en-US/webmail";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (/^\/\//.test(v)) return "https:" + v;
+  return "https://" + v;
+}
+let mailAccess = normalizeMailAccess(localStorage.getItem('mailAccess') || "");
+document.getElementById('settingsIcon').onclick = () => {
+  const d = prompt("Set Mail Access (full link or domain):", mailAccess);
+  if (d !== null) {
+    mailAccess = normalizeMailAccess(d);
+    localStorage.setItem('mailAccess', mailAccess);
+    rerun();
+  }
+};
+
+/* Blue toggle state */
+let blueActive = false;
+function toggleBlue(){
+  blueActive = !blueActive;
+  const btn = document.getElementById('blueBtn');
+  btn.classList.toggle('is-on', blueActive);
+  btn.setAttribute('aria-pressed', String(blueActive));
+  rerun();
+}
+
+/* ===============================
+   Parsing helpers
+   =============================== */
+function detectDirective(line){
+  const t=line.toLowerCase();
+  if(t.includes("#xfly")) return "xfly";
+  if(t.includes("#reverse")) return "reverse";
+  if(t.includes("#blue")) return "blue";
+  return "standard";
+}
+function smartSplit(line){
+  return line.includes("----") ? line.split("----").map(s=>s.trim()) : line.split(":").map(s=>s.trim());
+}
+function parseLine(raw){
+  const directive = detectDirective(raw);
+  const parts = smartSplit(raw.replace(/#\w+/gi,"").trim());
+  return { directive, parts };
+}
+
+/* Parse formatted block (for Reverse) */
+function parseFormattedBlock(lines){
+  const get = (label)=> {
+    const row = lines.find(l => l.toLowerCase().startsWith(label));
+    if(!row) return "";
+    const val = row.slice(label.length).trim();
+    return val.replace(/^`|`$/g,"");
+  };
+  const user = get("user:");
+  const pass = get("pass:");
+  const mail = get("mail:");
+  const mailPass = get("mail pass:");
+  const token = get("auth token:");
+  let twofa = get("2fa:");
+  const joined = get("joined:");
+  const plink = get("plink:");
+
+  const m = twofa.match(/2fa\.fb\.rip\/([A-Z0-9]{16})/i);
+  if(m) twofa = m[1];
+
+  let followers = "";
+  const f = plink.match(/\[(\d+)\]\s*$/);
+  if(f) followers = f[1];
+
+  return {user, pass, mail, mailPass, token, twofa, followers, joined};
+}
+
+/* Invalid hints */
+const HINTS = {
+  standard: "Expected: user:pass:mail:mailpass:authtoken:raw2fa:followers:year  (fields after pass are optional). Also supports one-field-per-line.",
+  xfly:     "Expected: username:password:RAW2FAKEY (16 A–Z/0–9 anywhere on the line). 2FA link accepted.",
+  reverse:  "Expected: (a) formatted block, or (b) username:password:email:emailpass:authtoken:raw_2fa:followers:joined",
+  plinks:   "Expected: user:pass:... (username required)"
+};
+function invalid(mode){ return `Sorry, invalid format for ${mode}.\n${HINTS[mode]}`; }
+
+/* Plink display helpers */
+function onlyPlink(username, followersRaw, withCounts){
+  if(!username) return "";
+  if(withCounts){
+    return followersRaw!=="" ? `x.com/${username} [${followersRaw}]` : `x.com/${username}`;
+  }
+  return `x.com/${username}`;
+}
+function plinkInBlock(username, followersRaw, mode){
+  if(!username) return "";
+  const has = followersRaw!==""; const n = has ? Number(followersRaw) : NaN;
+  if(mode==="without") return `x.com/${username}`;
+  if(mode==="with")    return has ? `x.com/${username} [${followersRaw}]` : `x.com/${username}`;
+  return (!isNaN(n) && n>=30) ? `x.com/${username} [${followersRaw}]` : `x.com/${username}`;
+}
+
+/* Reverse join helper (avoid :: when followers missing) */
+function joinReverse(arr){
+  const a = arr.slice();
+  if (a.length >= 8 && (a[6] === "" || a[6] == null) && a[7]) a.splice(6, 1);
+  return a.join(":");
+}
+
+/* ===============================
+   Renderers
+   =============================== */
+function renderStandard(parts, forceBlue, plinkMode="auto"){
+  let [user, pass, ...rest] = parts;
+  user = stripLeadingNumbers(user||""); pass = pass||"";
+  let mail="", mailPass="", token="", raw2fa="", followersRaw="", year="";
+  for(const p0 of rest){
+    const p = (p0||"").trim(); if(!p) continue;
+    if(!mail && isEmail(p))               { mail = p; continue; }
+    if(!mailPass && !isEmail(p) && !isHex40(p) && !is2FAKey(p) && !/2fa\.fb\.rip\//i.test(p) && !isYear(p)) { mailPass = p; continue; }
+    if(!token && isHex40(p))              { token = p; continue; }
+    if(!raw2fa && is2FAKey(p))            { raw2fa = p; continue; }
+    if(!raw2fa && /2fa\.fb\.rip\//i.test(p)) { raw2fa = extract2FAFromLink(p); continue; }
+    if(!year && isYear(p))                { year = p; continue; }
+    if(followersRaw==="" && /^\d+$/.test(p)) { followersRaw = p; continue; }
+  }
+  if(!user && !pass && !mail && !token && !raw2fa && !year){ return invalid("standard"); }
+
+  const lines = [];
+  if(user)     lines.push(`User: \`${user}\``);
+  if(pass)     lines.push(`Pass: \`${pass}\``);
+  if(mail)     lines.push(`Mail: \`${mail}\``);
+  if(mailPass) lines.push(`Mail Pass: \`${mailPass}\``);
+  if(token)    lines.push(`Auth Token: \`${token}\``);
+  if(raw2fa)   lines.push(`2FA: https://2fa.fb.rip/${raw2fa}`);
+  if(year)     lines.push(`Joined: ${year}`);
+  if(user)     lines.push(`Plink: ${plinkInBlock(user, followersRaw, plinkMode)}`);
+
+  if(forceBlue){
+    lines.push("");
+    lines.push("--------------");
+    lines.push(`Never set age less than 14 years from account creation time [${year||'UNKNOWN'}] otherwise it'll be locked.`);
+    lines.push("");
+    lines.push(" Mail Access:");
+    lines.push(mailAccess);
+  }
+  return lines.join("\n");
+}
+function renderXfly(parts){
+  let [user, pass, ...rest] = parts; user = stripLeadingNumbers(user||"");
+  let key = rest.find(x => is2FAKey(x));
+  if(!key){
+    const link = rest.find(x => /2fa\.fb\.rip\//i.test(x||""));
+    if(link) key = extract2FAFromLink(link);
+  }
+  if(!user || !pass || !key) return invalid("xfly");
+  return `${user}:${pass}:${key}`;
+}
+function renderReverse(text){
+  if(!text || !text.trim()) return invalid("reverse");
+  const chunks = text.replace(/\r/g, "").split(/\n\s*(?:-{6,}\s*)?\n+/).map(ch => ch.trim()).filter(Boolean);
+  const outputs = [];
+  for(const chunk of chunks){
+    const rows = chunk.split(/\n/).map(r => r.trim()).filter(Boolean);
+    const looksBlock = rows.some(r => /^user:/i.test(r));
+    if(looksBlock){
+      const {user,pass,mail,mailPass,token,twofa,followers,joined} = parseFormattedBlock(rows);
+      if(!user && !pass){ outputs.push(invalid("reverse")); continue; }
+      outputs.push(joinReverse([user,pass,mail,mailPass,token,twofa,followers,joined]));
+    }else{
+      const hasDelims = rows.some(r => r.includes(":") || r.includes("----"));
+      if(!hasDelims && rows.length>=2 && rows.length<=8){
+        const parts = rows.slice(0,8);
+        for(let i=0;i<parts.length;i++){ if(/2fa\.fb\.rip\//i.test(parts[i])) parts[i] = extract2FAFromLink(parts[i]); }
+        while(parts.length<8) parts.push("");
+        outputs.push(joinReverse(parts));
+      }else{
+        for(const line of rows){
+          const parts = smartSplit(line);
+          for(let i=0;i<parts.length;i++){ if(/2fa\.fb\.rip\//i.test(parts[i])) parts[i] = extract2FAFromLink(parts[i]); }
+          if(parts.length < 2){ outputs.push(invalid("reverse")); continue; }
+          const arr = parts.slice(0,8); while(arr.length < 8) arr.push("");
+          outputs.push(joinReverse(arr));
+        }
+      }
+    }
+  }
+  return outputs.join("\n");
+}
+
+/* ===============================
+   Runner
+   =============================== */
+function rerun(){ run(document.getElementById("moreOptions").value || "standard"); }
+
+function run(force){
+  const txt = document.getElementById("inp").value;
+  const addMail = document.getElementById("addMailChk").checked;
+
+  /* Plinks-only list modes */
+  if(force==="plinksWith" || force==="plinksWithout"){
+    const withCounts = (force==="plinksWith");
+    const rows = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    if(!rows.length){ document.getElementById("out").textContent = invalid("plinks"); return; }
+    const outLines = [];
+    for(const row of rows){
+      const {parts} = parseLine(row);
+      let [user,, ...rest] = parts; user = stripLeadingNumbers(user||"");
+      let followersRaw = ""; for(const p of rest){ if(/^\d+$/.test(p)){ followersRaw = p; break; } }
+      const link = onlyPlink(user, followersRaw, withCounts);
+      if(!user){ document.getElementById("out").textContent = invalid("plinks"); return; }
+      outLines.push(link);
+    }
+    /* Append Add Mail once at the very end when requested */
+    if(addMail && outLines.length){
+      outLines.push(""); outLines.push("--------------"); outLines.push("Access mail:"); outLines.push(mailAccess);
+    }
+    document.getElementById("out").textContent = outLines.join("\n");
+    return;
+  }
+
+  /* Xfly */
+  if(force==="xfly"){
+    const rows = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    if(!rows.length){ document.getElementById("out").textContent = invalid("xfly"); return; }
+    const out = rows.map(r => renderXfly(parseLine(r).parts)).join("\n");
+    const outLines = out ? out.split("\n") : [];
+    if(addMail && outLines.length){
+      outLines.push(""); outLines.push("--------------"); outLines.push("Access mail:"); outLines.push(mailAccess);
+    }
+    document.getElementById("out").textContent = outLines.join("\n");
+    return;
+  }
+
+  /* Reverse */
+  if(force==="reverse"){
+    if(!txt.trim()){ document.getElementById("out").textContent = invalid("reverse"); return; }
+    const outLines = renderReverse(txt).split("\n");
+    if(addMail && outLines.filter(Boolean).length){
+      outLines.push(""); outLines.push("--------------"); outLines.push("Access mail:"); outLines.push(mailAccess);
+    }
+    document.getElementById("out").textContent = outLines.join("\n");
+    return;
+  }
+
+  /* Standard / Blue (with support for one-field-per-line) */
+  const rows = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!rows.length){ document.getElementById("out").textContent = invalid("standard"); return; }
+
+  const hasAnyDelims = rows.some(r => r.includes(":") || r.includes("----"));
+  /* Single record (one field per line) */
+  if(!hasAnyDelims && rows.length>=2 && rows.length<=8){
+    const parts = rows.slice(0,8);
+    for(let i=0;i<parts.length;i++){ if(/2fa\.fb\.rip\//i.test(parts[i])) parts[i] = extract2FAFromLink(parts[i]); }
+    const out = renderStandard(parts, blueActive, "auto");
+    const outLines = out ? out.split("\n") : [];
+    if(addMail && outLines.filter(Boolean).length){
+      outLines.push(""); outLines.push("--------------"); outLines.push("Access mail:"); outLines.push(mailAccess);
+    }
+    document.getElementById("out").textContent = outLines.join("\n");
+    return;
+  }
+
+  /* Multi-line inputs  render each entry */
+  const out = [];
+  for(const row of rows){
+    const {directive, parts} = parseLine(row);
+    for(let i=0;i<parts.length;i++){ if(/2fa\.fb\.rip\//i.test(parts[i])) parts[i] = extract2FAFromLink(parts[i]); }
+    const blueLine = blueActive || (directive==='blue');
+    out.push(renderStandard(parts, blueLine));
+    out.push("");
+  }
+  /* Append Add Mail once at the end */
+  if(document.getElementById("addMailChk").checked && out.join("").trim()){
+    out.push("--------------"); out.push("Access mail:"); out.push(mailAccess);
+  }
+  document.getElementById("out").textContent = out.join("\n").trim();
+}
+
+/* ===============================
+   UI helpers
+   =============================== */
+async function pasteFromClipboard(){
+  try{
+    const t = await navigator.clipboard.readText();
+    document.getElementById("inp").value = t;
+    rerun();
+  }catch(e){ alert("Clipboard permission denied."); }
+}
+function clearAll(){ document.getElementById("inp").value=""; document.getElementById("out").textContent=""; }
+function copyOutput(){ navigator.clipboard.writeText(document.getElementById("out").textContent); }
+function handleOption(v){ run(v); }
+/* live typing */
+document.getElementById("inp").addEventListener("input", rerun);
+/* init blue visual & first run */
+document.getElementById('blueBtn').classList.toggle('is-on', false);
+window.addEventListener('load', rerun);
+</script>
+</body>
+</html>
