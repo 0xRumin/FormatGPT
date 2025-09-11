@@ -8,8 +8,10 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-  <!-- CSS: same folder -->
+  <!-- Your styles (same folder) -->
   <link rel="stylesheet" href="theme.css">
+  <!-- If you actually use header.css, keep the next line; otherwise delete it -->
+  <link rel="stylesheet" href="header.css">
 </head>
 <body>
 <header class="hero">
@@ -34,10 +36,9 @@
     <div style="position:relative;overflow:visible">
       <textarea id="inp" placeholder="Paste any lines here"></textarea>
 
-      <!-- Paste split -->
       <div class="split small" id="pasteSplit">
-        <button class="btn-main" id="pasteMain" type="button" title="Paste">Paste</button>
-        <button class="btn-caret" id="pasteCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Upload options">▾</button>
+        <button class="btn-main" id="pasteMain" type="button">Paste</button>
+        <button class="btn-caret" id="pasteCaret" type="button" aria-haspopup="true" aria-expanded="false">▾</button>
         <div class="menu" id="pasteMenu" role="menu" aria-label="Paste options">
           <button type="button" id="menuUploadAny">Upload a file</button>
         </div>
@@ -46,7 +47,6 @@
     </div>
 
     <div class="controls">
-      <!-- Mode dropdown -->
       <div class="mode-dd" id="modeDd" data-value="standard">
         <button class="dd-btn" id="modeBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
           <span id="modeLabel">Standard</span>
@@ -70,7 +70,6 @@
       </button>
 
       <button id="clearBtn" type="button">Clear</button>
-
       <label class="add-mail"><input type="checkbox" id="addMailChk">Add Mail</label>
     </div>
 
@@ -82,8 +81,8 @@
       <span>Output</span>
       <span style="position:relative;display:inline-block">
         <div class="split small" id="copySplit" style="position:static">
-          <button class="btn-main-copy" id="copyMain" type="button" title="Copy">Copy</button>
-          <button class="btn-caret-copy" id="copyCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Download">▾</button>
+          <button class="btn-main-copy" id="copyMain" type="button">Copy</button>
+          <button class="btn-caret-copy" id="copyCaret" type="button" aria-haspopup="true" aria-expanded="false">▾</button>
           <div class="menu" id="copyMenu" role="menu" aria-label="Download options">
             <button type="button" id="menuDownloadTxt">Save as txt</button>
           </div>
@@ -94,11 +93,26 @@
   </section>
 </main>
 
-<!-- JS: same folder -->
-<script src="utils.js"></script>
-<script src="state.js"></script>
-<script src="app.js"></script>
-<script src="ui.js"></script>
-<script src="boot.js"></script>
+<!-- Ensure a global namespace exists before any modules run -->
+<script>window.App = window.App || {};</script>
+
+<!-- Load everything from the SAME folder; 'defer' preserves order -->
+<script defer src="utils.js"></script>
+<script defer src="config.js"></script>
+<script defer src="state.js"></script>
+
+<!-- If you split renderers into separate files, include them before app.js -->
+<script defer src="standard.js"></script>
+<script defer src="reverse.js"></script>
+<script defer src="xfly.js"></script>
+<script defer src="plinks-with.js"></script>
+<script defer src="plinks-without.js"></script>
+<script defer src="convert.js"></script>
+<script defer src="renderers.js"></script>
+
+<!-- Core, UI, and boot last -->
+<script defer src="app.js"></script>
+<script defer src="ui.js"></script>
+<script defer src="boot.js"></script>
 </body>
 </html>
