@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FormatGPT v5</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="header.css">
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="brand">
+      <h1>FormatGPT</h1>
+      <div class="under"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>
+      <span>Paste Input (multi-line supported)</span>
+      <svg class="h2-gear" id="settingsIcon" viewBox="0 0 24 24" aria-label="Settings">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l-.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </h2>
+
+    <div style="position:relative;overflow:visible">
+      <textarea id="inp" placeholder="Paste any lines here"></textarea>
+
+      <!-- Paste split -->
+      <div class="split small" id="pasteSplit">
+        <button class="btn-main" id="pasteMain" type="button" title="Paste">Paste</button>
+        <button class="btn-caret" id="pasteCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Upload options">▾</button>
+        <div class="menu" id="pasteMenu" role="menu" aria-label="Paste options">
+          <button type="button" id="menuUploadAny">Upload a file</button>
+        </div>
+      </div>
+      <input type="file" id="uploadAny" accept=".txt,.csv,text/plain,text/csv" style="display:none" />
+    </div>
+
+    <div class="controls">
+      <!-- Mode dropdown -->
+      <div class="mode-dd" id="modeDd" data-value="standard">
+        <button class="dd-btn" id="modeBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span id="modeLabel">Standard</span>
+          <span class="dd-spacer" aria-hidden="true"></span>
+          <svg class="dd-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="dd-menu" id="modeMenu" role="listbox" aria-label="Select mode">
+          <li class="dd-item active" data-value="standard" role="option" aria-selected="true">Standard</li>
+          <li class="dd-item" data-value="xfly" role="option">Xfly</li>
+          <li class="dd-item" data-value="reverse" role="option">Reverse</li>
+          <li class="dd-item" data-value="plinksWith" role="option">Plinks with counts</li>
+          <li class="dd-item" data-value="plinksWithout" role="option">Plinks w/o counts</li>
+          <li class="dd-item" data-value="convertUsers" role="option">Usernames → Plinks</li>
+          <li class="dd-item" data-value="plinksToUsers" role="option">Plinks → Usernames</li>
+          <li class="dd-item" data-value="mailChanger" role="option">Mail Changer</li>
+        </ul>
+      </div>
+
+      <button id="blueBtn" class="blue-btn" type="button" aria-pressed="false">
+        <span class="label">Blue</span>
+        <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+      </button>
+
+      <button id="clearBtn" type="button">Clear</button>
+
+      <label class="add-mail"><input type="checkbox" id="addMailChk">Add Mail</label>
+    </div>
+
+    <div class="hint">Use the Blue toggle, the floating dropdown for extra options, and the gear to set the Mail Access link.</div>
+  </section>
+
+  <section class="card">
+    <h2>
+      <span>Output</span>
+      <span style="position:relative;display:inline-block">
+        <div class="split small" id="copySplit" style="position:static">
+          <button class="btn-main-copy" id="copyMain" type="button" title="Copy">Copy</button>
+          <button class="btn-caret-copy" id="copyCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Download">▾</button>
+          <div class="menu" id="copyMenu" role="menu" aria-label="Download options">
+            <button type="button" id="menuDownloadTxt">Save as txt</button>
+          </div>
+        </div>
+      </span>
+    </h2>
+    <pre id="out"></pre>
+  </section>
+</main>
+
+<!-- Namespace first -->
+<script>window.App = window.App || {};</script>
+
+<!-- Core order: utils -> config -> state -> renderers -> main -> modes -> ui -> boot -->
+<script defer src="utils.js"></script>
+<script defer src="config.js"></script>
+<script defer src="state.js"></script>
+<script defer src="renderers.js"></script>
+<script defer src="main.js"></script>
+
+<script defer src="standard.js"></script>
+<script defer src="reverse.js"></script>
+<script defer src="xfly.js"></script>
+<script defer src="plinks-with.js"></script>
+<script defer src="plinks-without.js"></script>
+<script defer src="plinks-to-users.js"></script>
+<script defer src="convert.js"></script>
+<script defer src="mail-changer.js"></script>
+<script defer src="ui.js"></script>
+<script defer src="boot.js"></script>
+</body>
+</html>

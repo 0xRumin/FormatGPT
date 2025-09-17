@@ -1,0 +1,188 @@
+/* ===== Root tokens ===== */
+:root{
+  --bg:#0b0d10;
+  --ink:#e6edf3;
+  --muted:#9fb0c6;
+
+  --panel:#11151b;
+  --line:#1b2330;
+
+  --accent:#22d3ee;
+  --accent-2:#38bdf8;
+  --accent-3:#a78bfa;
+  --accent-4:#7dd3fc;
+
+  --ok:#16a34a; --ok-dark:#0e7f37;
+  --bad:#ef4444;
+
+  --radius:12px;
+  --shadow:0 12px 30px rgba(2,6,23,.55),0 2px 1px rgba(0,0,0,.25);
+}
+
+/* ===== Base ===== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:14px/1.6 "IBM Plex Mono",
+       "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",
+       ui-monospace,monospace;
+}
+
+/* ===== Main layout & cards ===== */
+main{padding:14px;display:grid;gap:12px;max-width:980px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;position:relative;box-shadow:var(--shadow);overflow:visible}
+.card h2{
+  margin:0 0 10px;font-size:14px;color:#c6d4e2;display:flex;justify-content:space-between;align-items:center;
+  font-family:"Sora",sans-serif
+}
+.h2-gear{width:22px;height:22px;cursor:pointer;fill:none;stroke:#a8b3c7;stroke-width:2;opacity:.9;transition:opacity .2s,transform .2s}
+.h2-gear:hover{opacity:1;transform:rotate(20deg)}
+
+/* ===== Inputs/Output ===== */
+textarea{
+  width:100%;min-height:160px;background:#0b1220;color:#d6e3f5;border:1px solid #203047;border-radius:10px;padding:10px;outline:none;resize:vertical
+}
+pre{
+  background:#0b1220;color:#d6e3f5;border:1px solid #203047;border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-word;min-height:160px
+}
+.hint{color:var(--muted);font-size:12px;margin-top:4px}
+
+/* ===== Controls row ===== */
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0}
+
+/* Clear */
+#clearBtn{
+  background:transparent; border:1.5px solid var(--bad); color:#ef4444;
+  border-radius:10px;padding:6px 14px;min-height:36px;
+  font:800 14px "Sora",sans-serif;cursor:pointer;display:inline-flex;align-items:center
+}
+#clearBtn:hover{background:rgba(239,68,68,.08)}
+
+/* Add Mail */
+.add-mail{display:inline-flex;align-items:center;gap:6px;font:700 14px "Sora",sans-serif}
+.add-mail input{width:18px;height:18px}
+
+/* ===== Blue toggle (baseline for size) ===== */
+.blue-btn{
+  display:inline-flex;align-items:center;gap:8px;min-height:40px;
+  padding:8px 14px;border-radius:12px;border:1px solid #233147;
+  background:#0e1625;color:#cfe8ff;
+  font:700 14px/1 "Sora",sans-serif;letter-spacing:.2px;cursor:pointer;user-select:none;
+  transition:background .3s,color .3s,box-shadow .3s
+}
+.blue-btn .slider{width:38px;height:22px;border-radius:999px;position:relative;background:#cfd7e6;transition:background .3s}
+.blue-btn .knob{position:absolute;inset:4px auto 4px 4px;width:14px;height:14px;border-radius:50%;background:#0b0d10;transition:transform .3s,background .3s}
+.blue-btn.is-on{background:#12324b;color:#fff;box-shadow:0 0 18px rgba(32,130,255,.65),0 0 36px rgba(32,130,255,.35)}
+.blue-btn.is-on .slider{background:#0d2530}
+.blue-btn.is-on .knob{transform:translateX(16px);background:#fff}
+
+/* ===== Paste/Copy split buttons ===== */
+.split{position:absolute;bottom:12px;right:12px;display:inline-flex;align-items:stretch;border-radius:10px;overflow:visible}
+.split.small .btn-main, .split.small .btn-main-copy{padding:6px 12px;font:800 12px "Sora",sans-serif;min-height:36px;display:inline-flex;align-items:center}
+.split.small .btn-caret, .split.small .btn-caret-copy{padding:0 10px;font:800 12px "Sora",sans-serif;min-height:36px;display:inline-flex;align-items:center}
+
+/* Paste theme */
+.btn-main{background:linear-gradient(180deg,#1aa64f,#11843c);color:#fff;border:none;border-radius:10px 0 0 10px}
+.btn-caret{background:#0e2318;color:#c9ffe0;border:1px solid rgba(255,255,255,.1);border-left:none;border-radius:0 10px 10px 0}
+.btn-main:active,.btn-main-copy:active{transform:translateY(1px)}
+.btn-caret:active,.btn-caret-copy:active{transform:translateY(1px)}
+
+/* Copy theme */
+.btn-main-copy{background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:10px 0 0 10px}
+.btn-caret-copy{background:#10202c;border:1px solid var(--accent);border-left:none;color:#aee9ff;border-radius:0 10px 10px 0}
+
+/* Caret menus */
+.menu{
+  position:absolute;top:100%;right:0;min-width:220px;margin-top:8px;
+  background:#0f1726;border:1px solid #223046;border-radius:12px;
+  box-shadow:var(--shadow);padding:6px;display:none;z-index:500
+}
+.menu.open{display:block}
+.menu .header{font:800 11px/1 "Sora",sans-serif;color:#9fb0c6;padding:6px 8px 4px}
+.menu button{
+  display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;
+  padding:10px 12px;border:none;background:transparent;color:#dbe7ff;font:700 13px/1 "Sora",sans-serif;border-radius:10px;cursor:pointer
+}
+.menu button:hover{background:#132033}
+
+/* ===== Mode dropdown — SAME size as Blue ===== */
+.mode-dd{position:relative;flex:1;min-width:220px;max-width:320px}
+
+.dd-btn{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;
+  width:100%;
+  border:1px solid #203047; border-radius:12px;
+  background:#1a2230; color:#d6e3f5;
+  font:700 14px/1 "Sora",sans-serif; /* = Blue */
+  cursor:pointer; transition:box-shadow .2s, border-color .2s;
+}
+.dd-btn:hover{box-shadow:0 0 0 2px rgba(56,189,248,.16)}
+#modeLabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-spacer{flex:1}
+.dd-chevron{width:12px;height:12px;fill:none;stroke:#9fb0c6;stroke-width:2;transition:transform .2s;margin-left:8px}
+.dd-btn[aria-expanded="true"] .dd-chevron{transform:rotate(180deg)}
+
+/* Menu — balanced width, compact rows */
+.dd-menu{
+  position:absolute; top:calc(100% + 6px); left:0; z-index:510;
+  min-width:220px; max-width:320px;
+  padding:6px; margin:0; list-style:none;
+  border-radius:12px; border:1px solid #223046;
+  background:linear-gradient(180deg,#0f1726,#0b111d);
+  box-shadow:var(--shadow); display:none;
+}
+.mode-dd.open .dd-menu{display:block}
+.dd-menu.open{display:block}
+
+/* Items — same font as Blue; not oversized */
+.dd-item{
+  padding:8px 12px;
+  border-radius:10px;
+  color:#dbe7ff;
+  font:700 14px/1 "Sora",sans-serif;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between;
+  transition:background .12s, border-color .12s;
+}
+.dd-item:hover{background:#122233}
+.dd-item.active{
+  background:#163048;
+  border:1px solid #295476;
+  box-shadow:inset 0 0 0 1px rgba(41,84,118,.25);
+}
+
+/* Ultra-compact on very small screens */
+@media (max-width:420px){
+  .mode-dd{min-width:200px;max-width:280px}
+  .dd-btn{padding:8px 12px}
+  .dd-menu{min-width:200px;max-width:280px}
+}
+
+/* KBD helper (hidden on touch) */
+.dd-kbd{opacity:.55;font:600 11px/1 "IBM Plex Mono",monospace}
+@media (pointer:coarse){.dd-kbd{display:none}}
+
+/* ===== Optional: Settings popover ===== */
+.gear-pop{
+  position:absolute;
+  background:#0f1726;border:1px solid #223046;border-radius:12px;padding:12px;min-width:280px;z-index:1200;
+  box-shadow:var(--shadow)
+}
+.gp-title{font:700 13px "Sora",sans-serif;color:#dbe7ff;margin:0 0 8px}
+.gp-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.gp-input{
+  flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid #2b3950;background:#0b1220;color:#e6edf3;
+  font:13px/1.3 "IBM Plex Mono","Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",monospace
+}
+.gp-actions{display:flex;gap:8px;justify-content:flex-end}
+.icon-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:10px;border:1px solid #2b3950;background:#111a29;color:#dbe7ff;cursor:pointer
+}
+.icon-pill:hover{background:#163048;border-color:#2e5678}
+.icon-pill.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.icon-pill.warn{background:#1f2937;border-color:#2b3950}
