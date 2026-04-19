@@ -45,11 +45,6 @@
     <h1 class="animate-fade-rise">
       <span class="word">Format</span><em>GPT</em>
     </h1>
-    <div class="hero__side animate-fade-rise-delay">
-      <div><b>Vol. 05</b> · Rev 05</div>
-      <div>An editorial workbench</div>
-      <div>for messy text.</div>
-    </div>
   </div>
 
   <!-- Command rail (above workbench so it stays in view) -->
@@ -92,12 +87,6 @@
       </label>
 
       <button id="clearBtn" type="button">Clear</button>
-
-      <button class="run liquid-glass animate-fade-rise-delay-2" id="runBtn" type="button" title="Format (⌘↵)">
-        <span>Format</span>
-        <span class="arrow">→</span>
-        <kbd>⌘↵</kbd>
-      </button>
     </div>
   </div>
 
@@ -230,8 +219,7 @@
 
   const inp = document.getElementById('inp');
 
-  // 4. Format button → trigger existing reactive rerun + pulse
-  const runBtn = document.getElementById('runBtn');
+  // 4. Cmd/Ctrl+Enter → trigger existing reactive rerun + pulse
   const pulse  = document.getElementById('axisPulse');
   function fire() {
     if (window.App && window.App.App && typeof window.App.App.rerun === 'function') {
@@ -246,7 +234,6 @@
       pulse.classList.add('go');
     }
   }
-  runBtn?.addEventListener('click', fire);
 
   // 4a. Wrap each output line in an .out-row block so we can draw a separator
   //     ONLY between complete accounts (not under every wrapped text line).
@@ -369,7 +356,6 @@
 
     let runningUntil = 0;
     function bumpRunning(){ runningUntil = performance.now() + 1100; }
-    document.getElementById('runBtn')?.addEventListener('click', bumpRunning);
     window.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') bumpRunning();
     });
