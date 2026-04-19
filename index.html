@@ -50,17 +50,6 @@
       <div>An editorial workbench</div>
       <div>for messy text.</div>
     </div>
-    <div class="hero__desc animate-fade-rise-delay">
-      Emails, usernames, 2FA keys, followers — <i>any</i> mess of lines becomes clean, consistent rows. One accent. Zero ceremony.
-    </div>
-  </div>
-
-  <!-- Meters -->
-  <div class="meters">
-    <div class="m"><div class="m__label"><span>01</span><b>Rows</b></div><div class="m__v" id="meterRows">0</div></div>
-    <div class="m"><div class="m__label"><span>02</span><b>Emails</b></div><div class="m__v" id="meterEmails">0</div></div>
-    <div class="m"><div class="m__label"><span>03</span><b>Usernames</b></div><div class="m__v" id="meterUsers">0</div></div>
-    <div class="m m--accent"><div class="m__label"><span>04</span><b>Verified</b></div><div class="m__v" id="meterVerified">0</div></div>
   </div>
 
   <!-- Command rail (above workbench so it stays in view) -->
@@ -239,35 +228,7 @@
   tick();
   setInterval(tick, 1000);
 
-  // 3. Live meters from #inp
   const inp = document.getElementById('inp');
-  const mRows = document.getElementById('meterRows');
-  const mEm   = document.getElementById('meterEmails');
-  const mUs   = document.getElementById('meterUsers');
-  const mVf   = document.getElementById('meterVerified');
-  const reEmail = /[^\s,;:|]+@[^\s,;:|]+\.[^\s,;:|]+/;
-  const re2FA   = /\b[A-Z2-7]{16,}\b/;
-  function recount() {
-    const text = inp ? inp.value : '';
-    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    let em = 0, us = 0, vf = 0;
-    for (const line of lines) {
-      const hasEmail = reEmail.test(line);
-      const has2FA   = re2FA.test(line);
-      if (hasEmail) em++;
-      // Count any first non-email/2FA token as a username
-      if (line.split(/\s*[:;,|]\s*|\s{2,}/).some(t => t && !reEmail.test(t) && !re2FA.test(t))) us++;
-      if (hasEmail && has2FA) vf++;
-    }
-    if (mRows) mRows.textContent = lines.length;
-    if (mEm)   mEm.textContent   = em;
-    if (mUs)   mUs.textContent   = us;
-    if (mVf)   mVf.textContent   = vf;
-  }
-  inp?.addEventListener('input', recount);
-  // Initial + after boot
-  setTimeout(recount, 50);
-  setTimeout(recount, 400);
 
   // 4. Format button → trigger existing reactive rerun + pulse
   const runBtn = document.getElementById('runBtn');
@@ -284,7 +245,6 @@
       void pulse.offsetWidth;
       pulse.classList.add('go');
     }
-    recount();
   }
   runBtn?.addEventListener('click', fire);
 

@@ -190,23 +190,6 @@ main{
 @keyframes hueRoll{to{background-position:-300% 0}}
 .hero__side{display:flex;flex-direction:column;gap:10px;text-align:right;font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
 .hero__side b{color:var(--fg);font-weight:700}
-.hero__desc{grid-column:1/-1;margin-top:12px;max-width:720px;font-family:var(--font-serif);font-style:italic;font-size:22px;line-height:1.4;color:var(--muted)}
-.hero__desc i{color:var(--fg);font-style:italic}
-
-/* =================== Meters =================== */
-.meters{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.m{
-  position:relative;overflow:hidden;
-  background:linear-gradient(180deg, rgba(247,242,236,0.04), rgba(247,242,236,0.01));
-  border:1px solid var(--line);border-radius:20px;padding:16px 18px 14px;
-  transition:transform 0.3s cubic-bezier(.34,1.56,.64,1), border-color 0.3s;
-}
-.m:hover{transform:translateY(-3px);border-color:var(--line-strong)}
-.m__label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:8px}
-.m__label b{color:var(--fg);font-weight:700}
-.m__v{font-family:var(--font-serif);font-size:56px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.03em;color:var(--fg)}
-.m--accent .m__v{color:var(--accent)}
-
 /* =================== Workbench =================== */
 .work{
   position:relative;display:grid;grid-template-columns:1fr 100px 1fr;gap:0;
@@ -825,7 +808,6 @@ main{
   main{padding:20px;gap:18px}
   .hero{grid-template-columns:1fr}
   .hero__side{text-align:left}
-  .meters{grid-template-columns:repeat(2,1fr)}
   .work{grid-template-columns:1fr;min-height:auto}
   .axis{height:90px;border:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
   .axis__core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
@@ -841,9 +823,6 @@ main{
 @media (max-width:520px){
   main{padding:14px}
   .hero h1{font-size:48px}
-  .hero__desc{font-size:16px}
-  .meters{grid-template-columns:repeat(2,1fr)}
-  .m__v{font-size:40px}
   .pane{padding:18px 16px}
   .mode-dd{min-width:180px}
   /* Stack action buttons so they don't overlap pane content */
