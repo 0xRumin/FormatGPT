@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FormatGPT — Workbench</title>
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+
+<!-- Motion graphics background -->
+<video class="bg-video" autoplay loop muted playsinline preload="auto" aria-hidden="true">
+  <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4" type="video/mp4">
+</video>
+<div class="bg-video__tint" aria-hidden="true"></div>
+
+<!-- Aurora backdrop (dimmed; video provides depth) -->
+<div class="aur"></div>
+<div class="grid-lines"></div>
+
+<main>
+
+  <!-- Ticker -->
+  <div class="ticker">
+    <span class="pill"><span class="live"></span>Live</span>
+    <div class="scroll"><div class="scroll__inner">
+      <span><b>01</b> paste a mess</span>
+      <span><b>02</b> pick a mode</span>
+      <span><b>03</b> press format</span>
+      <span><b>04</b> copy tidy output</span>
+      <span><b>rev 05</b> · aurora build</span>
+      <span><b>01</b> paste a mess</span>
+      <span><b>02</b> pick a mode</span>
+      <span><b>03</b> press format</span>
+      <span><b>04</b> copy tidy output</span>
+      <span><b>rev 05</b> · aurora build</span>
+    </div></div>
+    <span class="clock" id="clock">00:00:00</span>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1 class="animate-fade-rise">
+      <span class="word">Format</span><em>GPT</em>
+    </h1>
+    <div class="hero__side animate-fade-rise-delay">
+      <div><b>Vol. 05</b> · Rev 05</div>
+      <div>An editorial workbench</div>
+      <div>for messy text.</div>
+    </div>
+    <div class="hero__desc animate-fade-rise-delay">
+      Emails, usernames, 2FA keys, followers — <i>any</i> mess of lines becomes clean, consistent rows. One accent. Zero ceremony.
+    </div>
+  </div>
+
+  <!-- Meters -->
+  <div class="meters">
+    <div class="m"><div class="m__label"><span>01</span><b>Rows</b></div><div class="m__v" id="meterRows">0</div></div>
+    <div class="m"><div class="m__label"><span>02</span><b>Emails</b></div><div class="m__v" id="meterEmails">0</div></div>
+    <div class="m"><div class="m__label"><span>03</span><b>Usernames</b></div><div class="m__v" id="meterUsers">0</div></div>
+    <div class="m m--accent"><div class="m__label"><span>04</span><b>Verified</b></div><div class="m__v" id="meterVerified">0</div></div>
+  </div>
+
+  <!-- Command rail (above workbench so it stays in view) -->
+  <div class="rail">
+    <div class="rail__kicker"><b>03</b><span>Controls</span></div>
+
+    <div class="rail__center">
+      <!-- Mode dropdown — keeps original IDs/structure so ui.js wires up unchanged -->
+      <div class="mode-dd" id="modeDd" data-value="standard">
+        <button class="dd-btn" id="modeBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span id="modeLabel">Standard</span>
+          <span class="dd-spacer" aria-hidden="true"></span>
+          <svg class="dd-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="dd-menu" id="modeMenu" role="listbox" aria-label="Select mode">
+          <li class="dd-item active" data-value="standard"      role="option" aria-selected="true">Standard</li>
+          <li class="dd-item"        data-value="reorder"       role="option">V2 Reorder</li>
+          <li class="dd-item"        data-value="filter"        role="option">Filter</li>
+          <li class="dd-item"        data-value="sorter"        role="option">Sorter</li>
+          <li class="dd-item"        data-value="plinksWith"    role="option">Plinks with counts</li>
+          <li class="dd-item"        data-value="plinksWithout" role="option">Plinks w/o counts</li>
+          <li class="dd-item"        data-value="convertUsers"  role="option">Usernames → Plinks</li>
+          <li class="dd-item"        data-value="plinksToUsers" role="option">Plinks → Usernames</li>
+          <li class="dd-item"        data-value="mailChanger"   role="option">Mail Changer</li>
+          <li class="dd-item"        data-value="xfly"          role="option">Xfly</li>
+          <li class="dd-item"        data-value="reverse"       role="option">Reverse</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rail__right">
+      <button id="blueBtn" class="blue-btn" type="button" aria-pressed="false">
+        <span class="slider" aria-hidden="true"><span class="knob"></span></span>
+        <span class="label">Blue</span>
+      </button>
+
+      <label class="add-mail">
+        <input type="checkbox" id="addMailChk">
+        Mail
+      </label>
+
+      <button id="clearBtn" type="button">Clear</button>
+
+      <button class="run liquid-glass animate-fade-rise-delay-2" id="runBtn" type="button" title="Format (⌘↵)">
+        <span>Format</span>
+        <span class="arrow">→</span>
+        <kbd>⌘↵</kbd>
+      </button>
+    </div>
+  </div>
+
+  <!-- Workbench -->
+  <section class="work">
+
+    <!-- Input pane -->
+    <div class="pane pane--in">
+      <div class="pane__head">
+        <div>
+          <div class="pane__kick"><b>01</b> · Raw input</div>
+          <div class="pane__title">The <em>mess</em></div>
+        </div>
+        <div class="pane__tools">
+          <!-- Copy raw input — sits to the left of the settings gear -->
+          <button class="head-copy" id="copyInputBtn" type="button" title="Copy raw input">Copy</button>
+          <svg class="h2-gear" id="settingsIcon" viewBox="0 0 24 24" aria-label="Settings">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l-.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div style="position:relative;display:flex;flex:1;flex-direction:column">
+        <textarea id="inp" placeholder="Paste any lines — we'll find emails, 2FA keys, usernames, followers…"></textarea>
+
+        <div class="split small" id="pasteSplit">
+          <button class="btn-main" id="pasteMain" type="button" title="Paste">Paste</button>
+          <button class="btn-caret" id="pasteCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Upload options">▾</button>
+          <div class="menu" id="pasteMenu" role="menu" aria-label="Paste options">
+            <button type="button" id="menuUploadAny">Upload a file</button>
+          </div>
+        </div>
+        <input type="file" id="uploadAny" accept=".txt,.csv,text/plain,text/csv" style="display:none" />
+      </div>
+    </div>
+
+    <!-- Axis -->
+    <div class="axis">
+      <canvas id="axisFlow" aria-hidden="true"></canvas>
+      <div class="axis__core">
+        <div class="ring"><div class="inner">⇌</div></div>
+      </div>
+      <div class="axis__pulse" id="axisPulse"></div>
+    </div>
+
+    <!-- Output pane (gets .card so filter.js's outCard.closest('.card') resolves) -->
+    <section class="pane pane--out card">
+      <div class="pane__head">
+        <div>
+          <div class="pane__kick"><b>02</b> · Tidy output</div>
+          <div class="pane__title">The <em>result</em></div>
+        </div>
+        <div class="pane__tools">
+          <span style="position:relative;display:inline-block">
+            <div class="split small" id="copySplit" style="position:static">
+              <button class="btn-main-copy" id="copyMain" type="button" title="Copy">Copy</button>
+              <button class="btn-caret-copy" id="copyCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Download">▾</button>
+              <div class="menu" id="copyMenu" role="menu" aria-label="Download options">
+                <button type="button" id="menuDownloadTxt">Save as txt</button>
+              </div>
+            </div>
+          </span>
+        </div>
+      </div>
+      <pre id="out"></pre>
+    </section>
+  </section>
+
+  <!-- Pre-created hidden panels so reorder.js / filter.js / sorter.js find them -->
+  <section class="card work-panel" id="reorderPanel" style="display:none"></section>
+  <section class="card work-panel" id="filterPanel"  style="display:none"></section>
+  <section class="card work-panel" id="sorterPanel"  style="display:none"></section>
+
+  <!-- Colophon -->
+  <footer class="colo">
+    <div>Typeset in <b>Instrument Serif</b> · <b>JetBrains Mono</b></div>
+    <div class="colo__c">Paste a mess. Pick a mode. Copy tidy output.</div>
+    <div class="colo__r">An editorial redesign of <b>0xRumin/FormatGPT</b> · Rev <b>05</b></div>
+  </footer>
+
+</main>
+
+<div class="shortcut">Press <kbd>⌘</kbd><kbd>↵</kbd> to format</div>
+
+<!-- Namespace first (matches original load order) -->
+<script>window.App = window.App || {};</script>
+
+<!-- Core order: utils -> config -> state -> renderers -> main -> modes -> ui -> boot -->
+<script defer src="utils.js"></script>
+<script defer src="config.js"></script>
+<script defer src="state.js"></script>
+<script defer src="renderers.js"></script>
+<script defer src="main.js"></script>
+
+<script defer src="standard.js"></script>
+<script defer src="reverse.js"></script>
+<script defer src="xfly.js"></script>
+<script defer src="plinks-with.js"></script>
+<script defer src="plinks-without.js"></script>
+<script defer src="plinks-to-users.js"></script>
+<script defer src="convert.js"></script>
+<script defer src="mail-changer.js"></script>
+<script defer src="reorder.js"></script>
+<script defer src="filter.js"></script>
+<script defer src="sorter.js"></script>
+<script defer src="ui.js"></script>
+<script defer src="boot.js"></script>
+
+<!-- Visual polish (no JS files modified). Runs after defer scripts. -->
+<script defer>
+(function () {
+  // 1. Aurora cursor follow
+  document.addEventListener('mousemove', (e) => {
+    const r = document.documentElement;
+    r.style.setProperty('--mx', (e.clientX / window.innerWidth * 100) + '%');
+    r.style.setProperty('--my', (e.clientY / window.innerHeight * 100) + '%');
+  });
+
+  // 2. Ticking clock
+  const clock = document.getElementById('clock');
+  function tick() {
+    if (!clock) return;
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    clock.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // 3. Live meters from #inp
+  const inp = document.getElementById('inp');
+  const mRows = document.getElementById('meterRows');
+  const mEm   = document.getElementById('meterEmails');
+  const mUs   = document.getElementById('meterUsers');
+  const mVf   = document.getElementById('meterVerified');
+  const reEmail = /[^\s,;:|]+@[^\s,;:|]+\.[^\s,;:|]+/;
+  const re2FA   = /\b[A-Z2-7]{16,}\b/;
+  function recount() {
+    const text = inp ? inp.value : '';
+    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    let em = 0, us = 0, vf = 0;
+    for (const line of lines) {
+      const hasEmail = reEmail.test(line);
+      const has2FA   = re2FA.test(line);
+      if (hasEmail) em++;
+      // Count any first non-email/2FA token as a username
+      if (line.split(/\s*[:;,|]\s*|\s{2,}/).some(t => t && !reEmail.test(t) && !re2FA.test(t))) us++;
+      if (hasEmail && has2FA) vf++;
+    }
+    if (mRows) mRows.textContent = lines.length;
+    if (mEm)   mEm.textContent   = em;
+    if (mUs)   mUs.textContent   = us;
+    if (mVf)   mVf.textContent   = vf;
+  }
+  inp?.addEventListener('input', recount);
+  // Initial + after boot
+  setTimeout(recount, 50);
+  setTimeout(recount, 400);
+
+  // 4. Format button → trigger existing reactive rerun + pulse
+  const runBtn = document.getElementById('runBtn');
+  const pulse  = document.getElementById('axisPulse');
+  function fire() {
+    if (window.App && window.App.App && typeof window.App.App.rerun === 'function') {
+      window.App.App.rerun();
+    } else if (inp) {
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (pulse) {
+      pulse.classList.remove('go');
+      // restart animation
+      void pulse.offsetWidth;
+      pulse.classList.add('go');
+    }
+    recount();
+  }
+  runBtn?.addEventListener('click', fire);
+
+  // 4a. Wrap each output line in an .out-row block so we can draw a separator
+  //     ONLY between complete accounts (not under every wrapped text line).
+  (function wrapOutputRows(){
+    const out = document.getElementById('out');
+    if (!out) return;
+    const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    let lastSig = '';
+    function render(){
+      const firstChild = out.firstElementChild;
+      const looksRendered = firstChild && firstChild.classList && firstChild.classList.contains('out-row');
+      // Reconstruct raw text from the rendered DOM (so we can re-render idempotently)
+      const raw = looksRendered
+        ? Array.from(out.children).map(d => d.dataset.raw || '').join('\n\n').replace(/\n+$/, '')
+        : (out.textContent || '');
+      const lines = raw.split(/\r?\n/);
+      // Group into account blocks (blank line = boundary)
+      const blocks = [];
+      let cur = [];
+      for (const line of lines) {
+        if (!line.trim()) {
+          if (cur.length) { blocks.push(cur); cur = []; }
+        } else {
+          cur.push(line);
+        }
+      }
+      if (cur.length) blocks.push(cur);
+
+      const sig = blocks.map(b => b.join('\u0002')).join('\u0001');
+      if (sig === lastSig) return;
+      lastSig = sig;
+
+      const html = !blocks.length ? '' : blocks.map((block) => {
+        const rawBlock = block.join('\n');
+        const inner = block.map((ln) => '<div class="out-row__line">' + esc(ln) + '</div>').join('');
+        return '<div class="out-row" data-raw="' + esc(rawBlock) + '">' + inner + '</div>';
+      }).join('');
+
+      mo.disconnect();
+      out.innerHTML = html;
+      mo.observe(out, { childList: true, characterData: true, subtree: true });
+    }
+    const mo = new MutationObserver(() => render());
+    mo.observe(out, { childList: true, characterData: true, subtree: true });
+    render();
+
+    // Override Copy handlers to use joined data-line values (since textContent
+    // of row-wrapped divs loses newlines).
+    function joined(){
+      const rows = out.querySelectorAll('.out-row');
+      if (!rows.length) return out.textContent || '';
+      return Array.from(rows).map(d => {
+        // Prefer data-raw, but fall back to joining child .out-row__line text with \n
+        if (d.dataset.raw) return d.dataset.raw;
+        const lines = d.querySelectorAll('.out-row__line');
+        return Array.from(lines).map(l => l.textContent || '').join('\n');
+      }).join('\n\n');
+    }
+    // Use CAPTURE-phase + stopImmediatePropagation so we run BEFORE ui.js's handler
+    // (which would otherwise read out.textContent and lose newlines between row divs).
+    const copyMain = document.getElementById('copyMain');
+    copyMain?.addEventListener('click', async (e) => {
+      e.stopImmediatePropagation();
+      try {
+        await navigator.clipboard.writeText(joined());
+        const orig = copyMain.textContent;
+        copyMain.textContent = 'Copied';
+        setTimeout(() => { copyMain.textContent = orig; }, 900);
+      } catch { alert('Copy failed.'); }
+    }, true);
+
+    // Same intercept for the Save-as-txt menu so it gets newline-correct text
+    const menuSave = document.getElementById('menuDownloadTxt');
+    menuSave?.addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
+      const text = joined();
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'formatgpt-output.txt';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      document.getElementById('copyMenu')?.classList.remove('open');
+    }, true);
+  })();
+
+  // 4b. Input Copy button — copies raw textarea to clipboard
+  const copyInputBtn = document.getElementById('copyInputBtn');
+  copyInputBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(inp ? inp.value : '');
+      const orig = copyInputBtn.textContent;
+      copyInputBtn.textContent = 'Copied';
+      copyInputBtn.classList.add('is-copied');
+      setTimeout(() => {
+        copyInputBtn.textContent = orig;
+        copyInputBtn.classList.remove('is-copied');
+      }, 900);
+    } catch { alert('Copy failed.'); }
+  });
+
+  // 4c. Axis "blood-flow" canvas (ported from design system Connector).
+  //     Flow direction adapts: horizontal (left→right) when axis is tall,
+  //     vertical (top→bottom) when axis is short & wide (mobile stacked layout).
+  //     L/R counts are smoothly interpolated so mode-changes don't look like a burst.
+  (function initAxisFlow(){
+    const canvas = document.getElementById('axisFlow');
+    const out    = document.getElementById('out');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    function resize(){
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      canvas.width  = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    new ResizeObserver(resize).observe(canvas);
+
+    let runningUntil = 0;
+    function bumpRunning(){ runningUntil = performance.now() + 1100; }
+    document.getElementById('runBtn')?.addEventListener('click', bumpRunning);
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') bumpRunning();
+    });
+
+    function bez(a,b,c,d,p){ const m=1-p; return m*m*m*a + 3*m*m*p*b + 3*m*p*p*c + p*p*p*d; }
+    function targets(){
+      const inText  = (inp && inp.value) || '';
+      const outText = (out && out.textContent) || '';
+      const L = inText.split(/\r?\n/).filter(s => s.trim()).length || 1;
+      const R = outText.split(/\r?\n/).filter(s => s.trim()).length || L;
+      return { L: Math.min(Math.max(L,1),16), R: Math.min(Math.max(R,1),16) };
+    }
+
+    let t = 0, smL = 1, smR = 1;
+    function tick(){
+      const running = performance.now() < runningUntil;
+      t += running ? 0.03 : 0.012;
+      // ease counts toward target (~0.06/frame ≈ smooth over ~0.3s, no burst feel)
+      const tg = targets();
+      smL += (tg.L - smL) * 0.06;
+      smR += (tg.R - smR) * 0.06;
+      const L = Math.max(1, Math.round(smL));
+      const R = Math.max(1, Math.round(smR));
+
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      const vertical = w > h * 1.5;        // wide & short axis (mobile stacked) → top↓bottom flow
+      const A = vertical ? w : h;          // span perpendicular to flow
+      const B = vertical ? h : w;          // length of flow path
+
+      // Use the larger of L,R as vein count so each row has its own parallel lane
+      const N = Math.max(L, R);
+      for (let i = 0; i < N; i++) {
+        const a1 = ((i + 0.5) / N) * A;   // start lane (parallel)
+        const a2 = a1;                    // end lane = same lane → fully parallel
+
+        const grad = vertical
+          ? ctx.createLinearGradient(0, 0, 0, B)
+          : ctx.createLinearGradient(0, 0, B, 0);
+        grad.addColorStop(0,    'rgba(45,212,191,0.18)');
+        grad.addColorStop(0.5,  'rgba(247,242,236,0.22)');
+        grad.addColorStop(1,    'rgba(56,189,248,0.18)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (vertical) { ctx.moveTo(a1, 0); ctx.lineTo(a2, B); }
+        else          { ctx.moveTo(0, a1); ctx.lineTo(B, a2); }
+        ctx.stroke();
+
+        // 2 travelling "blood cells" per parallel lane
+        for (let k = 0; k < 2; k++) {
+          const phase = ((t + i*0.22 + k*0.5) % 1);
+          const along = phase * B;
+          const across = a1;
+          const x = vertical ? across : along;
+          const y = vertical ? along  : across;
+          const alpha = Math.sin(phase * Math.PI);
+          ctx.fillStyle = running
+            ? 'rgba(45,212,191,' + alpha + ')'
+            : 'rgba(247,242,236,' + (alpha * 0.5) + ')';
+          ctx.beginPath();
+          ctx.arc(x, y, running ? 2.8 : 1.6, 0, Math.PI*2);
+          ctx.fill();
+          if (running) {
+            ctx.shadowColor = '#2dd4bf';
+            ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  })();
+
+  // 5. Cmd/Ctrl + Enter shortcut
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      fire();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

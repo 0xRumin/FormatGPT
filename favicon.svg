@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <!-- Cyan-to-purple gradient -->
+    <linearGradient id="fg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#22d3ee"/>
+      <stop offset="50%"  stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+
+    <!-- Line gradient -->
+    <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0.3"/>
+    </linearGradient>
+
+    <!-- Neon glow -->
+    <filter id="g" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="0 0 0 0 0.133
+                0 0 0 0 0.827
+                0 0 0 0 0.933
+                0 0 0 0.5 0" result="c"/>
+      <feMerge>
+        <feMergeNode in="c"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark rounded background -->
+  <rect width="64" height="64" rx="14" fill="#0b0d10"/>
+
+  <!-- Subtle border -->
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="none"
+        stroke="url(#fg)" stroke-width="1.2" opacity="0.3"/>
+
+  <!-- Icon group with glow -->
+  <g filter="url(#g)">
+    <!-- Stylized "F" -->
+    <path d="M14,14 L34,14 L34,20 L20,20 L20,29 L30,29 L30,35 L20,35 L20,50 L14,50 Z"
+          fill="url(#fg)"/>
+
+    <!-- Format lines -->
+    <rect x="38" y="16"  width="14" height="4" rx="2" fill="url(#lg)" opacity="0.9"/>
+    <rect x="38" y="26"  width="10" height="4" rx="2" fill="url(#lg)" opacity="0.6"/>
+    <rect x="38" y="36"  width="12" height="4" rx="2" fill="url(#lg)" opacity="0.8"/>
+    <rect x="38" y="46"  width="8"  height="4" rx="2" fill="url(#lg)" opacity="0.5"/>
+  </g>
+</svg>
