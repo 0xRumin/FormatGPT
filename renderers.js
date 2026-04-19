@@ -49,7 +49,7 @@
 
       if (followersRaw === "" && /^\d+$/.test(p) && !U.isYear(p)) { followersRaw = p; continue; }
 
-      if (!mailPass && !U.isEmail(p) && !U.isHex40(p) && !U.is2FAKey(p) && !/2fa\.fb\.rip\//i.test(p) && !U.isYear(p) && !/^\d+$/.test(p)) {
+      if (!mailPass && p.length <= 32 && !U.isEmail(p) && !U.isCt0(p) && !U.isHex40(p) && !U.is2FAKey(p) && !/2fa\.fb\.rip\//i.test(p) && !U.isYear(p) && !/^\d+$/.test(p)) {
         mailPass = p; continue;
       }
     }
