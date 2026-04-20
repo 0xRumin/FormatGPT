@@ -11,12 +11,12 @@
   try {
     var savedView = localStorage.getItem('cc_view');
     if (savedView === 'matched' || savedView === 'unmatched') state.crosscheck.view = savedView;
-    var savedL2 = localStorage.getItem('cc_list2');
-    if (savedL2 != null) state.crosscheck._persistedList2 = savedL2;
+    // List 2 is intentionally NOT persisted across sessions — wipe any residual value from
+    // older builds so the textarea starts empty on reload.
+    localStorage.removeItem('cc_list2');
   } catch (e) {}
 
-  function saveView()  { try { localStorage.setItem('cc_view', state.crosscheck.view); } catch (e) {} }
-  function saveList2(v){ try { localStorage.setItem('cc_list2', v || ''); } catch (e) {} }
+  function saveView() { try { localStorage.setItem('cc_view', state.crosscheck.view); } catch (e) {} }
 
   var panelBuilt = false;
 
@@ -96,17 +96,12 @@
   }
 
   // Wire the output-pane textarea (#ccList2) so typing in it re-runs the compare.
-  // Safe to call repeatedly — uses dataset flag.
+  // Safe to call repeatedly — uses dataset flag. List 2 is session-only (not persisted).
   function wireList2Input() {
     var ta = $('#ccList2');
     if (!ta || ta.dataset.ccBound === '1') return;
     ta.dataset.ccBound = '1';
-    // Restore persisted value
-    if (!ta.value && state.crosscheck._persistedList2) {
-      ta.value = state.crosscheck._persistedList2;
-    }
     ta.addEventListener('input', function () {
-      saveList2(ta.value);
       App.App.rerun();
     });
   }
@@ -132,7 +127,7 @@
       applyTabVisibility();
 
       var list1 = (text || '').split(/\r?\n/).filter(function (s) { return s.trim(); });
-      var list2Raw = ($('#ccList2') && $('#ccList2').value) || state.crosscheck._persistedList2 || '';
+      var list2Raw = ($('#ccList2') && $('#ccList2').value) || '';
       var list2 = list2Raw.split(/\r?\n/).filter(function (s) { return s.trim(); });
 
       var set2 = new Set();

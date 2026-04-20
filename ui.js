@@ -171,8 +171,18 @@
     // Textarea live
     inp?.addEventListener('input', () => Core?.rerun && Core.rerun());
 
-    // Clear
-    clear?.addEventListener('click', () => { if (inp) inp.value=''; if (out) out.textContent=''; });
+    // Clear — wipes input, output AND the Crosscheck List 2 textarea (both lists go blank)
+    clear?.addEventListener('click', () => {
+      if (inp) inp.value = '';
+      if (out) out.textContent = '';
+      const cc = document.getElementById('ccList2');
+      if (cc) cc.value = '';
+      try { localStorage.removeItem('cc_list2'); } catch (e) {}
+      if (window.App?.State?.state?.crosscheck) {
+        window.App.State.state.crosscheck._persistedList2 = '';
+      }
+      Core?.rerun && Core.rerun();
+    });
 
     // Blue toggle
     blue?.addEventListener('click', () => {
