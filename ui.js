@@ -109,11 +109,17 @@
     if (panel) panel.style.display = mode === 'sorter' ? 'block' : 'none';
   }
 
+  function syncCrosscheckPanel(mode) {
+    const panel = $('#crosscheckPanel');
+    if (panel) panel.style.display = mode === 'crosscheck' ? 'flex' : 'none';
+  }
+
   function setModeFromDd(value) {
     Core?.setMode && Core.setMode(value);
     syncReorderPanel(value);
     syncFilterPanel(value);
     syncSorterPanel(value);
+    syncCrosscheckPanel(value);
     Core?.rerun && Core.rerun();
   }
 
@@ -246,6 +252,7 @@
     syncReorderPanel('standard');
     syncFilterPanel('standard');
     syncSorterPanel('standard');
+    syncCrosscheckPanel('standard');
     Core?.rerun && Core.rerun();
   }
 

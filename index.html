@@ -69,11 +69,11 @@
           <li class="dd-item"        data-value="reorder"       role="option">V2 Reorder</li>
           <li class="dd-item"        data-value="filter"        role="option">Filter</li>
           <li class="dd-item"        data-value="sorter"        role="option">Sorter</li>
+          <li class="dd-item"        data-value="crosscheck"    role="option">Crosscheck</li>
           <li class="dd-item"        data-value="plinksWith"    role="option">Plinks with counts</li>
           <li class="dd-item"        data-value="plinksWithout" role="option">Plinks w/o counts</li>
           <li class="dd-item"        data-value="convertUsers"  role="option">Usernames → Plinks</li>
           <li class="dd-item"        data-value="plinksToUsers" role="option">Plinks → Usernames</li>
-          <li class="dd-item"        data-value="mailChanger"   role="option">Mail Changer</li>
           <li class="dd-item"        data-value="xfly"          role="option">Xfly</li>
           <li class="dd-item"        data-value="reverse"       role="option">Reverse</li>
         </ul>
@@ -162,10 +162,11 @@
     </section>
   </section>
 
-  <!-- Pre-created hidden panels so reorder.js / filter.js / sorter.js find them -->
-  <section class="card work-panel" id="reorderPanel" style="display:none"></section>
-  <section class="card work-panel" id="filterPanel"  style="display:none"></section>
-  <section class="card work-panel" id="sorterPanel"  style="display:none"></section>
+  <!-- Pre-created hidden panels so reorder.js / filter.js / sorter.js / crosscheck.js find them -->
+  <section class="card work-panel" id="reorderPanel"    style="display:none"></section>
+  <section class="card work-panel" id="filterPanel"     style="display:none"></section>
+  <section class="card work-panel" id="sorterPanel"     style="display:none"></section>
+  <section class="card work-panel" id="crosscheckPanel" style="display:none"></section>
 
   <!-- Colophon -->
   <footer class="colo">
@@ -195,10 +196,10 @@
 <script defer src="plinks-without.js"></script>
 <script defer src="plinks-to-users.js"></script>
 <script defer src="convert.js"></script>
-<script defer src="mail-changer.js"></script>
 <script defer src="reorder.js"></script>
 <script defer src="filter.js"></script>
 <script defer src="sorter.js"></script>
+<script defer src="crosscheck.js"></script>
 <script defer src="ui.js"></script>
 <script defer src="boot.js"></script>
 
@@ -373,11 +374,18 @@
   (function heroTypewriter(){
     const el = document.getElementById('heroTw');
     if (!el) return;
-    // Actual FormatGPT modes (matches the dropdown in the rail)
+    // Mode descriptions — typed out one at a time to teach what each mode does.
     const words = [
-      'Standard','Reorder','Filter','Sorter',
-      'Plinks','Convert','Extract',
-      'Mailgen','Xfly','Reverse'
+      'Standard: Convert messy lines to easy credentials',
+      'Reorder: Rearrange credential fields in any order',
+      'Filter: Keep only the rows that match your rules',
+      'Sorter: Sort and group accounts by column type',
+      'Crosscheck: Compare two lists, find what differs',
+      'Plinks: Turn accounts into x.com profile links',
+      'Convert: Usernames to x.com plinks in one click',
+      'Extract: Pull usernames out of x.com plinks',
+      'Xfly: Quick twitter handle cleanup',
+      'Reverse: Flip the field order of every line'
     ];
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       el.textContent = words[0];

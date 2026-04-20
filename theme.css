@@ -333,46 +333,109 @@ main{
 .head-split .btn-caret{padding:0 9px}
 .head-split .menu{ top:calc(100% + 8px); right:0; }
 
-/* =================== Hero typewriter (cycling mode names) =================== */
+/* =================== Hero typewriter (cycling mode descriptions) =================== */
+/* Kept intentionally subtle so FormatGPT stays the hero focal point. */
 .hero{
-  display:flex; align-items:baseline; gap:6px 28px; flex-wrap:wrap;
+  display:flex; align-items:baseline; gap:4px 22px; flex-wrap:wrap;
 }
 .hero h1{ flex:0 0 auto; }
 .hero__type{
-  display:inline-flex; align-items:baseline; gap:8px;
-  font-family:var(--font-display); font-style:normal; font-weight:700;
-  font-size:clamp(22px, 3.4vw, 46px);
-  line-height:1; letter-spacing:-.01em;
+  display:inline-flex; align-items:baseline; gap:7px;
+  font-family:var(--font-display); font-style:normal; font-weight:500;
+  font-size:clamp(12px, 1.5vw, 18px);
+  line-height:1; letter-spacing:.01em;
   white-space:nowrap; align-self:baseline;
+  opacity:.9;
 }
 .hero__type-slash{
   font-family:var(--font-mono); font-style:normal; font-weight:400;
-  font-size:.55em; color:rgba(255,255,255,0.3);
+  font-size:.85em; color:rgba(255,255,255,0.28);
 }
 .hero__type-text{
-  color:#facc15; /* bright yellow — matches the reference “I'm Coding” style */
-  text-shadow: 0 0 24px rgba(250,204,21,0.22);
-  min-width:0.4em; /* avoid layout collapse between words */
+  color:#fde68a; /* soft yellow — readable, not louder than the title */
+  text-shadow:none;
+  min-width:0.4em;
 }
 .hero__type-caret{
-  display:inline-block; width:.09em; height:.85em;
-  background:#facc15; border-radius:1px;
-  margin-left:3px;
+  display:inline-block; width:.1em; height:.95em;
+  background:#fde68a; border-radius:1px;
+  margin-left:2px;
   animation: blinkCaret 1s steps(2) infinite;
-  box-shadow:0 0 10px rgba(250,204,21,0.55);
 }
 @keyframes blinkCaret{ 50%{ opacity:0 } }
 
-/* Phones — stay on the SAME LINE; tighten sizes instead of wrapping */
+/* Phones — keep the typewriter on the same line under the title when it wraps */
 @media (max-width: 760px){
   .hero{ gap: 2px 10px; }
   .hero h1{ font-size:clamp(40px, 12vw, 72px); }
-  .hero__type{ font-size:clamp(14px, 4.2vw, 24px); }
+  .hero__type{ font-size:clamp(11px, 3vw, 14px); white-space:normal; max-width:100%; }
 }
 @media (max-width: 420px){
   .hero h1{ font-size:clamp(34px, 13vw, 58px); }
-  .hero__type{ font-size:clamp(13px, 4vw, 18px); }
+  .hero__type{ font-size:clamp(10px, 2.8vw, 12px); }
 }
+
+/* =================== Crosscheck panel =================== */
+#crosscheckPanel{
+  padding:16px 18px;
+  background:rgba(18,13,8,0.55);
+  border:1px solid var(--line);
+  border-radius:20px;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  color:var(--fg); font-family:var(--font-body);
+  display:flex; flex-direction:column; gap:12px;
+}
+.cc-head{ display:flex; flex-direction:column; gap:2px; }
+.cc-title{
+  font-family:var(--font-serif); font-size:24px; line-height:1;
+  letter-spacing:-.01em; color:var(--fg);
+}
+.cc-title em{ font-style:italic; color:var(--accent); }
+.cc-sub{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted);
+}
+.cc-modes{ display:flex; gap:8px; flex-wrap:wrap; }
+.cc-btn{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; font-weight:700;
+  padding:8px 14px; min-height:32px; border-radius:999px; cursor:pointer;
+  color:var(--muted); background:rgba(247,242,236,0.04);
+  border:1px solid var(--line); transition:all .2s;
+}
+.cc-btn:hover{ color:var(--fg); border-color:var(--line-strong); }
+.cc-btn.cc-active{
+  color:#041014;
+  background:linear-gradient(180deg, rgba(110,231,183,0.9), rgba(45,212,191,0.75));
+  border-color:var(--mint);
+  box-shadow:0 6px 18px -6px rgba(110,231,183,0.5);
+}
+.cc-label{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted);
+}
+.cc-textarea{
+  width:100%; min-height:140px; resize:vertical;
+  padding:12px 14px;
+  background:rgba(11,15,20,0.7);
+  color:var(--fg);
+  border:1px solid var(--line-strong); border-radius:12px;
+  font-family:var(--font-mono); font-size:12.5px; line-height:1.6;
+  outline:none; transition:border-color .2s, box-shadow .2s;
+}
+.cc-textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,212,191,.15); }
+.cc-stats{ display:flex; gap:14px; flex-wrap:wrap; }
+.cc-stat{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+  padding:6px 10px; border-radius:999px;
+  background:rgba(247,242,236,0.03); border:1px solid var(--line);
+}
+.cc-stat b{ color:var(--fg); font-weight:700; margin-left:6px; font-variant-numeric:tabular-nums; }
+.cc-stat.cc-m{ border-color:rgba(110,231,183,0.35); }
+.cc-stat.cc-m b{ color:var(--mint); }
+.cc-stat.cc-u{ border-color:rgba(251,146,60,0.35); }
+.cc-stat.cc-u b{ color:#fb923c; }
 
 /* =================== Paste / Copy split buttons =================== */
 .split{position:absolute;bottom:16px;right:14px;display:inline-flex;align-items:stretch;border-radius:999px;overflow:visible}
