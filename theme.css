@@ -358,7 +358,7 @@ main{
   vertical-align:-0.08em;
   animation: blinkCaret 1s steps(2) infinite;
 }
-.hero__type-caret--lead{ margin-right:8px; }
+.hero__type-caret--lead{ margin-right:0.3em; }
 .hero__type-text + .hero__type-caret{ margin-left:2px; }
 @keyframes blinkCaret{ 50%{ opacity:0 } }
 
