@@ -333,45 +333,45 @@ main{
 .head-split .btn-caret{padding:0 9px}
 .head-split .menu{ top:calc(100% + 8px); right:0; }
 
-/* =================== Hero typewriter (cycling key features) =================== */
+/* =================== Hero typewriter (cycling mode names) =================== */
 .hero{
-  display:flex; align-items:flex-end; gap:10px 36px; flex-wrap:wrap;
+  display:flex; align-items:baseline; gap:6px 28px; flex-wrap:wrap;
 }
 .hero h1{ flex:0 0 auto; }
 .hero__type{
   display:inline-flex; align-items:baseline; gap:8px;
-  font-family:var(--font-serif); font-style:italic; font-weight:400;
-  font-size:clamp(28px, 4.4vw, 64px);
-  line-height:1; letter-spacing:-.02em;
-  white-space:nowrap; align-self:center;
-  padding-bottom:.18em; /* sit on the same baseline-ish line as the GPT descender */
+  font-family:var(--font-display); font-style:normal; font-weight:700;
+  font-size:clamp(22px, 3.4vw, 46px);
+  line-height:1; letter-spacing:-.01em;
+  white-space:nowrap; align-self:baseline;
 }
 .hero__type-slash{
   font-family:var(--font-mono); font-style:normal; font-weight:400;
-  font-size:.55em; color:rgba(255,255,255,0.32);
-  transform:translateY(-.2em);
+  font-size:.55em; color:rgba(255,255,255,0.3);
 }
 .hero__type-text{
-  background:linear-gradient(100deg, #fbbf24 0%, #fb923c 38%, #f472b6 72%, #fb7185 100%);
-  background-size:300% 100%;
-  -webkit-background-clip:text; background-clip:text;
-  -webkit-text-fill-color:transparent; color:transparent;
-  animation: hueRoll 6s linear infinite;
-  text-shadow: 0 0 28px rgba(251,113,133,0.10);
-  min-width: 0.4em; /* avoid layout collapse when empty between words */
+  color:#facc15; /* bright yellow — matches the reference “I'm Coding” style */
+  text-shadow: 0 0 24px rgba(250,204,21,0.22);
+  min-width:0.4em; /* avoid layout collapse between words */
 }
 .hero__type-caret{
-  display:inline-block; width:.06em; height:.78em;
-  background:#fb923c; border-radius:1px;
-  margin-left:3px; transform:translateY(.06em);
+  display:inline-block; width:.09em; height:.85em;
+  background:#facc15; border-radius:1px;
+  margin-left:3px;
   animation: blinkCaret 1s steps(2) infinite;
-  box-shadow:0 0 12px rgba(251,146,60,0.45);
+  box-shadow:0 0 10px rgba(250,204,21,0.55);
 }
 @keyframes blinkCaret{ 50%{ opacity:0 } }
+
+/* Phones — stay on the SAME LINE; tighten sizes instead of wrapping */
 @media (max-width: 760px){
-  .hero{ flex-direction:column; align-items:flex-start; gap:6px; }
-  .hero__type{ font-size:clamp(20px, 6vw, 30px); padding-bottom:0; }
-  .hero__type-slash{ transform:translateY(-.1em); }
+  .hero{ gap: 2px 10px; }
+  .hero h1{ font-size:clamp(40px, 12vw, 72px); }
+  .hero__type{ font-size:clamp(14px, 4.2vw, 24px); }
+}
+@media (max-width: 420px){
+  .hero h1{ font-size:clamp(34px, 13vw, 58px); }
+  .hero__type{ font-size:clamp(13px, 4vw, 18px); }
 }
 
 /* =================== Paste / Copy split buttons =================== */

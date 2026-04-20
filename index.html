@@ -373,10 +373,11 @@
   (function heroTypewriter(){
     const el = document.getElementById('heroTw');
     if (!el) return;
+    // Actual FormatGPT modes (matches the dropdown in the rail)
     const words = [
-      'Standard','Reorder','Filter','Sorter','Plinks',
-      'Tokens','Mailgen','Followers','Convert','Reverse',
-      'Xfly','2FA-keys'
+      'Standard','Reorder','Filter','Sorter',
+      'Plinks','Convert','Extract',
+      'Mailgen','Xfly','Reverse'
     ];
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       el.textContent = words[0];
