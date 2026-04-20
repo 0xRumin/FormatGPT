@@ -368,7 +368,13 @@ main{
 @media (max-width: 760px){
   .hero{ gap: 2px 10px; }
   .hero h1{ font-size:clamp(40px, 12vw, 72px); }
-  .hero__type{ font-size:clamp(11px, 3vw, 14px); white-space:normal; max-width:100%; }
+  .hero__type{
+    display:flex; flex:1 1 100%; width:100%;
+    font-size:clamp(11px, 3vw, 14px);
+    white-space:normal; max-width:100%;
+  }
+  .hero__type-text{ white-space:normal; overflow-wrap:anywhere; min-width:0; flex:1 1 auto; }
+  .hero__type-caret{ flex:0 0 auto; }
 }
 @media (max-width: 420px){
   .hero h1{ font-size:clamp(34px, 13vw, 58px); }
