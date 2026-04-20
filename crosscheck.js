@@ -1,26 +1,22 @@
-// crosscheck.js — Compare two lists; show unmatched (L1 not in L2) or matched (in both).
-// Ported logic from D:\SCRIPTS\1. Mosts\Crosscheck\main.py
+// crosscheck.js — Compare two lists, tabbed results (Unmatched / Matched), each copyable.
+// List 1 comes from the main input textarea (#inp).
+// List 2 comes from the output-pane textarea (#ccList2), which is revealed while crosscheck mode is active.
 (function () {
   if (!window.App || !App.App || typeof App.App.registerMode !== 'function') return;
 
   var state = App.State.state;
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
 
-  // Persisted sub-state
-  state.crosscheck = state.crosscheck || { list2: '', view: 'unmatched' };
+  state.crosscheck = state.crosscheck || { view: 'unmatched' };
   try {
-    var savedList2 = localStorage.getItem('cc_list2');
-    var savedView  = localStorage.getItem('cc_view');
-    if (savedList2 != null) state.crosscheck.list2 = savedList2;
+    var savedView = localStorage.getItem('cc_view');
     if (savedView === 'matched' || savedView === 'unmatched') state.crosscheck.view = savedView;
+    var savedL2 = localStorage.getItem('cc_list2');
+    if (savedL2 != null) state.crosscheck._persistedList2 = savedL2;
   } catch (e) {}
 
-  function save() {
-    try {
-      localStorage.setItem('cc_list2', state.crosscheck.list2 || '');
-      localStorage.setItem('cc_view',  state.crosscheck.view  || 'unmatched');
-    } catch (e) {}
-  }
+  function saveView()  { try { localStorage.setItem('cc_view', state.crosscheck.view); } catch (e) {} }
+  function saveList2(v){ try { localStorage.setItem('cc_list2', v || ''); } catch (e) {} }
 
   var panelBuilt = false;
 
@@ -32,55 +28,96 @@
     panel.innerHTML = [
       '<div class="cc-head">',
         '<div class="cc-title">Cross<em>check</em></div>',
-        '<div class="cc-sub">Paste List 1 in the input · List 2 below · see what differs</div>',
+        '<div class="cc-sub">List 1 = Input pane · List 2 = Output pane · Results tabbed below</div>',
       '</div>',
-      '<div class="cc-modes" role="tablist">',
-        '<button class="cc-btn" data-view="unmatched" type="button">Unmatched · in L1 not L2</button>',
-        '<button class="cc-btn" data-view="matched"   type="button">Matched · in both</button>',
+      '<div class="cc-tabs" role="tablist">',
+        '<button class="cc-tab" data-view="unmatched" type="button" role="tab">',
+          'Unmatched · in L1 not L2',
+          '<span class="cc-count" id="ccCountU">0</span>',
+        '</button>',
+        '<button class="cc-tab" data-view="matched" type="button" role="tab">',
+          'Matched · in both',
+          '<span class="cc-count" id="ccCountM">0</span>',
+        '</button>',
       '</div>',
-      '<label class="cc-label" for="ccList2">List 2</label>',
-      '<textarea id="ccList2" class="cc-textarea" spellcheck="false" placeholder="Paste list 2 here — one credential per line (e.g. user:pass:... or x.com/user)"></textarea>',
+      '<div class="cc-result" id="ccResultU">',
+        '<div class="cc-result__head">',
+          '<span class="cc-result__title">Unmatched from List 1</span>',
+          '<button class="cc-copy" type="button" data-src="U">Copy</button>',
+        '</div>',
+        '<pre class="cc-result__body" id="ccBodyU"></pre>',
+      '</div>',
+      '<div class="cc-result" id="ccResultM" hidden>',
+        '<div class="cc-result__head">',
+          '<span class="cc-result__title">Matched · present in both lists</span>',
+          '<button class="cc-copy" type="button" data-src="M">Copy</button>',
+        '</div>',
+        '<pre class="cc-result__body" id="ccBodyM"></pre>',
+      '</div>',
       '<div class="cc-stats" id="ccStats"></div>'
     ].join('');
 
-    var ta = $('#ccList2');
-    if (ta) {
-      ta.value = state.crosscheck.list2 || '';
-      ta.addEventListener('input', function () {
-        state.crosscheck.list2 = ta.value;
-        save();
-        App.App.rerun();
-      });
-    }
+    // Tab switching — show exactly one result block at a time
+    panel.querySelector('.cc-tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('.cc-tab');
+      if (!b) return;
+      state.crosscheck.view = b.dataset.view === 'matched' ? 'matched' : 'unmatched';
+      saveView();
+      applyTabVisibility();
+    });
 
-    var modes = panel.querySelector('.cc-modes');
-    if (modes) {
-      modes.addEventListener('click', function (e) {
-        var b = e.target.closest('.cc-btn');
-        if (!b) return;
-        state.crosscheck.view = b.dataset.view === 'matched' ? 'matched' : 'unmatched';
-        save();
-        syncModeBtns();
-        App.App.rerun();
-      });
-    }
-    syncModeBtns();
+    // Per-tab Copy buttons (independent)
+    panel.addEventListener('click', function (e) {
+      var btn = e.target.closest('.cc-copy');
+      if (!btn) return;
+      var src  = btn.dataset.src === 'M' ? '#ccBodyM' : '#ccBodyU';
+      var body = $(src);
+      var text = (body && body.textContent) || '';
+      navigator.clipboard.writeText(text).then(function () {
+        btn.classList.add('is-copied');
+        var orig = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () {
+          btn.classList.remove('is-copied');
+          btn.textContent = orig;
+        }, 900);
+      }).catch(function () { alert('Copy failed.'); });
+    });
   }
 
-  function syncModeBtns() {
-    var btns = document.querySelectorAll('#crosscheckPanel .cc-btn');
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle('cc-active', btns[i].dataset.view === state.crosscheck.view);
+  function applyTabVisibility() {
+    var tabs = document.querySelectorAll('#crosscheckPanel .cc-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('cc-active', tabs[i].dataset.view === state.crosscheck.view);
     }
+    var u = $('#ccResultU'), m = $('#ccResultM');
+    if (u) u.hidden = state.crosscheck.view !== 'unmatched';
+    if (m) m.hidden = state.crosscheck.view !== 'matched';
+  }
+
+  // Wire the output-pane textarea (#ccList2) so typing in it re-runs the compare.
+  // Safe to call repeatedly — uses dataset flag.
+  function wireList2Input() {
+    var ta = $('#ccList2');
+    if (!ta || ta.dataset.ccBound === '1') return;
+    ta.dataset.ccBound = '1';
+    // Restore persisted value
+    if (!ta.value && state.crosscheck._persistedList2) {
+      ta.value = state.crosscheck._persistedList2;
+    }
+    ta.addEventListener('input', function () {
+      saveList2(ta.value);
+      App.App.rerun();
+    });
   }
 
   function extractKey(line) {
     var t = (line || '').trim();
     if (!t) return '';
-    // Prefer a twitter/x plink username if present
+    // Prefer an x.com / twitter.com username if present
     var m = t.match(/(?:x\.com|twitter\.com)\/@?([A-Za-z0-9_]+)/i);
     if (m) return m[1].toLowerCase();
-    // Fallback: first token before ':' (credential-list style)
+    // Fallback: first colon-separated token (credential list: user:pass:...)
     var parts = t.split(':');
     var first = (parts[0] || '').replace(/^@/, '').trim();
     return first.toLowerCase();
@@ -91,9 +128,12 @@
     label: 'Crosscheck',
     run: function (text) {
       if (!panelBuilt) buildPanel();
+      wireList2Input();
+      applyTabVisibility();
 
       var list1 = (text || '').split(/\r?\n/).filter(function (s) { return s.trim(); });
-      var list2 = (state.crosscheck.list2 || '').split(/\r?\n/).filter(function (s) { return s.trim(); });
+      var list2Raw = ($('#ccList2') && $('#ccList2').value) || state.crosscheck._persistedList2 || '';
+      var list2 = list2Raw.split(/\r?\n/).filter(function (s) { return s.trim(); });
 
       var set2 = new Set();
       for (var i = 0; i < list2.length; i++) {
@@ -114,6 +154,14 @@
         else unmatched.push(list1[j]);
       }
 
+      var bodyU = $('#ccBodyU');
+      var bodyM = $('#ccBodyM');
+      if (bodyU) bodyU.textContent = unmatched.join('\n');
+      if (bodyM) bodyM.textContent = matched.join('\n');
+
+      var cU = $('#ccCountU'); if (cU) cU.textContent = String(unmatched.length);
+      var cM = $('#ccCountM'); if (cM) cM.textContent = String(matched.length);
+
       var stats = $('#ccStats');
       if (stats) {
         stats.innerHTML =
@@ -125,7 +173,9 @@
           '<span class="cc-stat">L1 dupes<b>' + duplicates + '</b></span>';
       }
 
-      return (state.crosscheck.view === 'matched' ? matched : unmatched).join('\n');
+      // Output pane is already swapped to the List 2 textarea via CSS (body[data-mode="crosscheck"]),
+      // so we don't need to populate #out. Return empty to keep main.js happy.
+      return '';
     }
   });
 })();

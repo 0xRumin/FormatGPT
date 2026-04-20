@@ -120,6 +120,7 @@
     syncFilterPanel(value);
     syncSorterPanel(value);
     syncCrosscheckPanel(value);
+    document.body.dataset.mode = value;
     Core?.rerun && Core.rerun();
   }
 
@@ -253,6 +254,7 @@
     syncFilterPanel('standard');
     syncSorterPanel('standard');
     syncCrosscheckPanel('standard');
+    document.body.dataset.mode = 'standard';
     Core?.rerun && Core.rerun();
   }
 

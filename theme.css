@@ -375,58 +375,141 @@ main{
   .hero__type{ font-size:clamp(10px, 2.8vw, 12px); }
 }
 
-/* =================== Crosscheck panel =================== */
+/* =================== Crosscheck mode (output pane → List 2 textarea) =================== */
+/* List 2 editable pane — matches #out sizing. Hidden unless crosscheck mode is active. */
+.cc-list2{
+  display:none;
+  height:420px; margin:0; padding:6px 0;
+  background:transparent; border:none; outline:none; resize:none;
+  color:var(--fg);
+  font-family:var(--font-mono); font-size:13px; line-height:1.7;
+  letter-spacing:0.005em;
+  scrollbar-gutter:stable;
+  white-space:pre; overflow:auto;
+}
+.cc-list2::placeholder{
+  color:var(--muted); font-family:var(--font-serif); font-style:italic; font-size:15px;
+}
+/* In crosscheck mode: swap output pane to List 2, hide output copy-split (per-tab copy lives in the bottom panel) */
+body[data-mode="crosscheck"] #out{ display:none; }
+body[data-mode="crosscheck"] .pane--out .cc-list2{ display:block; }
+body[data-mode="crosscheck"] .pane--out #copySplit{ display:none; }
+/* Rename pane titles while in crosscheck mode (font-size:0 hides text nodes + children) */
+body[data-mode="crosscheck"] .pane--in  .pane__title,
+body[data-mode="crosscheck"] .pane--out .pane__title{
+  position:relative; font-size:0;
+}
+body[data-mode="crosscheck"] .pane--in  .pane__title::after,
+body[data-mode="crosscheck"] .pane--out .pane__title::after{
+  font-size:30px; font-family:var(--font-serif); font-style:italic;
+  color:var(--accent); line-height:1; letter-spacing:-.02em;
+  display:inline-block;
+}
+body[data-mode="crosscheck"] .pane--in  .pane__title::after{ content:"List 1"; }
+body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
+@media (max-width: 760px){
+  body[data-mode="crosscheck"] .pane--in  .pane__title::after,
+  body[data-mode="crosscheck"] .pane--out .pane__title::after{ font-size:24px; }
+}
+
+/* =================== Crosscheck results panel (below the workbench) =================== */
 #crosscheckPanel{
-  padding:16px 18px;
+  padding:18px 22px;
   background:rgba(18,13,8,0.55);
   border:1px solid var(--line);
   border-radius:20px;
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   color:var(--fg); font-family:var(--font-body);
-  display:flex; flex-direction:column; gap:12px;
+  display:flex; flex-direction:column; gap:14px;
 }
 .cc-head{ display:flex; flex-direction:column; gap:2px; }
 .cc-title{
-  font-family:var(--font-serif); font-size:24px; line-height:1;
-  letter-spacing:-.01em; color:var(--fg);
+  font-family:var(--font-serif); font-size:28px; line-height:1;
+  letter-spacing:-.01em; color:var(--fg); font-weight:400;
 }
 .cc-title em{ font-style:italic; color:var(--accent); }
 .cc-sub{
   font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em;
   text-transform:uppercase; color:var(--muted);
 }
-.cc-modes{ display:flex; gap:8px; flex-wrap:wrap; }
-.cc-btn{
+
+/* Tabs */
+.cc-tabs{ display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px dashed var(--line); padding-bottom:8px; }
+.cc-tab{
   font-family:var(--font-mono); font-size:10px; letter-spacing:.14em;
   text-transform:uppercase; font-weight:700;
-  padding:8px 14px; min-height:32px; border-radius:999px; cursor:pointer;
+  padding:9px 14px; min-height:34px; border-radius:999px; cursor:pointer;
   color:var(--muted); background:rgba(247,242,236,0.04);
   border:1px solid var(--line); transition:all .2s;
+  display:inline-flex; align-items:center; gap:8px;
 }
-.cc-btn:hover{ color:var(--fg); border-color:var(--line-strong); }
-.cc-btn.cc-active{
+.cc-tab:hover{ color:var(--fg); border-color:var(--line-strong); }
+.cc-tab.cc-active{
   color:#041014;
   background:linear-gradient(180deg, rgba(110,231,183,0.9), rgba(45,212,191,0.75));
   border-color:var(--mint);
   box-shadow:0 6px 18px -6px rgba(110,231,183,0.5);
 }
-.cc-label{
-  font-family:var(--font-mono); font-size:10px; letter-spacing:.18em;
-  text-transform:uppercase; color:var(--muted);
+.cc-tab .cc-count{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:22px; height:20px; padding:0 7px;
+  border-radius:999px; font-size:10px; letter-spacing:.02em; font-weight:700;
+  background:rgba(0,0,0,0.25); color:inherit; border:1px solid currentColor;
+  font-variant-numeric:tabular-nums;
 }
-.cc-textarea{
-  width:100%; min-height:140px; resize:vertical;
-  padding:12px 14px;
-  background:rgba(11,15,20,0.7);
-  color:var(--fg);
-  border:1px solid var(--line-strong); border-radius:12px;
-  font-family:var(--font-mono); font-size:12.5px; line-height:1.6;
-  outline:none; transition:border-color .2s, box-shadow .2s;
+.cc-tab.cc-active .cc-count{ background:rgba(4,16,20,0.25); border-color:rgba(4,16,20,0.4); }
+
+/* Result panels — one per tab, each with its own Copy button */
+.cc-result{
+  border:1px solid var(--line); border-radius:14px;
+  background:rgba(11,15,20,0.55);
+  display:flex; flex-direction:column; gap:0;
+  overflow:hidden;
 }
-.cc-textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,212,191,.15); }
-.cc-stats{ display:flex; gap:14px; flex-wrap:wrap; }
+.cc-result[hidden]{ display:none; }
+.cc-result__head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; border-bottom:1px solid var(--line);
+  background:rgba(247,242,236,0.02);
+}
+.cc-result__title{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--fg); font-weight:700;
+}
+.cc-copy{
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.14em;
+  text-transform:uppercase; font-weight:700;
+  padding:6px 14px; min-height:28px; border-radius:999px; cursor:pointer;
+  color:var(--mint);
+  background:linear-gradient(180deg, rgba(110,231,183,0.18) 0%, rgba(110,231,183,0.06) 100%);
+  border:1px solid rgba(110,231,183,0.55);
+  box-shadow:0 4px 12px -6px rgba(110,231,183,0.35);
+  transition:all .2s;
+}
+.cc-copy:hover{
+  color:#04261b;
+  background:linear-gradient(180deg, rgba(110,231,183,0.55) 0%, rgba(110,231,183,0.25) 100%);
+  transform:translateY(-1px);
+}
+.cc-copy.is-copied{
+  color:#04261b;
+  background:linear-gradient(180deg, rgba(110,231,183,0.7), rgba(110,231,183,0.35));
+}
+.cc-result__body{
+  margin:0; padding:14px 16px;
+  max-height:340px; overflow:auto;
+  font-family:var(--font-mono); font-size:12.5px; line-height:1.7;
+  color:var(--fg); white-space:pre-wrap; word-break:break-word;
+}
+.cc-result__body:empty::before{
+  content:"Nothing here yet — paste both lists.";
+  color:var(--muted); font-family:var(--font-serif); font-style:italic; font-size:14px;
+}
+
+/* Stats */
+.cc-stats{ display:flex; gap:10px; flex-wrap:wrap; }
 .cc-stat{
-  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em;
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.12em;
   text-transform:uppercase; color:var(--muted);
   padding:6px 10px; border-radius:999px;
   background:rgba(247,242,236,0.03); border:1px solid var(--line);
@@ -436,6 +519,26 @@ main{
 .cc-stat.cc-m b{ color:var(--mint); }
 .cc-stat.cc-u{ border-color:rgba(251,146,60,0.35); }
 .cc-stat.cc-u b{ color:#fb923c; }
+
+/* Phone screens — keep the crosscheck views usable on mobile */
+@media (max-width: 760px){
+  #crosscheckPanel{ padding:14px; gap:10px; }
+  .cc-title{ font-size:22px; }
+  .cc-sub{ font-size:9.5px; letter-spacing:.1em; }
+  .cc-tab{ padding:7px 10px; font-size:9.5px; letter-spacing:.1em; min-height:30px; }
+  .cc-tab .cc-count{ min-width:18px; height:16px; font-size:9px; padding:0 5px; }
+  .cc-result__head{ padding:8px 10px; }
+  .cc-result__title{ font-size:9.5px; letter-spacing:.1em; }
+  .cc-copy{ padding:5px 10px; font-size:9.5px; min-height:26px; }
+  .cc-result__body{ padding:10px 12px; font-size:12px; max-height:260px; }
+  .cc-stats{ gap:6px; }
+  .cc-stat{ font-size:9px; padding:5px 8px; letter-spacing:.08em; }
+  .cc-list2{ height:340px; font-size:12.5px; }
+}
+@media (max-width: 420px){
+  #crosscheckPanel{ padding:12px; }
+  .cc-list2{ height:280px; font-size:12px; }
+}
 
 /* =================== Paste / Copy split buttons =================== */
 .split{position:absolute;bottom:16px;right:14px;display:inline-flex;align-items:stretch;border-radius:999px;overflow:visible}
