@@ -269,7 +269,12 @@
       const html = !blocks.length ? '' : blocks.map((block) => {
         const rawBlock = block.join('\n');
         const inner = block.map((ln) => '<div class="out-row__line">' + esc(ln) + '</div>').join('');
-        return '<div class="out-row" data-raw="' + esc(rawBlock) + '">' + inner + '</div>';
+        const btn = '<button type="button" class="row-copy" title="Copy this account" aria-label="Copy this account">'
+                  + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+                  + '<rect x="9" y="9" width="11" height="11" rx="2"></rect>'
+                  + '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>'
+                  + '</svg><span class="row-copy__txt">Copy</span></button>';
+        return '<div class="out-row" data-raw="' + esc(rawBlock) + '">' + btn + inner + '</div>';
       }).join('');
 
       mo.disconnect();
@@ -292,6 +297,29 @@
         return Array.from(lines).map(l => l.textContent || '').join('\n');
       }).join('\n\n');
     }
+    // Per-row copy button (event delegation on #out)
+    out.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.row-copy');
+      if (!btn) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      const row = btn.closest('.out-row');
+      if (!row) return;
+      const text = row.dataset.raw
+        || Array.from(row.querySelectorAll('.out-row__line')).map(l => l.textContent || '').join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.classList.add('is-copied');
+        const lbl = btn.querySelector('.row-copy__txt');
+        const orig = lbl ? lbl.textContent : '';
+        if (lbl) lbl.textContent = 'Copied';
+        setTimeout(() => {
+          btn.classList.remove('is-copied');
+          if (lbl) lbl.textContent = orig || 'Copy';
+        }, 900);
+      } catch { alert('Copy failed.'); }
+    }, true);
+
     // Use CAPTURE-phase + stopImmediatePropagation so we run BEFORE ui.js's handler
     // (which would otherwise read out.textContent and lose newlines between row divs).
     const copyMain = document.getElementById('copyMain');
