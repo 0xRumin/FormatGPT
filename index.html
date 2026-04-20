@@ -45,6 +45,11 @@
     <h1 class="animate-fade-rise">
       <span class="word">Format</span><em>GPT</em>
     </h1>
+    <div class="hero__type animate-fade-rise-delay-2" aria-label="Key features cycling">
+      <span class="hero__type-slash" aria-hidden="true">/</span>
+      <span class="hero__type-text" id="heroTw"></span>
+      <span class="hero__type-caret" aria-hidden="true"></span>
+    </div>
   </div>
 
   <!-- Command rail (above workbench so it stays in view) -->
@@ -101,8 +106,17 @@
           <div class="pane__title">The <em>mess</em></div>
         </div>
         <div class="pane__tools">
-          <!-- Copy raw input — sits to the left of the settings gear -->
+          <!-- Order: Copy raw input → Paste (with dropdown) → Settings gear -->
           <button class="head-copy" id="copyInputBtn" type="button" title="Copy raw input">Copy</button>
+
+          <div class="split small head-split" id="pasteSplit">
+            <button class="btn-main" id="pasteMain" type="button" title="Paste">Paste</button>
+            <button class="btn-caret" id="pasteCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Upload options">▾</button>
+            <div class="menu" id="pasteMenu" role="menu" aria-label="Paste options">
+              <button type="button" id="menuUploadAny">Upload a file</button>
+            </div>
+          </div>
+
           <svg class="h2-gear" id="settingsIcon" viewBox="0 0 24 24" aria-label="Settings">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l-.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -112,14 +126,6 @@
 
       <div style="position:relative;display:flex;flex:1;flex-direction:column">
         <textarea id="inp" placeholder="Paste any lines — we'll find emails, 2FA keys, usernames, followers…"></textarea>
-
-        <div class="split small" id="pasteSplit">
-          <button class="btn-main" id="pasteMain" type="button" title="Paste">Paste</button>
-          <button class="btn-caret" id="pasteCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Upload options">▾</button>
-          <div class="menu" id="pasteMenu" role="menu" aria-label="Paste options">
-            <button type="button" id="menuUploadAny">Upload a file</button>
-          </div>
-        </div>
         <input type="file" id="uploadAny" accept=".txt,.csv,text/plain,text/csv" style="display:none" />
       </div>
     </div>
@@ -362,6 +368,37 @@
       }, 900);
     } catch { alert('Copy failed.'); }
   });
+
+  // 4b2. Hero typewriter — cycles key features beside the FormatGPT title.
+  (function heroTypewriter(){
+    const el = document.getElementById('heroTw');
+    if (!el) return;
+    const words = [
+      'Standard','Reorder','Filter','Sorter','Plinks',
+      'Tokens','Mailgen','Followers','Convert','Reverse',
+      'Xfly','2FA-keys'
+    ];
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = words[0];
+      return;
+    }
+    let i = 0, j = 0, deleting = false;
+    function tick(){
+      const w = words[i % words.length];
+      if (!deleting) {
+        j++;
+        el.textContent = w.slice(0, j);
+        if (j >= w.length) { deleting = true; setTimeout(tick, 1300); return; }
+        setTimeout(tick, 70 + Math.random() * 50);
+      } else {
+        j--;
+        el.textContent = w.slice(0, Math.max(0, j));
+        if (j <= 0) { deleting = false; i++; setTimeout(tick, 280); return; }
+        setTimeout(tick, 35 + Math.random() * 25);
+      }
+    }
+    setTimeout(tick, 900); // wait for hero fade-rise to finish
+  })();
 
   // 4c. Axis "blood-flow" canvas (ported from design system Connector).
   //     Flow direction adapts: horizontal (left→right) when axis is tall,

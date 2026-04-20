@@ -318,6 +318,62 @@ main{
 }
 .head-copy.is-copied{background:linear-gradient(180deg, rgba(110,231,183,0.7), rgba(110,231,183,0.35));color:#04261b;border-color:var(--mint)}
 
+/* Inline header variant of the Paste split — sits inside .pane__tools (not floating over textarea) */
+.head-split{
+  position:relative !important;
+  bottom:auto !important; right:auto !important;
+  align-items:stretch;
+}
+.head-split .btn-main,
+.head-split .btn-caret{
+  font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;
+  padding:6px 12px;min-height:28px;display:inline-flex;align-items:center;cursor:pointer;
+  transition:all .2s;
+}
+.head-split .btn-caret{padding:0 9px}
+.head-split .menu{ top:calc(100% + 8px); right:0; }
+
+/* =================== Hero typewriter (cycling key features) =================== */
+.hero{
+  display:flex; align-items:flex-end; gap:10px 36px; flex-wrap:wrap;
+}
+.hero h1{ flex:0 0 auto; }
+.hero__type{
+  display:inline-flex; align-items:baseline; gap:8px;
+  font-family:var(--font-serif); font-style:italic; font-weight:400;
+  font-size:clamp(28px, 4.4vw, 64px);
+  line-height:1; letter-spacing:-.02em;
+  white-space:nowrap; align-self:center;
+  padding-bottom:.18em; /* sit on the same baseline-ish line as the GPT descender */
+}
+.hero__type-slash{
+  font-family:var(--font-mono); font-style:normal; font-weight:400;
+  font-size:.55em; color:rgba(255,255,255,0.32);
+  transform:translateY(-.2em);
+}
+.hero__type-text{
+  background:linear-gradient(100deg, #fbbf24 0%, #fb923c 38%, #f472b6 72%, #fb7185 100%);
+  background-size:300% 100%;
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+  animation: hueRoll 6s linear infinite;
+  text-shadow: 0 0 28px rgba(251,113,133,0.10);
+  min-width: 0.4em; /* avoid layout collapse when empty between words */
+}
+.hero__type-caret{
+  display:inline-block; width:.06em; height:.78em;
+  background:#fb923c; border-radius:1px;
+  margin-left:3px; transform:translateY(.06em);
+  animation: blinkCaret 1s steps(2) infinite;
+  box-shadow:0 0 12px rgba(251,146,60,0.45);
+}
+@keyframes blinkCaret{ 50%{ opacity:0 } }
+@media (max-width: 760px){
+  .hero{ flex-direction:column; align-items:flex-start; gap:6px; }
+  .hero__type{ font-size:clamp(20px, 6vw, 30px); padding-bottom:0; }
+  .hero__type-slash{ transform:translateY(-.1em); }
+}
+
 /* =================== Paste / Copy split buttons =================== */
 .split{position:absolute;bottom:16px;right:14px;display:inline-flex;align-items:stretch;border-radius:999px;overflow:visible}
 .split.small .btn-main, .split.small .btn-main-copy,
@@ -458,13 +514,16 @@ main{
 }
 .blue-btn .label{order:2}
 .blue-btn .slider{
-  order:1;position:relative;width:32px;height:16px;border-radius:999px;
+  order:1;position:relative;width:34px;height:18px;border-radius:999px;
   background:rgba(247,242,236,0.08);border:1px solid var(--line-strong);transition:background 0.2s;
   display:inline-block;
+  overflow:hidden; /* clip any easing overshoot so knob never escapes the pill */
+  flex:0 0 auto;
 }
 .blue-btn .knob{
-  position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;
-  background:var(--muted);transition:transform 0.35s cubic-bezier(.34,1.56,.64,1), background 0.2s;
+  position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;
+  background:var(--muted);
+  transition:transform 0.28s cubic-bezier(.34, 1.25, .64, 1), background 0.2s;
   inset:auto;
 }
 .blue-btn:hover{color:var(--fg);border-color:var(--line-strong)}
