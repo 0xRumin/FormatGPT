@@ -2,6 +2,8 @@
 
 FormatGPT is a small utility script that helps standardize and format text or code snippets using configurable formatting rules and templates. It is intended to make it easier to apply consistent formatting conventions across files, code blocks, and generated text.
 
+📎 https://0xrumin.github.io/FormatGPT/
+
 ## Features
 
 - Apply predefined or custom formatting templates to text and code
