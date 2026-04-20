@@ -340,30 +340,31 @@ main{
 }
 .hero h1{ flex:0 0 auto; }
 .hero__type{
-  display:flex; align-items:baseline; gap:7px;
+  display:block;
   width:100%; max-width:100%;
   font-family:var(--font-display); font-style:normal; font-weight:500;
   font-size:clamp(12px, 1.5vw, 18px);
-  line-height:1.2; letter-spacing:.01em;
-  white-space:normal;
+  line-height:1.3; letter-spacing:.01em;
+  white-space:normal; overflow-wrap:anywhere;
   opacity:.9;
 }
 .hero__type-slash{
   font-family:var(--font-mono); font-style:normal; font-weight:400;
   font-size:.85em; color:rgba(255,255,255,0.28);
+  margin:0 6px 0 4px;
 }
 .hero__type-text{
   color:#fde68a; /* soft yellow — readable, not louder than the title */
   text-shadow:none;
-  min-width:0.4em;
-  flex:1 1 auto; overflow-wrap:anywhere;
 }
 .hero__type-caret{
   display:inline-block; width:.1em; height:.95em;
   background:#fde68a; border-radius:1px;
-  margin-left:2px;
+  vertical-align:-0.08em;
   animation: blinkCaret 1s steps(2) infinite;
 }
+.hero__type-caret--lead{ margin-right:0; }
+.hero__type-text + .hero__type-caret{ margin-left:2px; }
 @keyframes blinkCaret{ 50%{ opacity:0 } }
 
 /* Phones — tighten title + subtext sizing */
