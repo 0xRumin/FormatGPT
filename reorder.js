@@ -35,15 +35,17 @@
   var SEPS = [':', '|', ',', '\t', ' ', ';'];
   var SEP_LABELS = { ':': ':', '|': '|', ',': ',', '\t': 'TAB', ' ': 'SPACE', ';': ';' };
 
-  /* ======== State defaults ======== */
-  if (!Array.isArray(state.reorderFields) || !state.reorderFields.length)
-    state.reorderFields = ALL_FIELDS.slice();
+  /* ======== State defaults ========
+     V2 Reorder ALWAYS boots on "Original" — fields auto-detect from whatever
+     the user pastes in. Previous "custom" selection from localStorage is
+     intentionally overridden here each page load. */
+  state.reorderPreset = 'original';
+  state.reorderFields = ALL_FIELDS.slice();
   if (!state.reorderEnabled || typeof state.reorderEnabled !== 'object') {
     state.reorderEnabled = {};
     ALL_FIELDS.forEach(function (f) { state.reorderEnabled[f] = true; });
   }
   if (!state.reorderSep) state.reorderSep = ':';
-  if (!state.reorderPreset) state.reorderPreset = 'original';
 
   function saveState() {
     localStorage.setItem('reorderFields', JSON.stringify(state.reorderFields));
@@ -90,6 +92,13 @@
   /* ======== Auto-detect which fields are present in input ======== */
   function detectPresentFields(text) {
     var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    // Empty input → default to all fields enabled so the panel shows something
+    // usable (otherwise every checkbox would be off and the output would be blank).
+    if (!rows.length) {
+      var allOn = {};
+      ALL_FIELDS.forEach(function (f) { allOn[f] = true; });
+      return allOn;
+    }
     var foundTypes = {};
     for (var r = 0; r < rows.length; r++) {
       var parts = U.splitFlexible(rows[r]);
