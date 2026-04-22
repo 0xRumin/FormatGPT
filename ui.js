@@ -181,7 +181,7 @@
       _inpRerunTimer = setTimeout(() => { Core?.rerun && Core.rerun(); }, 140);
     });
 
-    // Clear — wipes input, output AND the Crosscheck List 2 textarea (both lists go blank)
+    // Clear — wipes input, output, Crosscheck List 2 AND the Deliver panel fields
     clear?.addEventListener('click', () => {
       if (inp) inp.value = '';
       if (out) out.textContent = '';
@@ -191,6 +191,25 @@
       if (window.App?.State?.state?.crosscheck) {
         window.App.State.state.crosscheck._persistedList2 = '';
       }
+
+      // Wipe Deliver mode state + panel fields so nothing residual sticks around
+      const S = window.App?.State?.state;
+      if (S) {
+        S.deliverExtract  = '';
+        S.deliverFilename = '';
+        S.deliverCount    = 0;
+      }
+      const dpCount = document.getElementById('dpCount');
+      const dpName  = document.getElementById('dpName');
+      const dpHint  = document.getElementById('dpHint');
+      const dpIn    = document.getElementById('dpInCount');
+      const dpOut   = document.getElementById('dpOutCount');
+      if (dpCount) dpCount.value = '';
+      if (dpName)  dpName.value  = '';
+      if (dpHint)  { dpHint.textContent = ''; dpHint.classList.remove('dp-hint--err'); }
+      if (dpIn)    dpIn.textContent  = '0';
+      if (dpOut)   dpOut.textContent = '0';
+
       Core?.rerun && Core.rerun();
     });
 
