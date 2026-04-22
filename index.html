@@ -7,28 +7,13 @@
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="theme.css">
-
-  <!-- dotLottie web component (supports .lottie files) -->
-  <script type="module" src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs"></script>
 </head>
 <body>
 
-<!-- Background tint (CSS gradient) + Lottie globe (animated, transparent, local asset) -->
+<!-- Static gradient tint only — no video, no Lottie, no animated canvas bg. -->
 <div class="bg-video__tint" aria-hidden="true"></div>
-<dotlottie-player
-  class="bg-lottie"
-  src="global.lottie"
-  autoplay loop
-  background="transparent"
-  speed="1"
-  aria-hidden="true"></dotlottie-player>
-
-<!-- Aurora backdrop (dimmed; video provides depth) -->
 <div class="aur"></div>
 <div class="grid-lines"></div>
-
-<!-- Flowing dot-waves overlay (canvas, rAF-throttled) -->
-<canvas class="bg-dotwave" aria-hidden="true"></canvas>
 
 <main>
 
@@ -233,93 +218,8 @@
 <!-- Visual polish (no JS files modified). Runs after defer scripts. -->
 <script defer>
 (function () {
-  // 1. Aurora cursor follow — rAF throttled so we never do more than 1 style write per frame
-  (function auroraCursor(){
-    let pending = false, px = 0, py = 0;
-    document.addEventListener('mousemove', (e) => {
-      px = e.clientX; py = e.clientY;
-      if (pending) return;
-      pending = true;
-      requestAnimationFrame(() => {
-        const r = document.documentElement;
-        r.style.setProperty('--mx', (px / window.innerWidth  * 100) + '%');
-        r.style.setProperty('--my', (py / window.innerHeight * 100) + '%');
-        pending = false;
-      });
-    }, { passive: true });
-  })();
-
-  // 1b. Flowing dot-waves background — multiple sine waves drawn as dots,
-  //     drifting horizontally. Canvas is cheap, rAF capped to ~30fps, and
-  //     fully skipped when tab is hidden or user prefers reduced motion.
-  (function dotWaves(){
-    const canvas = document.querySelector('.bg-dotwave');
-    if (!canvas) return;
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) { canvas.style.display = 'none'; return; }
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-
-    function resize(){
-      const w = window.innerWidth, h = window.innerHeight;
-      canvas.width  = Math.max(1, Math.round(w * dpr));
-      canvas.height = Math.max(1, Math.round(h * dpr));
-      canvas.style.width  = w + 'px';
-      canvas.style.height = h + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    resize();
-    window.addEventListener('resize', resize, { passive: true });
-
-    const NUM_WAVES   = 5;       // number of parallel sine waves
-    const DOT_SPACING = 14;      // px between dots along each wave
-    const DOT_RADIUS  = 1.6;
-    const t0 = performance.now();
-    let lastDraw = 0;
-    const FRAME_MS = 33;         // ~30fps cap
-
-    function tick(now){
-      if (document.hidden) { requestAnimationFrame(tick); return; }
-      if (!now) now = performance.now();
-      if (now - lastDraw < FRAME_MS) { requestAnimationFrame(tick); return; }
-      lastDraw = now;
-
-      const w = canvas.clientWidth, h = canvas.clientHeight;
-      ctx.clearRect(0, 0, w, h);
-      const t = (now - t0) / 1000;
-
-      for (let i = 0; i < NUM_WAVES; i++) {
-        const baseY    = ((i + 0.5) / NUM_WAVES) * h;
-        const amp      = Math.min(h / 14, 60);
-        const wavelen  = w * (0.45 + (i % 3) * 0.12);   // vary wavelength per wave
-        const speed    = 0.28 + i * 0.06;               // each wave drifts at its own pace
-        const phase    = i * 0.9;
-        // Alternate teal / cyan / mint per wave for a subtle chroma shift
-        const colors = [
-          [45, 212, 191],   // teal
-          [94, 234, 212],   // mint-teal
-          [56, 189, 248],   // sky
-          [110, 231, 183],  // mint
-          [6, 182, 212]     // cyan
-        ];
-        const c = colors[i % colors.length];
-
-        for (let x = -DOT_SPACING; x <= w + DOT_SPACING; x += DOT_SPACING) {
-          const u = (x / wavelen) * Math.PI * 2 + t * speed + phase;
-          const y = baseY + amp * Math.sin(u);
-          // brightness pulses with the wave so the crest glows brighter than the trough
-          const bright = 0.30 + 0.45 * (0.5 + 0.5 * Math.sin(u + t * 0.4));
-          ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (0.08 + bright * 0.22).toFixed(3) + ')';
-          ctx.beginPath();
-          ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  })();
+  // [Removed for speed] aurora cursor follow + dot-waves canvas background.
+  // Static gradient + aurora CSS only now.
 
   // 2. Ticking clock
   const clock = document.getElementById('clock');
@@ -348,10 +248,15 @@
       void pulse.offsetWidth;
       pulse.classList.add('go');
     }
+    if (typeof window.__axisBurst === 'function') window.__axisBurst();
   }
 
   // 4a. Wrap each output line in an .out-row block so we can draw a separator
   //     ONLY between complete accounts (not under every wrapped text line).
+  //     For LARGE outputs (>400 blocks OR >1500 lines), skip row wrapping
+  //     entirely — render plain text. This is the #1 perf win on big pastes.
+  const ROW_WRAP_MAX_BLOCKS = 400;
+  const ROW_WRAP_MAX_LINES  = 1500;
   (function wrapOutputRows(){
     const out = document.getElementById('out');
     if (!out) return;
@@ -365,6 +270,20 @@
         ? Array.from(out.children).map(d => d.dataset.raw || '').join('\n\n').replace(/\n+$/, '')
         : (out.textContent || '');
       const lines = raw.split(/\r?\n/);
+
+      // FAST PATH — plain text for big outputs. No DOM wrapping, no per-row
+      // buttons. The top Copy + Save-as-txt buttons still work (they fall back
+      // to out.textContent when no .out-row children are found).
+      if (lines.length > ROW_WRAP_MAX_LINES) {
+        const sig = '\u0003' + raw;
+        if (sig === lastSig) return;
+        lastSig = sig;
+        mo.disconnect();
+        out.textContent = raw;
+        mo.observe(out, { childList: true });
+        return;
+      }
+
       // Group into account blocks (blank line = boundary)
       const blocks = [];
       let cur = [];
@@ -376,6 +295,16 @@
         }
       }
       if (cur.length) blocks.push(cur);
+
+      if (blocks.length > ROW_WRAP_MAX_BLOCKS){
+        const sig = '\u0003' + raw;
+        if (sig === lastSig) return;
+        lastSig = sig;
+        mo.disconnect();
+        out.textContent = raw;
+        mo.observe(out, { childList: true });
+        return;
+      }
 
       const sig = blocks.map(b => b.join('\u0002')).join('\u0001');
       if (sig === lastSig) return;
@@ -394,10 +323,12 @@
 
       mo.disconnect();
       out.innerHTML = html;
-      mo.observe(out, { childList: true, characterData: true, subtree: true });
+      mo.observe(out, { childList: true });
     }
+    // Lighter observer — childList only. We don't need characterData/subtree
+    // since we write via innerHTML / textContent which triggers childList.
     const mo = new MutationObserver(() => render());
-    mo.observe(out, { childList: true, characterData: true, subtree: true });
+    mo.observe(out, { childList: true });
     render();
 
     // Override Copy handlers to use joined data-line values (since textContent
@@ -520,7 +451,7 @@
       if (inp) inp.addEventListener('input', updInp);
       if (out) {
         const mo = new MutationObserver(updOut);
-        mo.observe(out, { childList: true, characterData: true, subtree: true });
+        mo.observe(out, { childList: true });
       }
 
       // Wrap App.App.rerun so every format-run also refreshes counts — covers
@@ -605,110 +536,74 @@
     setTimeout(tick, 900); // wait for hero fade-rise to finish
   })();
 
-  // 4c. Axis "blood-flow" canvas (ported from design system Connector).
-  //     Flow direction adapts: horizontal (left→right) when axis is tall,
-  //     vertical (top→bottom) when axis is short & wide (mobile stacked layout).
-  //     L/R counts are smoothly interpolated so mode-changes don't look like a burst.
+  // 4c. Axis canvas — IDLE by default. A single static stroke set of parallel
+  //     lanes is painted once (and on resize). A short ~900ms particle burst
+  //     plays ONLY when a format actually runs (Cmd+Enter or fire()). No rAF
+  //     loop while idle → zero CPU cost between formats.
   (function initAxisFlow(){
     const canvas = document.getElementById('axisFlow');
-    const out    = document.getElementById('out');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
     function resize(){
       const w = canvas.clientWidth, h = canvas.clientHeight;
+      W = w; H = h;
       canvas.width  = Math.max(1, Math.round(w * dpr));
       canvas.height = Math.max(1, Math.round(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      paintStatic();
+    }
+    function paintStatic(){
+      ctx.clearRect(0, 0, W, H);
+      const vertical = W > H * 1.5;
+      const A = vertical ? W : H, B = vertical ? H : W;
+      const N = 8;
+      for (let i = 0; i < N; i++){
+        const a = ((i + 0.5) / N) * A;
+        const grad = vertical ? ctx.createLinearGradient(0,0,0,B) : ctx.createLinearGradient(0,0,B,0);
+        grad.addColorStop(0,   'rgba(45,212,191,0.14)');
+        grad.addColorStop(0.5, 'rgba(247,242,236,0.18)');
+        grad.addColorStop(1,   'rgba(56,189,248,0.14)');
+        ctx.strokeStyle = grad; ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (vertical){ ctx.moveTo(a,0); ctx.lineTo(a,B); }
+        else          { ctx.moveTo(0,a); ctx.lineTo(B,a); }
+        ctx.stroke();
+      }
     }
     resize();
     new ResizeObserver(resize).observe(canvas);
 
-    let runningUntil = 0;
-    function bumpRunning(){ runningUntil = performance.now() + 1100; }
-    window.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') bumpRunning();
-    });
-
-    function bez(a,b,c,d,p){ const m=1-p; return m*m*m*a + 3*m*m*p*b + 3*m*p*p*c + p*p*p*d; }
-    function targets(){
-      const inText  = (inp && inp.value) || '';
-      const outText = (out && out.textContent) || '';
-      const L = inText.split(/\r?\n/).filter(s => s.trim()).length || 1;
-      const R = outText.split(/\r?\n/).filter(s => s.trim()).length || L;
-      return { L: Math.min(Math.max(L,1),16), R: Math.min(Math.max(R,1),16) };
+    // Short particle burst — runs only on demand.
+    let burstEnd = 0, t0 = 0, rafId = 0;
+    function burst(){
+      burstEnd = performance.now() + 900;
+      t0 = performance.now();
+      if (!rafId) rafId = requestAnimationFrame(tick);
     }
-
-    let t = 0, smL = 1, smR = 1;
-    // Cap axis animation to ~30fps — halves GPU/CPU cost with no visible loss.
-    // Also skip entirely when tab is hidden or user prefers reduced motion.
-    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let lastDraw = 0;
-    const FRAME_MS = 33; // ~30fps
     function tick(now){
-      if (document.hidden || reduceMotion) { requestAnimationFrame(tick); return; }
-      if (!now) now = performance.now();
-      if (now - lastDraw < FRAME_MS) { requestAnimationFrame(tick); return; }
-      lastDraw = now;
-      const running = performance.now() < runningUntil;
-      t += running ? 0.03 : 0.012;
-      // ease counts toward target (~0.06/frame ≈ smooth over ~0.3s, no burst feel)
-      const tg = targets();
-      smL += (tg.L - smL) * 0.06;
-      smR += (tg.R - smR) * 0.06;
-      const L = Math.max(1, Math.round(smL));
-      const R = Math.max(1, Math.round(smR));
-
-      const w = canvas.clientWidth, h = canvas.clientHeight;
-      ctx.clearRect(0, 0, w, h);
-      const vertical = w > h * 1.5;        // wide & short axis (mobile stacked) → top↓bottom flow
-      const A = vertical ? w : h;          // span perpendicular to flow
-      const B = vertical ? h : w;          // length of flow path
-
-      // Use the larger of L,R as vein count so each row has its own parallel lane
-      const N = Math.max(L, R);
-      for (let i = 0; i < N; i++) {
-        const a1 = ((i + 0.5) / N) * A;   // start lane (parallel)
-        const a2 = a1;                    // end lane = same lane → fully parallel
-
-        const grad = vertical
-          ? ctx.createLinearGradient(0, 0, 0, B)
-          : ctx.createLinearGradient(0, 0, B, 0);
-        grad.addColorStop(0,    'rgba(45,212,191,0.18)');
-        grad.addColorStop(0.5,  'rgba(247,242,236,0.22)');
-        grad.addColorStop(1,    'rgba(56,189,248,0.18)');
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        if (vertical) { ctx.moveTo(a1, 0); ctx.lineTo(a2, B); }
-        else          { ctx.moveTo(0, a1); ctx.lineTo(B, a2); }
-        ctx.stroke();
-
-        // 2 travelling "blood cells" per parallel lane
-        for (let k = 0; k < 2; k++) {
-          const phase = ((t + i*0.22 + k*0.5) % 1);
-          const along = phase * B;
-          const across = a1;
-          const x = vertical ? across : along;
-          const y = vertical ? along  : across;
-          const alpha = Math.sin(phase * Math.PI);
-          ctx.fillStyle = running
-            ? 'rgba(45,212,191,' + alpha + ')'
-            : 'rgba(247,242,236,' + (alpha * 0.5) + ')';
-          ctx.beginPath();
-          ctx.arc(x, y, running ? 2.8 : 1.6, 0, Math.PI*2);
-          ctx.fill();
-          if (running) {
-            ctx.shadowColor = '#2dd4bf';
-            ctx.shadowBlur = 12;
-            ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
-          }
-        }
+      if (document.hidden) { rafId = requestAnimationFrame(tick); return; }
+      const remaining = burstEnd - now;
+      const vertical = W > H * 1.5;
+      const A = vertical ? W : H, B = vertical ? H : W;
+      const N = 8;
+      paintStatic();
+      const t = (now - t0) / 1000;
+      for (let i = 0; i < N; i++){
+        const a = ((i + 0.5) / N) * A;
+        const phase = ((t * 1.4 + i * 0.15) % 1);
+        const along = phase * B;
+        const x = vertical ? a : along, y = vertical ? along : a;
+        const alpha = Math.sin(phase * Math.PI) * Math.max(0, Math.min(1, remaining / 900));
+        ctx.fillStyle = 'rgba(45,212,191,' + alpha.toFixed(3) + ')';
+        ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI*2); ctx.fill();
       }
-      requestAnimationFrame(tick);
+      if (remaining > 0) rafId = requestAnimationFrame(tick);
+      else { rafId = 0; paintStatic(); }
     }
-    tick();
+    // Expose so fire() below can trigger it.
+    window.__axisBurst = burst;
   })();
 
   // 4d. Drop-to-paste on input-style textareas.

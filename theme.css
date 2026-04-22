@@ -1257,46 +1257,4 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   .drop-hint{ left:10px; right:10px; top:62px; bottom:10px; }
 }
 
-/* =================== Flowing dot-waves background =================== */
-/* Canvas sits above the globe/tint but below main content. Dots flow in sine
-   waves across the viewport. Pointer-events off so it never blocks UI. */
-.bg-dotwave{
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.55;
-}
-@media (prefers-reduced-motion: reduce){
-  .bg-dotwave{ display: none; }
-}
-
-/* =================== Animated Lottie globe background =================== */
-/* Fixed, transparent, sits behind everything. Low opacity so content stays readable. */
-.bg-lottie{
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(95vmin, 1200px);
-  height: min(95vmin, 1200px);
-  z-index: 0;                       /* above bg-video__tint (-1), below main (2) */
-  pointer-events: none;
-  opacity: 0.45;
-  mix-blend-mode: screen;
-  filter: hue-rotate(-10deg) saturate(1.05);
-}
-/* Subtle radial fade so edges of the globe blend into the page */
-.bg-lottie::after{
-  content: none;
-}
-
-/* Tone it down on small screens so it doesn't dominate */
-@media (max-width: 760px){
-  .bg-lottie{ width: 120vmin; height: 120vmin; opacity: 0.30; }
-}
-@media (prefers-reduced-motion: reduce){
-  .bg-lottie{ display: none; }
-}
+/* [Removed for speed] dot-waves canvas + Lottie globe backgrounds. */
