@@ -158,29 +158,32 @@ main{
   border:none;background:transparent;
 }
 .hero h1{
-  font-family:'Rosca', var(--font-serif);font-weight:400;
-  font-size:clamp(60px,10vw,140px);line-height:0.88;letter-spacing:-0.02em;margin:0;
+  font-family:var(--font-display);font-weight:800;
+  font-size:clamp(60px,10vw,140px);line-height:0.88;letter-spacing:-0.055em;margin:0;
   color:var(--fg);
 }
 
 /* Moody sigma tagline under the FormatGPT wordmark.
-   Two short words with a middot separator — sits inline on one line. */
+   Two short words with a middot separator — stays on ONE line always. */
 .hero__sigma{
   font-family:var(--font-mono);
   font-size:clamp(11px, 1.3vw, 14px);
   font-weight:700;
-  letter-spacing:0.42em;
+  letter-spacing:0.38em;
   text-transform:uppercase;
   color:rgba(247,242,236,0.55);
   margin:10px 0 0;
   padding:0;
-  display:flex;align-items:center;gap:14px;
+  display:inline-flex;align-items:center;gap:14px;
+  flex-wrap:nowrap;white-space:nowrap;
   line-height:1;
+  width:auto;
 }
-.hero__sigma > span{
+.hero__sigma > span:not(.dot){
   background:linear-gradient(100deg, #94a3b8 0%, #e2e8f0 50%, #64748b 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   text-shadow:0 0 30px rgba(148,163,184,0.15);
+  white-space:nowrap;
 }
 .hero__sigma > .dot{
   width:4px;height:4px;border-radius:50%;
@@ -194,11 +197,14 @@ main{
 .hero h1 .word:nth-child(3){animation-delay:0.32s}
 @keyframes wIn{to{opacity:1;transform:none}}
 .hero h1 em{
-  font-style:italic;display:inline-block;position:relative;
-  background:linear-gradient(100deg, #2dd4bf 0%, #06b6d4 35%, #38bdf8 68%, #6ee7b7 100%);
-  background-size:300% 100%;
+  font-style:normal;display:inline-block;position:relative;
+  font-weight:800;
+  margin-left:0.08em;
+  /* Coral accent on the "gpt" half — reference design system pairing. */
+  background:linear-gradient(100deg, #fb923c 0%, #f97316 45%, #fb7185 100%);
+  background-size:260% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  animation: wIn 0.9s cubic-bezier(.2,.8,.2,1) 0.32s both, hueRoll 6s linear infinite 0.9s;
+  animation: wIn 0.9s cubic-bezier(.2,.8,.2,1) 0.32s both, hueRoll 7s linear infinite 0.9s;
 }
 @keyframes hueRoll{to{background-position:-300% 0}}
 
