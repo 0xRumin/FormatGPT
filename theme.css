@@ -178,33 +178,6 @@ main{
 .pane__title em{font-style:italic;color:var(--accent)}
 .pane__tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 
-/* Prominent line-count chip sitting at bottom-right of each pane header,
-   inline with the big title — visible even when the tiny top pill is missed. */
-.pane__lines{
-  position:absolute;
-  right:4px;
-  bottom:16px;
-  padding:5px 12px;
-  border:1px solid rgba(45,212,191,0.45);
-  border-radius:999px;
-  background:rgba(11,15,20,0.6);
-  backdrop-filter:blur(6px);
-  -webkit-backdrop-filter:blur(6px);
-  font-family:var(--font-mono);
-  font-size:12px;
-  font-weight:700;
-  letter-spacing:0.18em;
-  text-transform:uppercase;
-  color:rgba(94,234,212,0.95);
-  text-shadow:0 0 12px rgba(45,212,191,0.3);
-  pointer-events:none;
-  white-space:nowrap;
-  z-index:2;
-}
-.pane__lines:empty{display:none} /* only hides on very first paint before JS runs */
-@media (max-width:760px){
-  .pane__lines{font-size:11px;padding:4px 9px;right:2px;bottom:10px}
-}
 
 /* When dynamic JS panels (filter/sorter) hide the output pane via .closest('.card'),
    the .pane.card sibling rules still cleanly hide the right side. */

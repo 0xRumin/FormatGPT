@@ -113,7 +113,7 @@
       <div class="pane__head">
         <div>
           <div class="pane__kick"><b>01</b> · Raw input <span class="pane__count" id="inpCount"></span></div>
-          <div class="pane__title">The <em>mess</em> <span class="pane__lines" id="inpLines" aria-live="polite"></span></div>
+          <div class="pane__title">The <em>mess</em></div>
         </div>
         <div class="pane__tools">
           <!-- Order: Copy raw input → Paste (with dropdown) → Settings gear -->
@@ -155,7 +155,7 @@
       <div class="pane__head">
         <div>
           <div class="pane__kick"><b>02</b> · Tidy output <span class="pane__count" id="outCount"></span></div>
-          <div class="pane__title">The <em>result</em> <span class="pane__lines" id="outLines" aria-live="polite"></span></div>
+          <div class="pane__title">The <em>result</em></div>
         </div>
         <div class="pane__tools">
           <!-- Paste split for List 2 (Crosscheck only — CSS-gated via body[data-mode]) -->
@@ -479,16 +479,16 @@
       document.getElementById('copyMenu')?.classList.remove('open');
     }, true);
 
-    // 4b3. Live line-count displays in both pane headers (Raw input / Tidy output).
-    //      Writes "Lines Count: N" into the prominent chip next to "The mess" /
-    //      "The result" titles AND mirrors a short form into the small top-right
-    //      pill. Always visible (shows "Lines Count: 0" when empty).
-    //      Also pokes the Deliver panel's "Total Counts" stat when present.
+    // 4b3. Live line-count display in both pane headers (Raw input / Tidy output).
+    //      Writes into the small "N LINES" pill next to each pane's kick label.
+    //      Also feeds the Deliver panel's Input / Output / Total stats so they
+    //      stay in sync with whatever the textarea actually contains — this is
+    //      important because the Paste button and file-upload handlers set
+    //      inp.value programmatically (no 'input' event), so we also tick on
+    //      every App.App.rerun() via a lightweight polling fallback.
     (function lineCounts(){
       const inpCountEl = document.getElementById('inpCount');
       const outCountEl = document.getElementById('outCount');
-      const inpLinesEl = document.getElementById('inpLines');
-      const outLinesEl = document.getElementById('outLines');
       function count(t){
         if (!t) return 0;
         const parts = t.split(/\r?\n/);
@@ -496,29 +496,30 @@
         for (let i = 0; i < parts.length; i++) if (parts[i].trim()) n++;
         return n;
       }
-      let lastIn = 0, lastOut = 0;
+      let lastIn = -1, lastOut = -1;
       function updTotal(){
         const t = document.getElementById('dpTotalCount');
-        if (t) t.textContent = (lastIn + lastOut).toLocaleString();
+        if (t) t.textContent = (Math.max(0,lastIn) + Math.max(0,lastOut)).toLocaleString();
+        // Also refresh Deliver panel's Input/Output tallies if visible.
+        const dIn  = document.getElementById('dpInCount');
+        const dOut = document.getElementById('dpOutCount');
+        if (dIn)  dIn.textContent  = Math.max(0,lastIn).toLocaleString();
+        if (dOut) dOut.textContent = Math.max(0,lastOut).toLocaleString();
       }
       function updInp(){
-        lastIn = count(inp ? inp.value : '');
-        const short = lastIn.toLocaleString() + ' lines';
-        const full  = 'Lines Count: ' + lastIn.toLocaleString();
-        if (inpCountEl) inpCountEl.textContent = short;
-        if (inpLinesEl) inpLinesEl.textContent = full;
+        const n = count(inp ? inp.value : '');
+        if (n === lastIn) return;
+        lastIn = n;
+        if (inpCountEl) inpCountEl.textContent = n.toLocaleString() + ' lines';
         updTotal();
       }
       function updOut(){
         if (!out) return;
-        // Output is rendered as .out-row__line wrappers — count those when present.
         const wrapped = out.querySelectorAll('.out-row__line');
-        if (wrapped && wrapped.length) lastOut = wrapped.length;
-        else lastOut = count(out.textContent);
-        const short = lastOut.toLocaleString() + ' lines';
-        const full  = 'Lines Count: ' + lastOut.toLocaleString();
-        if (outCountEl) outCountEl.textContent = short;
-        if (outLinesEl) outLinesEl.textContent = full;
+        const n = (wrapped && wrapped.length) ? wrapped.length : count(out.textContent);
+        if (n === lastOut) return;
+        lastOut = n;
+        if (outCountEl) outCountEl.textContent = n.toLocaleString() + ' lines';
         updTotal();
       }
       if (inp) inp.addEventListener('input', updInp);
@@ -526,6 +527,30 @@
         const mo = new MutationObserver(updOut);
         mo.observe(out, { childList: true, characterData: true, subtree: true });
       }
+
+      // Wrap App.App.rerun so every format-run also refreshes counts — covers
+      // paste-button, file-upload, drag-drop, Clear, and mode changes.
+      function wrapRerun(){
+        const A = window.App && window.App.App;
+        if (!A || typeof A.rerun !== 'function' || A.__countsWrapped) return;
+        const orig = A.rerun;
+        A.rerun = function(){
+          const r = orig.apply(this, arguments);
+          updInp(); updOut();
+          return r;
+        };
+        A.__countsWrapped = true;
+      }
+      wrapRerun();
+      // In case App.App wasn't ready yet when this IIFE ran, retry briefly.
+      let tries = 0;
+      const wt = setInterval(() => {
+        wrapRerun();
+        if ((window.App && window.App.App && window.App.App.__countsWrapped) || ++tries > 40) {
+          clearInterval(wt);
+        }
+      }, 100);
+
       updInp();
       updOut();
     })();
