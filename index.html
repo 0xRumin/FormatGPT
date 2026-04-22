@@ -113,7 +113,7 @@
       <div class="pane__head">
         <div>
           <div class="pane__kick"><b>01</b> · Raw input <span class="pane__count" id="inpCount"></span></div>
-          <div class="pane__title">The <em>mess</em></div>
+          <div class="pane__title">The <em>mess</em> <span class="pane__lines" id="inpLines" aria-live="polite"></span></div>
         </div>
         <div class="pane__tools">
           <!-- Order: Copy raw input → Paste (with dropdown) → Settings gear -->
@@ -155,7 +155,7 @@
       <div class="pane__head">
         <div>
           <div class="pane__kick"><b>02</b> · Tidy output <span class="pane__count" id="outCount"></span></div>
-          <div class="pane__title">The <em>result</em></div>
+          <div class="pane__title">The <em>result</em> <span class="pane__lines" id="outLines" aria-live="polite"></span></div>
         </div>
         <div class="pane__tools">
           <!-- Paste split for List 2 (Crosscheck only — CSS-gated via body[data-mode]) -->
@@ -480,9 +480,13 @@
     }, true);
 
     // 4b3. Live line-count pills in both pane headers (Raw input / Tidy output).
+    //      Updates BOTH the tiny top-right pill AND the prominent counter that
+    //      sits next to the big "The mess" / "The result" titles.
     (function lineCounts(){
       const inpCountEl = document.getElementById('inpCount');
       const outCountEl = document.getElementById('outCount');
+      const inpLinesEl = document.getElementById('inpLines');
+      const outLinesEl = document.getElementById('outLines');
       function count(t){
         if (!t) return 0;
         const parts = t.split(/\r?\n/);
@@ -490,19 +494,23 @@
         for (let i = 0; i < parts.length; i++) if (parts[i].trim()) n++;
         return n;
       }
+      function fmt(n){ return n ? n.toLocaleString() + ' lines' : ''; }
       function updInp(){
-        if (!inpCountEl) return;
         const n = count(inp ? inp.value : '');
-        inpCountEl.textContent = n ? n.toLocaleString() + ' lines' : '';
+        const txt = fmt(n);
+        if (inpCountEl) inpCountEl.textContent = txt;
+        if (inpLinesEl) inpLinesEl.textContent = txt;
       }
       function updOut(){
-        if (!outCountEl || !out) return;
+        if (!out) return;
         // Output is rendered as .out-row__line wrappers — count those when present.
         const wrapped = out.querySelectorAll('.out-row__line');
         let n;
         if (wrapped && wrapped.length) n = wrapped.length;
         else n = count(out.textContent);
-        outCountEl.textContent = n ? n.toLocaleString() + ' lines' : '';
+        const txt = fmt(n);
+        if (outCountEl) outCountEl.textContent = txt;
+        if (outLinesEl) outLinesEl.textContent = txt;
       }
       if (inp) inp.addEventListener('input', updInp);
       if (out) {

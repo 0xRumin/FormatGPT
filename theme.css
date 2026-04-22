@@ -171,12 +171,40 @@ main{
 
 .pane{position:relative;padding:26px 28px;display:flex;flex-direction:column;background:transparent;border:none;border-radius:0;box-shadow:none;margin:0}
 .pane--out{background:linear-gradient(180deg, rgba(45,212,191,0.04), transparent 40%)}
-.pane__head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line);gap:12px}
+.pane__head{position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line);gap:12px}
 .pane__kick{font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
 .pane__kick b{color:var(--fg);font-weight:700}
 .pane__title{font-family:var(--font-serif);font-size:30px;line-height:1;letter-spacing:-0.02em;margin-top:4px;font-weight:400;display:flex;align-items:center;gap:10px}
 .pane__title em{font-style:italic;color:var(--accent)}
 .pane__tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+/* Prominent line-count chip sitting at bottom-right of each pane header,
+   inline with the big title — visible even when the tiny top pill is missed. */
+.pane__lines{
+  position:absolute;
+  right:4px;
+  bottom:16px;
+  padding:5px 12px;
+  border:1px solid rgba(45,212,191,0.45);
+  border-radius:999px;
+  background:rgba(11,15,20,0.6);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:rgba(94,234,212,0.95);
+  text-shadow:0 0 12px rgba(45,212,191,0.3);
+  pointer-events:none;
+  white-space:nowrap;
+  z-index:2;
+}
+.pane__lines:empty{display:none}
+@media (max-width:760px){
+  .pane__lines{font-size:11px;padding:4px 9px;right:2px;bottom:10px}
+}
 
 /* When dynamic JS panels (filter/sorter) hide the output pane via .closest('.card'),
    the .pane.card sibling rules still cleanly hide the right side. */
