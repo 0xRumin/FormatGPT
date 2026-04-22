@@ -500,11 +500,6 @@
       function updTotal(){
         const t = document.getElementById('dpTotalCount');
         if (t) t.textContent = (Math.max(0,lastIn) + Math.max(0,lastOut)).toLocaleString();
-        // Also refresh Deliver panel's Input/Output tallies if visible.
-        const dIn  = document.getElementById('dpInCount');
-        const dOut = document.getElementById('dpOutCount');
-        if (dIn)  dIn.textContent  = Math.max(0,lastIn).toLocaleString();
-        if (dOut) dOut.textContent = Math.max(0,lastOut).toLocaleString();
       }
       function updInp(){
         const n = count(inp ? inp.value : '');

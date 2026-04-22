@@ -55,8 +55,6 @@
         '</div>',
       '</div>',
       '<div class="dp-stats">',
-        '<span class="dp-stat">Input <b id="dpInCount">0</b> lines</span>',
-        '<span class="dp-stat dp-stat--out">Output <b id="dpOutCount">0</b> lines</span>',
         '<span class="dp-stat dp-stat--total">Total Counts: <b id="dpTotalCount">0</b></span>',
         '<span class="dp-stat dp-stat--hint" id="dpHint"></span>',
       '</div>'
@@ -179,8 +177,6 @@
     var inp = $('#inp');
     var inLines  = countLines(inp ? inp.value : '');
     var outLines = countLines(state.deliverExtract || '');
-    var ic = $('#dpInCount');    if (ic) ic.textContent = inLines.toLocaleString();
-    var oc = $('#dpOutCount');   if (oc) oc.textContent = outLines.toLocaleString();
     var tc = $('#dpTotalCount'); if (tc) tc.textContent = (inLines + outLines).toLocaleString();
   }
 

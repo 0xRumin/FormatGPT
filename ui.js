@@ -203,14 +203,10 @@
       const dpCount = document.getElementById('dpCount');
       const dpName  = document.getElementById('dpName');
       const dpHint  = document.getElementById('dpHint');
-      const dpIn    = document.getElementById('dpInCount');
-      const dpOut   = document.getElementById('dpOutCount');
+      const dpTotal = document.getElementById('dpTotalCount');
       if (dpCount) dpCount.value = '';
       if (dpName)  dpName.value  = '';
       if (dpHint)  { dpHint.textContent = ''; dpHint.classList.remove('dp-hint--err'); }
-      if (dpIn)    dpIn.textContent  = '0';
-      if (dpOut)   dpOut.textContent = '0';
-      const dpTotal = document.getElementById('dpTotalCount');
       if (dpTotal) dpTotal.textContent = '0';
       // Reset direction toggle visual state
       const dpDirBtns = document.querySelectorAll('#dpDir .dp-dir-btn');
