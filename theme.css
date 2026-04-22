@@ -1039,7 +1039,7 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
    so it acts like a focused spotlight instead of a page-wide wash. */
 .aur::before{
   background:
-    radial-gradient(circle 320px at var(--mx,30%) var(--my,20%), rgba(45,212,191,0.40), transparent 70%),
+    radial-gradient(circle 160px at var(--mx,30%) var(--my,20%), rgba(45,212,191,0.45), transparent 70%),
     radial-gradient(circle 680px at 90% 90%, rgba(56,189,248,0.20), transparent 65%),
     radial-gradient(circle 620px at 10% 90%, rgba(110,231,183,0.14), transparent 65%),
     radial-gradient(circle 780px at 70% 0%, rgba(6,182,212,0.16), transparent 65%);
