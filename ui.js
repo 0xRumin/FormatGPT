@@ -168,8 +168,12 @@
       if (!modeDd?.contains(e.target)) closeDropdown(modeMenu, modeBtn);
     });
 
-    // Textarea live
-    inp?.addEventListener('input', () => Core?.rerun && Core.rerun());
+    // Textarea live — debounced so big pastes and fast typing don't thrash the formatter
+    let _inpRerunTimer = 0;
+    inp?.addEventListener('input', () => {
+      clearTimeout(_inpRerunTimer);
+      _inpRerunTimer = setTimeout(() => { Core?.rerun && Core.rerun(); }, 140);
+    });
 
     // Clear — wipes input, output AND the Crosscheck List 2 textarea (both lists go blank)
     clear?.addEventListener('click', () => {

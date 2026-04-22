@@ -10,10 +10,7 @@
 </head>
 <body>
 
-<!-- Motion graphics background -->
-<video class="bg-video" autoplay loop muted playsinline preload="auto" aria-hidden="true">
-  <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4" type="video/mp4">
-</video>
+<!-- Background tint (CSS only — streaming video removed for speed) -->
 <div class="bg-video__tint" aria-hidden="true"></div>
 
 <!-- Aurora backdrop (dimmed; video provides depth) -->
@@ -146,6 +143,15 @@
           <div class="pane__title">The <em>result</em></div>
         </div>
         <div class="pane__tools">
+          <!-- Paste split for List 2 (Crosscheck only — CSS-gated via body[data-mode]) -->
+          <div class="split small head-split" id="ccPasteSplit">
+            <button class="btn-main" id="ccPasteMain" type="button" title="Paste List 2">Paste</button>
+            <button class="btn-caret" id="ccPasteCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Upload options">▾</button>
+            <div class="menu" id="ccPasteMenu" role="menu" aria-label="Paste options">
+              <button type="button" id="ccMenuUploadAny">Upload a file</button>
+            </div>
+          </div>
+
           <span style="position:relative;display:inline-block">
             <div class="split small" id="copySplit" style="position:static">
               <button class="btn-main-copy" id="copyMain" type="button" title="Copy">Copy</button>
@@ -161,6 +167,7 @@
       <!-- Editable List 2 input, revealed only when crosscheck mode is active -->
       <textarea id="ccList2" class="cc-list2" spellcheck="false"
         placeholder="List 2 — paste the reference list here to compare against List 1"></textarea>
+      <input type="file" id="ccUploadAny" accept=".txt,.csv,.tsv,.log,.json,text/plain,text/csv" style="display:none" />
     </section>
   </section>
 
@@ -208,12 +215,21 @@
 <!-- Visual polish (no JS files modified). Runs after defer scripts. -->
 <script defer>
 (function () {
-  // 1. Aurora cursor follow
-  document.addEventListener('mousemove', (e) => {
-    const r = document.documentElement;
-    r.style.setProperty('--mx', (e.clientX / window.innerWidth * 100) + '%');
-    r.style.setProperty('--my', (e.clientY / window.innerHeight * 100) + '%');
-  });
+  // 1. Aurora cursor follow — rAF throttled so we never do more than 1 style write per frame
+  (function auroraCursor(){
+    let pending = false, px = 0, py = 0;
+    document.addEventListener('mousemove', (e) => {
+      px = e.clientX; py = e.clientY;
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        const r = document.documentElement;
+        r.style.setProperty('--mx', (px / window.innerWidth  * 100) + '%');
+        r.style.setProperty('--my', (py / window.innerHeight * 100) + '%');
+        pending = false;
+      });
+    }, { passive: true });
+  })();
 
   // 2. Ticking clock
   const clock = document.getElementById('clock');
@@ -446,7 +462,16 @@
     }
 
     let t = 0, smL = 1, smR = 1;
-    function tick(){
+    // Cap axis animation to ~30fps — halves GPU/CPU cost with no visible loss.
+    // Also skip entirely when tab is hidden or user prefers reduced motion.
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let lastDraw = 0;
+    const FRAME_MS = 33; // ~30fps
+    function tick(now){
+      if (document.hidden || reduceMotion) { requestAnimationFrame(tick); return; }
+      if (!now) now = performance.now();
+      if (now - lastDraw < FRAME_MS) { requestAnimationFrame(tick); return; }
+      lastDraw = now;
       const running = performance.now() < runningUntil;
       t += running ? 0.03 : 0.012;
       // ease counts toward target (~0.06/frame ≈ smooth over ~0.3s, no burst feel)
@@ -506,6 +531,109 @@
       requestAnimationFrame(tick);
     }
     tick();
+  })();
+
+  // 4d. Drop-to-paste on input-style textareas.
+  //     Accepts plain-text drops and small text files (.txt/.csv/.tsv/.log/.json).
+  //     Works for the main input AND the Crosscheck List 2 textarea.
+  (function dropToPaste(){
+    function wire(el){
+      if (!el || el.dataset.dropBound === '1') return;
+      el.dataset.dropBound = '1';
+      let depth = 0;
+      const onEnter = (e) => {
+        if (!e.dataTransfer) return;
+        e.preventDefault();
+        depth++;
+        el.classList.add('is-drop');
+      };
+      const onOver = (e) => {
+        if (!e.dataTransfer) return;
+        e.preventDefault();
+        try { e.dataTransfer.dropEffect = 'copy'; } catch(_){}
+      };
+      const onLeave = () => {
+        depth = Math.max(0, depth - 1);
+        if (depth === 0) el.classList.remove('is-drop');
+      };
+      const onDrop = async (e) => {
+        e.preventDefault();
+        depth = 0;
+        el.classList.remove('is-drop');
+        const dt = e.dataTransfer;
+        if (!dt) return;
+        let text = '';
+        if (dt.files && dt.files.length) {
+          const f = dt.files[0];
+          const ok = /\.(txt|csv|tsv|log|json)$/i.test(f.name) || /^text\//i.test(f.type);
+          if (!ok) { alert('Only text files (.txt, .csv, .tsv, .log, .json) can be dropped.'); return; }
+          try { text = await f.text(); } catch { alert('Could not read that file.'); return; }
+        } else {
+          text = dt.getData('text/plain') || dt.getData('text') || '';
+        }
+        if (!text) return;
+        el.value = text;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      el.addEventListener('dragenter', onEnter);
+      el.addEventListener('dragover',  onOver);
+      el.addEventListener('dragleave', onLeave);
+      el.addEventListener('drop',      onDrop);
+    }
+    wire(document.getElementById('inp'));
+    wire(document.getElementById('ccList2'));
+  })();
+
+  // 4e. Crosscheck List 2 — Paste button and Upload-a-file menu (mirrors main #pasteSplit).
+  //     Visible only when crosscheck mode is active (CSS-gated).
+  (function wireCcPaste(){
+    const ccList2      = document.getElementById('ccList2');
+    const ccPasteMain  = document.getElementById('ccPasteMain');
+    const ccPasteCaret = document.getElementById('ccPasteCaret');
+    const ccPasteMenu  = document.getElementById('ccPasteMenu');
+    const ccMenuUpload = document.getElementById('ccMenuUploadAny');
+    const ccUpload     = document.getElementById('ccUploadAny');
+
+    ccPasteMain?.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (ccList2) {
+          ccList2.value = text;
+          ccList2.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      } catch { alert('Paste failed. Long-press in the box and choose Paste.'); }
+    });
+
+    ccPasteCaret?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = ccPasteCaret.getAttribute('aria-expanded') === 'true';
+      ccPasteCaret.setAttribute('aria-expanded', open ? 'false' : 'true');
+      ccPasteMenu?.classList.toggle('open', !open);
+    });
+
+    ccMenuUpload?.addEventListener('click', () => {
+      ccUpload?.click();
+      ccPasteMenu?.classList.remove('open');
+      ccPasteCaret?.setAttribute('aria-expanded', 'false');
+    });
+
+    ccUpload?.addEventListener('change', async () => {
+      const f = ccUpload.files && ccUpload.files[0];
+      if (!f) return;
+      const text = await f.text();
+      if (ccList2) {
+        ccList2.value = text;
+        ccList2.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!ccPasteCaret) return;
+      if (e.target === ccPasteCaret || ccPasteMenu?.contains(e.target)) return;
+      ccPasteMenu?.classList.remove('open');
+      ccPasteCaret.setAttribute('aria-expanded', 'false');
+    });
   })();
 
   // 5. Cmd/Ctrl + Enter shortcut

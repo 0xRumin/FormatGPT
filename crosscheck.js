@@ -101,8 +101,10 @@
     var ta = $('#ccList2');
     if (!ta || ta.dataset.ccBound === '1') return;
     ta.dataset.ccBound = '1';
+    var _ccTimer = 0;
     ta.addEventListener('input', function () {
-      App.App.rerun();
+      clearTimeout(_ccTimer);
+      _ccTimer = setTimeout(function () { App.App.rerun(); }, 140);
     });
   }
 
