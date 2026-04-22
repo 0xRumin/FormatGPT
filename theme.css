@@ -163,8 +163,8 @@ main{
   color:var(--fg);
 }
 
-/* Moody sigma tagline under the FormatGPT wordmark.
-   Two short words with a middot separator — stays on ONE line always. */
+/* Moody sigma tagline — sits INLINE to the right of FormatGPT wordmark,
+   stays on ONE line always. Aligns to the baseline of the big word. */
 .hero__sigma{
   font-family:var(--font-mono);
   font-size:clamp(11px, 1.3vw, 14px);
@@ -172,14 +172,15 @@ main{
   letter-spacing:0.38em;
   text-transform:uppercase;
   color:rgba(247,242,236,0.55);
-  margin:10px 0 0;
-  padding:0;
+  margin:0;
+  padding:0 0 0.55em 0; /* bottom padding nudges it onto h1's baseline */
   /* One-liner: flex row, content-sized, no wrapping of any kind. */
   display:flex;flex-direction:row;align-items:center;gap:14px;
   flex-wrap:nowrap;white-space:nowrap;word-break:keep-all;
   line-height:1;
   width:max-content;max-width:100%;
   overflow:visible;
+  flex:0 0 auto;
 }
 .hero__sigma > span:not(.dot){
   display:inline-block;
@@ -395,9 +396,11 @@ body[data-mode="filter"] .work .pane--out{display:none !important}
 /* =================== Hero typewriter (cycling mode descriptions) =================== */
 /* Kept intentionally subtle so FormatGPT stays the hero focal point. */
 .hero{
-  display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  display:flex; flex-direction:row; flex-wrap:wrap;
+  align-items:flex-end; column-gap:22px; row-gap:4px;
 }
 .hero h1{ flex:0 0 auto; }
+.hero__type{ flex:1 0 100%; } /* force typewriter onto its own row under the wordmark */
 .hero__type{
   display:block;
   width:100%; max-width:100%;
