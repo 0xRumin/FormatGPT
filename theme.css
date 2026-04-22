@@ -1057,3 +1057,31 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 /* =================== Crosscheck List 2 Paste split (only shown in crosscheck mode) =================== */
 .pane--out #ccPasteSplit{ display: none; }
 body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
+
+/* =================== Animated Lottie globe background =================== */
+/* Fixed, transparent, sits behind everything. Low opacity so content stays readable. */
+.bg-lottie{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(95vmin, 1200px);
+  height: min(95vmin, 1200px);
+  z-index: 0;                       /* above bg-video__tint (-1), below main (2) */
+  pointer-events: none;
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  filter: hue-rotate(-10deg) saturate(1.05);
+}
+/* Subtle radial fade so edges of the globe blend into the page */
+.bg-lottie::after{
+  content: none;
+}
+
+/* Tone it down on small screens so it doesn't dominate */
+@media (max-width: 760px){
+  .bg-lottie{ width: 120vmin; height: 120vmin; opacity: 0.30; }
+}
+@media (prefers-reduced-motion: reduce){
+  .bg-lottie{ display: none; }
+}

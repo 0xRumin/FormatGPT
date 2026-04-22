@@ -7,11 +7,21 @@
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="theme.css">
+
+  <!-- dotLottie web component (supports .lottie files) -->
+  <script type="module" src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs"></script>
 </head>
 <body>
 
-<!-- Background tint (CSS only — streaming video removed for speed) -->
+<!-- Background tint (CSS gradient) + Lottie globe (animated, transparent, local asset) -->
 <div class="bg-video__tint" aria-hidden="true"></div>
+<dotlottie-player
+  class="bg-lottie"
+  src="global.lottie"
+  autoplay loop
+  background="transparent"
+  speed="1"
+  aria-hidden="true"></dotlottie-player>
 
 <!-- Aurora backdrop (dimmed; video provides depth) -->
 <div class="aur"></div>
