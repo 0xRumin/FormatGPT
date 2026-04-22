@@ -1163,6 +1163,9 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   color:rgba(255,255,255,0.25);
   font-style:italic;
 }
+.deliver-panel .dp-actions{
+  display:flex; flex-direction:column; gap:8px; align-self:flex-end;
+}
 .deliver-panel .dp-btn{
   padding:11px 20px;
   background:linear-gradient(180deg, rgba(110,231,183,0.9), rgba(45,212,191,0.8));
@@ -1172,11 +1175,51 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   font-family:var(--font-mono);
   font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
   cursor:pointer;
-  transition:transform .15s, filter .15s;
-  align-self:flex-end;
+  transition:transform .15s, filter .15s, background .15s, color .15s;
+  min-width:160px;
+  text-align:center;
 }
 .deliver-panel .dp-btn:hover{ transform:translateY(-1px); filter:brightness(1.08); }
 .deliver-panel .dp-btn:active{ transform:translateY(0); }
+.deliver-panel .dp-btn--alt{
+  background:rgba(11,15,20,0.85);
+  color:rgba(94,234,212,0.95);
+  border:1px solid rgba(45,212,191,0.55);
+}
+.deliver-panel .dp-btn--alt:hover{
+  background:rgba(20,32,34,0.95);
+  color:#6ee7b7;
+  filter:none;
+}
+
+/* Direction toggle — segmented control */
+.deliver-panel .dp-field--dir{ flex:0 0 auto; }
+.deliver-panel .dp-dir{
+  display:inline-flex;
+  padding:4px;
+  background:rgba(11,15,20,0.85);
+  border:1px solid var(--line);
+  border-radius:12px;
+  gap:4px;
+}
+.deliver-panel .dp-dir-btn{
+  padding:8px 14px;
+  background:transparent;
+  color:var(--muted);
+  border:none;
+  border-radius:8px;
+  font-family:var(--font-mono);
+  font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;
+  cursor:pointer;
+  transition:background .15s, color .15s;
+  white-space:nowrap;
+}
+.deliver-panel .dp-dir-btn:hover{ color:var(--fg); }
+.deliver-panel .dp-dir-btn.is-active{
+  background:linear-gradient(180deg, rgba(110,231,183,0.9), rgba(45,212,191,0.8));
+  color:#04261b;
+  box-shadow:0 2px 10px rgba(45,212,191,0.25);
+}
 .deliver-panel .dp-stats{
   display:flex; gap:22px; flex-wrap:wrap;
   padding:10px 0 2px;
@@ -1197,7 +1240,10 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
 @media (max-width: 760px){
   .deliver-panel{ padding:16px 18px; }
   .deliver-panel .dp-row{ gap:10px; }
-  .deliver-panel .dp-btn{ width:100%; align-self:stretch; }
+  .deliver-panel .dp-actions{ width:100%; align-self:stretch; flex-direction:row; }
+  .deliver-panel .dp-btn{ flex:1; width:auto; min-width:0; }
+  .deliver-panel .dp-dir{ width:100%; }
+  .deliver-panel .dp-dir-btn{ flex:1; }
   .drop-hint{ left:10px; right:10px; top:62px; bottom:10px; }
 }
 

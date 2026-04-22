@@ -195,9 +195,10 @@
       // Wipe Deliver mode state + panel fields so nothing residual sticks around
       const S = window.App?.State?.state;
       if (S) {
-        S.deliverExtract  = '';
-        S.deliverFilename = '';
-        S.deliverCount    = 0;
+        S.deliverExtract   = '';
+        S.deliverFilename  = '';
+        S.deliverCount     = 0;
+        S.deliverDirection = 'bottom'; // back to default
       }
       const dpCount = document.getElementById('dpCount');
       const dpName  = document.getElementById('dpName');
@@ -209,6 +210,9 @@
       if (dpHint)  { dpHint.textContent = ''; dpHint.classList.remove('dp-hint--err'); }
       if (dpIn)    dpIn.textContent  = '0';
       if (dpOut)   dpOut.textContent = '0';
+      // Reset direction toggle visual state
+      const dpDirBtns = document.querySelectorAll('#dpDir .dp-dir-btn');
+      dpDirBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.dir === 'bottom'));
 
       Core?.rerun && Core.rerun();
     });

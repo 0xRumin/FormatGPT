@@ -1,19 +1,23 @@
 // deliver.js — "Deliver" mode.
-// Paste a big list in the input; type how many accounts to extract and
-// (optionally) a filename. "Extract" moves the first N non-empty lines into
-// the output pane and removes them from the input — the rest stays in input.
-// Line counts in both panes are updated live. The custom filename is used by
-// the Save-as-txt handler (see index.html) whenever the current mode is
-// "deliver" and a name was provided.
+// Paste a big list in the input; choose direction (Bottom→Top default, or
+// Top→Bottom), type how many accounts to extract and (optionally) a filename.
+// "Extract" pulls N non-empty lines from the chosen end into the output pane
+// and removes them from the input — the rest stays in input.
+// Direction matters because auto-orders consume from the top of the file:
+// extracting from the bottom keeps the in-flight queue untouched.
+// "Download" saves the current extracted output as a .txt (custom filename
+// when set, otherwise a unique 6-char random name).
 (function () {
   if (!window.App || !App.App || typeof App.App.registerMode !== 'function') return;
 
   var state = App.State.state;
-  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var U     = App.Utils;
+  var $     = function (sel, root) { return (root || document).querySelector(sel); };
 
-  state.deliverExtract  = state.deliverExtract  || '';
-  state.deliverFilename = state.deliverFilename || '';
-  state.deliverCount    = state.deliverCount    || 0;
+  state.deliverExtract   = state.deliverExtract   || '';
+  state.deliverFilename  = state.deliverFilename  || '';
+  state.deliverCount     = state.deliverCount     || 0;
+  state.deliverDirection = state.deliverDirection || 'bottom'; // 'bottom' | 'top'
 
   var panelBuilt = false;
 
@@ -22,21 +26,33 @@
     if (!panel || panelBuilt) return;
     panelBuilt = true;
 
+    var dir = state.deliverDirection || 'bottom';
+
     panel.innerHTML = [
       '<div class="dp-head">',
         '<div class="dp-title">Deliver</div>',
-        '<div class="dp-sub">Extract the first N accounts from input → output. Remaining lines stay in input.</div>',
+        '<div class="dp-sub">Extract N accounts from input \u2192 output. Choose direction so live orders aren\u2019t disturbed.</div>',
       '</div>',
       '<div class="dp-row">',
+        '<div class="dp-field dp-field--dir">',
+          '<span class="dp-label">Direction</span>',
+          '<div class="dp-dir" id="dpDir" role="tablist">',
+            '<button type="button" class="dp-dir-btn' + (dir === 'bottom' ? ' is-active' : '') + '" data-dir="bottom">Bottom \u2192 Top</button>',
+            '<button type="button" class="dp-dir-btn' + (dir === 'top'    ? ' is-active' : '') + '" data-dir="top">Top \u2192 Bottom</button>',
+          '</div>',
+        '</div>',
         '<label class="dp-field">',
           '<span class="dp-label">Accounts to extract</span>',
           '<input type="number" id="dpCount" min="1" inputmode="numeric" placeholder="e.g. 5000" />',
         '</label>',
         '<label class="dp-field">',
           '<span class="dp-label">Output filename <span class="dp-optional">(optional)</span></span>',
-          '<input type="text" id="dpName" spellcheck="false" placeholder="GavinDe  →  GavinDe.txt" />',
+          '<input type="text" id="dpName" spellcheck="false" placeholder="GavinDe  \u2192  GavinDe.txt" />',
         '</label>',
-        '<button type="button" id="dpExtract" class="dp-btn">Extract →</button>',
+        '<div class="dp-actions">',
+          '<button type="button" id="dpExtract"  class="dp-btn">Extract \u2192</button>',
+          '<button type="button" id="dpDownload" class="dp-btn dp-btn--alt">\u2193 Download</button>',
+        '</div>',
       '</div>',
       '<div class="dp-stats">',
         '<span class="dp-stat">Input <b id="dpInCount">0</b> lines</span>',
@@ -55,6 +71,18 @@
       state.deliverFilename = this.value;
     });
 
+    // Direction toggle
+    $('#dpDir').addEventListener('click', function (e) {
+      var btn = e.target.closest('.dp-dir-btn');
+      if (!btn) return;
+      state.deliverDirection = btn.dataset.dir === 'top' ? 'top' : 'bottom';
+      var btns = this.querySelectorAll('.dp-dir-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('is-active', btns[i].dataset.dir === state.deliverDirection);
+      }
+      showHint('Direction set to ' + (state.deliverDirection === 'bottom' ? 'Bottom \u2192 Top' : 'Top \u2192 Bottom') + '.');
+    });
+
     $('#dpExtract').addEventListener('click', function () {
       var inp = $('#inp');
       if (!inp) return;
@@ -71,13 +99,22 @@
       }
 
       if (nonEmpty.length === 0) {
-        showHint('Input is empty — nothing to extract.', true);
+        showHint('Input is empty \u2014 nothing to extract.', true);
         return;
       }
 
       var take = Math.min(n, nonEmpty.length);
-      var extracted = nonEmpty.slice(0, take);
-      var remaining = nonEmpty.slice(take);
+      var extracted, remaining;
+
+      if ((state.deliverDirection || 'bottom') === 'bottom') {
+        // Pull from the END of the list — leaves top-of-file lines untouched
+        // for any auto-orders draining the input from the top.
+        extracted = nonEmpty.slice(nonEmpty.length - take);
+        remaining = nonEmpty.slice(0, nonEmpty.length - take);
+      } else {
+        extracted = nonEmpty.slice(0, take);
+        remaining = nonEmpty.slice(take);
+      }
 
       state.deliverExtract = extracted.join('\n');
       inp.value = remaining.join('\n');
@@ -85,9 +122,33 @@
       App.App.rerun();
       updateStats();
 
-      var leftover = remaining.length;
-      showHint('Extracted ' + take.toLocaleString() + ' → output. ' +
-               leftover.toLocaleString() + ' remain in input.');
+      var dirLabel = (state.deliverDirection === 'bottom') ? 'bottom' : 'top';
+      showHint('Extracted ' + take.toLocaleString() + ' from ' + dirLabel + ' \u2192 output. ' +
+               remaining.length.toLocaleString() + ' remain in input.');
+    });
+
+    $('#dpDownload').addEventListener('click', function () {
+      var text = state.deliverExtract || '';
+      if (!text) {
+        showHint('Nothing to download \u2014 hit Extract first.', true);
+        return;
+      }
+      var custom = (state.deliverFilename || '').trim();
+      var name;
+      if (custom) {
+        var clean = custom.replace(/\.txt$/i, '')
+                          .replace(/[^A-Za-z0-9_\-. ]/g, '')
+                          .replace(/\s+/g, '_');
+        name = (clean || 'deliver') + '.txt';
+      } else {
+        name = (U && U.randFileName) ? U.randFileName('txt') : ('deliver_' + Date.now() + '.txt');
+      }
+      var blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+      showHint('Downloaded ' + name + '.');
     });
   }
 
