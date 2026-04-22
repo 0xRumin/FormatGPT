@@ -48,7 +48,7 @@
 
   function saveTxt() {
     const contents = ($('#out')?.textContent) || '';
-    const filename = ((Math.random() < .5) ? 's' : 'k') + randToken(5) + '.txt';
+    const filename = App.Utils.randFileName('txt');
     const blob = new Blob(["\uFEFF" + contents], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

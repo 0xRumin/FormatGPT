@@ -135,9 +135,8 @@
     }).catch(function () { alert('Copy failed.'); });
   }
 
-  function saveTxtFile(text, prefix) {
-    var token = U.randToken(5);
-    var filename = prefix + '_' + token + '.txt';
+  function saveTxtFile(text /*, prefix (unused — filenames are now unique 6-char) */) {
+    var filename = U.randFileName('txt');
     var blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');

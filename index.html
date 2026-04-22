@@ -358,7 +358,8 @@
       } catch { alert('Copy failed.'); }
     }, true);
 
-    // Same intercept for the Save-as-txt menu so it gets newline-correct text
+    // Same intercept for the Save-as-txt menu so it gets newline-correct text.
+    // Filename uses the shared 6-char random helper so every export is unique.
     const menuSave = document.getElementById('menuDownloadTxt');
     menuSave?.addEventListener('click', (e) => {
       e.stopImmediatePropagation();
@@ -366,7 +367,10 @@
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'formatgpt-output.txt';
+      const name = (window.App && window.App.Utils && window.App.Utils.randFileName)
+        ? window.App.Utils.randFileName('txt')
+        : (Math.random().toString(36).slice(2, 8) + '.txt');
+      a.href = url; a.download = name;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       document.getElementById('copyMenu')?.classList.remove('open');

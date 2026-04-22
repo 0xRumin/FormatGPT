@@ -62,6 +62,14 @@
     return s;
   };
 
+  // Uniform filename generator for every export in the app: 6 mixed-case
+  // alphanumeric chars + ".<ext>" (e.g. "s2wH4p.txt", "yT7mdU.txt").
+  U.randFileName = (ext = "txt") => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let s = ""; for (let i = 0; i < 6; i++) s += chars[(Math.random() * chars.length) | 0];
+    return s + "." + String(ext || "txt").replace(/^\./, "");
+  };
+
   // Used by main.js earlier; keep a safe passthrough to avoid breaking anything.
   U.coalesceTokenOnlyRows = (text) => text;
 
