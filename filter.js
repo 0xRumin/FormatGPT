@@ -9,7 +9,10 @@
   var lastUnmatched = [];
 
   /* ======== State defaults ======== */
-  if (state.filterUsernames == null) state.filterUsernames = '';
+  // No persistence for the username list — always start empty.
+  // Wipe any residual from earlier builds that did write to localStorage.
+  try { localStorage.removeItem('filterUsernames'); } catch (e) {}
+  state.filterUsernames = '';
   if (!state.filterView) state.filterView = 'both';
 
   /* ======== Panel creation ======== */
@@ -86,19 +89,17 @@
 
     panel.innerHTML = h;
 
-    // Load saved usernames
-    var ta = $('#fpUsernames');
-    if (ta && state.filterUsernames) ta.value = state.filterUsernames;
+    // Intentionally NOT restoring any previous username list — always empty
+    // on fresh page load so stale targets don't leak into new runs.
 
     bindEvents();
   }
 
   /* ======== Events ======== */
   function bindEvents() {
-    // Username textarea
+    // Username textarea — in-memory only, no localStorage persistence.
     $('#fpUsernames').addEventListener('input', function () {
       state.filterUsernames = this.value;
-      localStorage.setItem('filterUsernames', this.value);
       App.App.rerun();
     });
 

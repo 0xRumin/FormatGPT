@@ -192,6 +192,12 @@
         window.App.State.state.crosscheck._persistedList2 = '';
       }
 
+      // Wipe Filter mode state + textarea so nothing residual sticks around
+      const fpUsers = document.getElementById('fpUsernames');
+      if (fpUsers) fpUsers.value = '';
+      try { localStorage.removeItem('filterUsernames'); } catch (e) {}
+      if (window.App?.State?.state) window.App.State.state.filterUsernames = '';
+
       // Wipe Deliver mode state + panel fields so nothing residual sticks around
       const S = window.App?.State?.state;
       if (S) {
