@@ -44,7 +44,10 @@
     h += '<div class="fp-label">USERNAMES TO FILTER</div>';
     h += '<div class="fp-ta-wrap">';
     h += '<textarea class="fp-usernames" id="fpUsernames" placeholder="Paste usernames here (one per line)" spellcheck="false"></textarea>';
+    h += '<div class="fp-ta-btns">';
     h += '<button class="fp-paste-btn" id="fpPasteBtn" type="button">Paste</button>';
+    h += '<button class="fp-clear-btn" id="fpClearBtn" type="button" title="Clear the username list">Clear</button>';
+    h += '</div>';
     h += '</div></div>';
 
     // Summary
@@ -105,6 +108,17 @@
         var ta = $('#fpUsernames');
         if (ta) { ta.value = text; ta.dispatchEvent(new Event('input')); }
       }).catch(function () { alert('Paste failed. Long-press in the box and choose Paste.'); });
+    });
+
+    // Clear button — wipes the usernames list
+    $('#fpClearBtn').addEventListener('click', function () {
+      var ta = $('#fpUsernames');
+      if (!ta) return;
+      ta.value = '';
+      state.filterUsernames = '';
+      try { localStorage.removeItem('filterUsernames'); } catch (e) {}
+      ta.dispatchEvent(new Event('input'));
+      ta.focus();
     });
 
     // View toggle

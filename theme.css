@@ -168,6 +168,11 @@ main{
   min-height:540px;
   box-shadow: 0 40px 80px -30px rgba(0,0,0,0.6), 0 0 120px -40px rgba(45,212,191,0.25);
 }
+/* Filter mode: output pane is redundant (filter has its own result blocks),
+   so collapse the axis + output columns and let input span the full width. */
+body[data-mode="filter"] .work{grid-template-columns:1fr}
+body[data-mode="filter"] .work .axis,
+body[data-mode="filter"] .work .pane--out{display:none !important}
 
 .pane{position:relative;padding:26px 28px;display:flex;flex-direction:column;background:transparent;border:none;border-radius:0;box-shadow:none;margin:0}
 .pane--out{background:linear-gradient(180deg, rgba(45,212,191,0.04), transparent 40%)}
@@ -687,8 +692,9 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .blue-btn .knob{
   position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;
   background:var(--muted);
-  transition:transform 0.28s cubic-bezier(.34, 1.25, .64, 1), background 0.2s;
-  inset:auto;
+  transition:transform 0.22s ease, background 0.2s;
+  /* no bouncy cubic-bezier, no `inset:auto` override — keeps knob inside
+     the slider at rest (left:1px) and glides cleanly to +16px when ON. */
 }
 .blue-btn:hover{color:var(--fg);border-color:var(--line-strong)}
 .blue-btn.is-on{
@@ -856,14 +862,26 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
   font-family:var(--font-mono);font-size:13px;line-height:1.5;
 }
 .fp-usernames:focus{border-color:var(--accent)}
-.fp-paste-btn{
+.fp-ta-btns{
   position:absolute;top:8px;right:8px;
+  display:flex;flex-direction:column;gap:6px;align-items:stretch;
+}
+.fp-paste-btn,.fp-clear-btn{
   padding:6px 14px;border-radius:999px;border:none;
-  background:linear-gradient(100deg,#2dd4bf,#06b6d4);color:#fff;
   font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;cursor:pointer;
+  transition:transform .12s ease, filter .15s;
+  white-space:nowrap;
+}
+.fp-paste-btn{
+  background:linear-gradient(100deg,#2dd4bf,#06b6d4);color:#fff;
   box-shadow:0 6px 16px -4px rgba(45,212,191,0.5);
 }
-.fp-paste-btn:active{transform:translateY(1px) scale(0.97)}
+.fp-clear-btn{
+  background:rgba(11,15,20,0.85);color:#ff8aa6;
+  border:1px solid rgba(255,138,166,0.45);
+}
+.fp-paste-btn:hover,.fp-clear-btn:hover{filter:brightness(1.1)}
+.fp-paste-btn:active,.fp-clear-btn:active{transform:translateY(1px) scale(0.97)}
 
 .fp-summary{
   background:rgba(0,0,0,0.35);border:1px solid var(--line);border-radius:14px;
