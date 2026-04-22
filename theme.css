@@ -201,7 +201,7 @@ main{
   white-space:nowrap;
   z-index:2;
 }
-.pane__lines:empty{display:none}
+.pane__lines:empty{display:none} /* only hides on very first paint before JS runs */
 @media (max-width:760px){
   .pane__lines{font-size:11px;padding:4px 9px;right:2px;bottom:10px}
 }
@@ -1259,6 +1259,15 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
 }
 .deliver-panel .dp-stat b{ color:var(--fg); font-weight:700; margin:0 4px; }
 .deliver-panel .dp-stat--out b{ color:#6ee7b7; }
+.deliver-panel .dp-stat--total{
+  padding:4px 12px;
+  border:1px solid rgba(45,212,191,0.4);
+  border-radius:999px;
+  background:rgba(11,15,20,0.55);
+  color:rgba(94,234,212,0.95);
+  letter-spacing:0.12em;
+}
+.deliver-panel .dp-stat--total b{ color:#6ee7b7; font-size:13px; }
 .deliver-panel .dp-stat--hint{
   margin-left:auto; color:rgba(94,234,212,0.9); text-transform:none; letter-spacing:0.02em;
   font-family:var(--font-body);

@@ -57,12 +57,20 @@
       '<div class="dp-stats">',
         '<span class="dp-stat">Input <b id="dpInCount">0</b> lines</span>',
         '<span class="dp-stat dp-stat--out">Output <b id="dpOutCount">0</b> lines</span>',
+        '<span class="dp-stat dp-stat--total">Total Counts: <b id="dpTotalCount">0</b></span>',
         '<span class="dp-stat dp-stat--hint" id="dpHint"></span>',
       '</div>'
     ].join('');
 
     if (state.deliverCount)    $('#dpCount').value = state.deliverCount;
     if (state.deliverFilename) $('#dpName').value  = state.deliverFilename;
+
+    // Input typing should refresh the stat totals live (not only on Extract).
+    var _inpEl = $('#inp');
+    if (_inpEl && !_inpEl.dataset.dpStatsBound){
+      _inpEl.dataset.dpStatsBound = '1';
+      _inpEl.addEventListener('input', function () { updateStats(); });
+    }
 
     $('#dpCount').addEventListener('input', function () {
       state.deliverCount = parseInt(this.value, 10) || 0;
@@ -171,8 +179,9 @@
     var inp = $('#inp');
     var inLines  = countLines(inp ? inp.value : '');
     var outLines = countLines(state.deliverExtract || '');
-    var ic = $('#dpInCount');  if (ic) ic.textContent = inLines.toLocaleString();
-    var oc = $('#dpOutCount'); if (oc) oc.textContent = outLines.toLocaleString();
+    var ic = $('#dpInCount');    if (ic) ic.textContent = inLines.toLocaleString();
+    var oc = $('#dpOutCount');   if (oc) oc.textContent = outLines.toLocaleString();
+    var tc = $('#dpTotalCount'); if (tc) tc.textContent = (inLines + outLines).toLocaleString();
   }
 
   App.App.registerMode({

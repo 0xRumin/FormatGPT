@@ -210,6 +210,8 @@
       if (dpHint)  { dpHint.textContent = ''; dpHint.classList.remove('dp-hint--err'); }
       if (dpIn)    dpIn.textContent  = '0';
       if (dpOut)   dpOut.textContent = '0';
+      const dpTotal = document.getElementById('dpTotalCount');
+      if (dpTotal) dpTotal.textContent = '0';
       // Reset direction toggle visual state
       const dpDirBtns = document.querySelectorAll('#dpDir .dp-dir-btn');
       dpDirBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.dir === 'bottom'));
