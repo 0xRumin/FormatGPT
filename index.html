@@ -79,6 +79,7 @@
           <li class="dd-item"        data-value="filter"        role="option">Filter</li>
           <li class="dd-item"        data-value="sorter"        role="option">Sorter</li>
           <li class="dd-item"        data-value="crosscheck"    role="option">Crosscheck</li>
+          <li class="dd-item"        data-value="deliver"       role="option">Deliver</li>
           <li class="dd-item"        data-value="plinksWith"    role="option">Plinks with counts</li>
           <li class="dd-item"        data-value="plinksWithout" role="option">Plinks w/o counts</li>
           <li class="dd-item"        data-value="convertUsers"  role="option">Usernames → Plinks</li>
@@ -111,7 +112,7 @@
     <div class="pane pane--in">
       <div class="pane__head">
         <div>
-          <div class="pane__kick"><b>01</b> · Raw input</div>
+          <div class="pane__kick"><b>01</b> · Raw input <span class="pane__count" id="inpCount"></span></div>
           <div class="pane__title">The <em>mess</em></div>
         </div>
         <div class="pane__tools">
@@ -137,6 +138,7 @@
         <textarea id="inp" placeholder="Paste any lines — we'll find emails, 2FA keys, usernames, followers…"></textarea>
         <input type="file" id="uploadAny" accept=".txt,.csv,text/plain,text/csv" style="display:none" />
       </div>
+      <div class="drop-hint" aria-hidden="true"><span>Paste any text file</span></div>
     </div>
 
     <!-- Axis -->
@@ -152,7 +154,7 @@
     <section class="pane pane--out card">
       <div class="pane__head">
         <div>
-          <div class="pane__kick"><b>02</b> · Tidy output</div>
+          <div class="pane__kick"><b>02</b> · Tidy output <span class="pane__count" id="outCount"></span></div>
           <div class="pane__title">The <em>result</em></div>
         </div>
         <div class="pane__tools">
@@ -181,14 +183,16 @@
       <textarea id="ccList2" class="cc-list2" spellcheck="false"
         placeholder="List 2 — paste the reference list here to compare against List 1"></textarea>
       <input type="file" id="ccUploadAny" accept=".txt,.csv,.tsv,.log,.json,text/plain,text/csv" style="display:none" />
+      <div class="drop-hint" aria-hidden="true"><span>Paste any text file</span></div>
     </section>
   </section>
 
-  <!-- Pre-created hidden panels so reorder.js / filter.js / sorter.js / crosscheck.js find them -->
+  <!-- Pre-created hidden panels so reorder.js / filter.js / sorter.js / crosscheck.js / deliver.js find them -->
   <section class="card work-panel" id="reorderPanel"    style="display:none"></section>
   <section class="card work-panel" id="filterPanel"     style="display:none"></section>
   <section class="card work-panel" id="sorterPanel"     style="display:none"></section>
   <section class="card work-panel" id="crosscheckPanel" style="display:none"></section>
+  <section class="card work-panel deliver-panel" id="deliverPanel" style="display:none"></section>
 
   <!-- Colophon -->
   <footer class="colo">
@@ -222,6 +226,7 @@
 <script defer src="filter.js"></script>
 <script defer src="sorter.js"></script>
 <script defer src="crosscheck.js"></script>
+<script defer src="deliver.js"></script>
 <script defer src="ui.js"></script>
 <script defer src="boot.js"></script>
 
@@ -444,7 +449,8 @@
     }, true);
 
     // Same intercept for the Save-as-txt menu so it gets newline-correct text.
-    // Filename uses the shared 6-char random helper so every export is unique.
+    // Filename: if Deliver mode has a custom name, use it — otherwise a unique
+    // 6-char random name from App.Utils.randFileName.
     const menuSave = document.getElementById('menuDownloadTxt');
     menuSave?.addEventListener('click', (e) => {
       e.stopImmediatePropagation();
@@ -452,14 +458,60 @@
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const name = (window.App && window.App.Utils && window.App.Utils.randFileName)
-        ? window.App.Utils.randFileName('txt')
-        : (Math.random().toString(36).slice(2, 8) + '.txt');
+      let name;
+      const st = window.App && window.App.State && window.App.State.state;
+      const delivName = (st && st.mode === 'deliver' && st.deliverFilename)
+        ? String(st.deliverFilename).trim() : '';
+      if (delivName) {
+        const clean = delivName
+          .replace(/\.txt$/i, '')
+          .replace(/[^A-Za-z0-9_\-. ]/g, '')
+          .replace(/\s+/g, '_');
+        name = (clean || 'deliver') + '.txt';
+      } else {
+        name = (window.App && window.App.Utils && window.App.Utils.randFileName)
+          ? window.App.Utils.randFileName('txt')
+          : (Math.random().toString(36).slice(2, 8) + '.txt');
+      }
       a.href = url; a.download = name;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       document.getElementById('copyMenu')?.classList.remove('open');
     }, true);
+
+    // 4b3. Live line-count pills in both pane headers (Raw input / Tidy output).
+    (function lineCounts(){
+      const inpCountEl = document.getElementById('inpCount');
+      const outCountEl = document.getElementById('outCount');
+      function count(t){
+        if (!t) return 0;
+        const parts = t.split(/\r?\n/);
+        let n = 0;
+        for (let i = 0; i < parts.length; i++) if (parts[i].trim()) n++;
+        return n;
+      }
+      function updInp(){
+        if (!inpCountEl) return;
+        const n = count(inp ? inp.value : '');
+        inpCountEl.textContent = n ? n.toLocaleString() + ' lines' : '';
+      }
+      function updOut(){
+        if (!outCountEl || !out) return;
+        // Output is rendered as .out-row__line wrappers — count those when present.
+        const wrapped = out.querySelectorAll('.out-row__line');
+        let n;
+        if (wrapped && wrapped.length) n = wrapped.length;
+        else n = count(out.textContent);
+        outCountEl.textContent = n ? n.toLocaleString() + ' lines' : '';
+      }
+      if (inp) inp.addEventListener('input', updInp);
+      if (out) {
+        const mo = new MutationObserver(updOut);
+        mo.observe(out, { childList: true, characterData: true, subtree: true });
+      }
+      updInp();
+      updOut();
+    })();
   })();
 
   // 4b. Input Copy button — copies raw textarea to clipboard
@@ -629,12 +681,17 @@
     function wire(el){
       if (!el || el.dataset.dropBound === '1') return;
       el.dataset.dropBound = '1';
+      const pane = el.closest('.pane');
       let depth = 0;
+      const setDrop = (on) => {
+        el.classList.toggle('is-drop', on);
+        if (pane) pane.classList.toggle('is-drop', on);
+      };
       const onEnter = (e) => {
         if (!e.dataTransfer) return;
         e.preventDefault();
         depth++;
-        el.classList.add('is-drop');
+        setDrop(true);
       };
       const onOver = (e) => {
         if (!e.dataTransfer) return;
@@ -643,12 +700,12 @@
       };
       const onLeave = () => {
         depth = Math.max(0, depth - 1);
-        if (depth === 0) el.classList.remove('is-drop');
+        if (depth === 0) setDrop(false);
       };
       const onDrop = async (e) => {
         e.preventDefault();
         depth = 0;
-        el.classList.remove('is-drop');
+        setDrop(false);
         const dt = e.dataTransfer;
         if (!dt) return;
         let text = '';

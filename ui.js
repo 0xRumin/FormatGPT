@@ -114,12 +114,18 @@
     if (panel) panel.style.display = mode === 'crosscheck' ? 'flex' : 'none';
   }
 
+  function syncDeliverPanel(mode) {
+    const panel = $('#deliverPanel');
+    if (panel) panel.style.display = mode === 'deliver' ? 'block' : 'none';
+  }
+
   function setModeFromDd(value) {
     Core?.setMode && Core.setMode(value);
     syncReorderPanel(value);
     syncFilterPanel(value);
     syncSorterPanel(value);
     syncCrosscheckPanel(value);
+    syncDeliverPanel(value);
     document.body.dataset.mode = value;
     Core?.rerun && Core.rerun();
   }
@@ -268,6 +274,7 @@
     syncFilterPanel('standard');
     syncSorterPanel('standard');
     syncCrosscheckPanel('standard');
+    syncDeliverPanel('standard');
     document.body.dataset.mode = 'standard';
     Core?.rerun && Core.rerun();
   }

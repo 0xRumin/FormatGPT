@@ -1060,6 +1060,147 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .pane--out #ccPasteSplit{ display: none; }
 body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
 
+/* =================== Line-count pill in pane headers =================== */
+.pane__count{
+  display:inline-block;
+  margin-left:10px;
+  padding:2px 9px;
+  border-radius:999px;
+  background:rgba(45,212,191,0.14);
+  color:rgba(94,234,212,0.95);
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  vertical-align:middle;
+  border:1px solid rgba(45,212,191,0.25);
+}
+.pane__count:empty{ display:none; }
+
+/* =================== Drop-to-paste overlay ("Paste any text file") =================== */
+.drop-hint{
+  position:absolute;
+  left:20px; right:20px;
+  top:78px; bottom:20px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  border:2px dashed rgba(45,212,191,0.7);
+  border-radius:14px;
+  background:rgba(10,40,35,0.55);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  z-index:6;
+}
+.drop-hint > span{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:clamp(14px, 1.8vw, 22px);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:rgba(94,234,212,0.95);
+  text-shadow:0 0 18px rgba(45,212,191,0.35);
+}
+.pane.is-drop > .drop-hint{ display:flex; }
+
+/* =================== Deliver-mode panel =================== */
+.deliver-panel{
+  padding:22px 26px;
+  background:rgba(18,13,8,0.55);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);
+  border-radius:20px;
+  color:var(--fg);
+}
+.deliver-panel .dp-head{ margin-bottom:14px; }
+.deliver-panel .dp-title{
+  font-family:var(--font-serif);
+  font-size:26px; font-weight:400; letter-spacing:-0.01em;
+  color:var(--fg);
+}
+.deliver-panel .dp-sub{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--muted);
+  margin-top:4px;
+}
+.deliver-panel .dp-row{
+  display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.deliver-panel .dp-field{
+  display:flex; flex-direction:column; gap:6px; flex:1 1 200px;
+}
+.deliver-panel .dp-label{
+  font-family:var(--font-mono);
+  font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--muted);
+}
+.deliver-panel .dp-optional{
+  color:rgba(255,255,255,0.3); font-weight:400; text-transform:none; letter-spacing:0.04em;
+}
+.deliver-panel input[type="number"],
+.deliver-panel input[type="text"]{
+  padding:10px 14px;
+  background:rgba(11,15,20,0.85);
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--fg);
+  font-family:var(--font-mono);
+  font-size:14px;
+  outline:none;
+  transition:border-color .15s, background .15s;
+}
+.deliver-panel input[type="number"]:focus,
+.deliver-panel input[type="text"]:focus{
+  border-color:rgba(45,212,191,0.65);
+  background:rgba(11,15,20,0.95);
+}
+.deliver-panel input::placeholder{
+  color:rgba(255,255,255,0.25);
+  font-style:italic;
+}
+.deliver-panel .dp-btn{
+  padding:11px 20px;
+  background:linear-gradient(180deg, rgba(110,231,183,0.9), rgba(45,212,191,0.8));
+  color:#04261b;
+  border:none;
+  border-radius:12px;
+  font-family:var(--font-mono);
+  font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+  cursor:pointer;
+  transition:transform .15s, filter .15s;
+  align-self:flex-end;
+}
+.deliver-panel .dp-btn:hover{ transform:translateY(-1px); filter:brightness(1.08); }
+.deliver-panel .dp-btn:active{ transform:translateY(0); }
+.deliver-panel .dp-stats{
+  display:flex; gap:22px; flex-wrap:wrap;
+  padding:10px 0 2px;
+  border-top:1px dashed var(--line);
+  margin-top:4px;
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--muted);
+}
+.deliver-panel .dp-stat b{ color:var(--fg); font-weight:700; margin:0 4px; }
+.deliver-panel .dp-stat--out b{ color:#6ee7b7; }
+.deliver-panel .dp-stat--hint{
+  margin-left:auto; color:rgba(94,234,212,0.9); text-transform:none; letter-spacing:0.02em;
+  font-family:var(--font-body);
+}
+.deliver-panel .dp-hint--err{ color:#ff7a93 !important; }
+
+@media (max-width: 760px){
+  .deliver-panel{ padding:16px 18px; }
+  .deliver-panel .dp-row{ gap:10px; }
+  .deliver-panel .dp-btn{ width:100%; align-self:stretch; }
+  .drop-hint{ left:10px; right:10px; top:62px; bottom:10px; }
+}
+
 /* =================== Flowing dot-waves background =================== */
 /* Canvas sits above the globe/tint but below main content. Dots flow in sine
    waves across the viewport. Pointer-events off so it never blocks UI. */
