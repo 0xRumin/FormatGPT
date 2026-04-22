@@ -858,13 +858,13 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .fp-usernames{
   width:100%;min-height:90px;max-height:200px;resize:vertical;
   background:rgba(0,0,0,0.35);color:var(--fg);border:1px solid var(--line);border-radius:14px;
-  padding:12px;padding-right:80px;outline:none;
+  padding:12px;padding-right:160px;outline:none;
   font-family:var(--font-mono);font-size:13px;line-height:1.5;
 }
 .fp-usernames:focus{border-color:var(--accent)}
 .fp-ta-btns{
   position:absolute;top:8px;right:8px;
-  display:flex;flex-direction:column;gap:6px;align-items:stretch;
+  display:flex;flex-direction:row;gap:6px;align-items:center;
 }
 .fp-paste-btn,.fp-clear-btn{
   padding:6px 14px;border-radius:999px;border:none;

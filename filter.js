@@ -45,8 +45,8 @@
     h += '<div class="fp-ta-wrap">';
     h += '<textarea class="fp-usernames" id="fpUsernames" placeholder="Paste usernames here (one per line)" spellcheck="false"></textarea>';
     h += '<div class="fp-ta-btns">';
-    h += '<button class="fp-paste-btn" id="fpPasteBtn" type="button">Paste</button>';
     h += '<button class="fp-clear-btn" id="fpClearBtn" type="button" title="Clear the username list">Clear</button>';
+    h += '<button class="fp-paste-btn" id="fpPasteBtn" type="button">Paste</button>';
     h += '</div>';
     h += '</div></div>';
 
