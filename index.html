@@ -27,6 +27,9 @@
 <div class="aur"></div>
 <div class="grid-lines"></div>
 
+<!-- Flowing dot-waves overlay (canvas, rAF-throttled) -->
+<canvas class="bg-dotwave" aria-hidden="true"></canvas>
+
 <main>
 
   <!-- Ticker -->
@@ -239,6 +242,78 @@
         pending = false;
       });
     }, { passive: true });
+  })();
+
+  // 1b. Flowing dot-waves background — multiple sine waves drawn as dots,
+  //     drifting horizontally. Canvas is cheap, rAF capped to ~30fps, and
+  //     fully skipped when tab is hidden or user prefers reduced motion.
+  (function dotWaves(){
+    const canvas = document.querySelector('.bg-dotwave');
+    if (!canvas) return;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { canvas.style.display = 'none'; return; }
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+
+    function resize(){
+      const w = window.innerWidth, h = window.innerHeight;
+      canvas.width  = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
+      canvas.style.width  = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize, { passive: true });
+
+    const NUM_WAVES   = 5;       // number of parallel sine waves
+    const DOT_SPACING = 14;      // px between dots along each wave
+    const DOT_RADIUS  = 1.6;
+    const t0 = performance.now();
+    let lastDraw = 0;
+    const FRAME_MS = 33;         // ~30fps cap
+
+    function tick(now){
+      if (document.hidden) { requestAnimationFrame(tick); return; }
+      if (!now) now = performance.now();
+      if (now - lastDraw < FRAME_MS) { requestAnimationFrame(tick); return; }
+      lastDraw = now;
+
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      const t = (now - t0) / 1000;
+
+      for (let i = 0; i < NUM_WAVES; i++) {
+        const baseY    = ((i + 0.5) / NUM_WAVES) * h;
+        const amp      = Math.min(h / 14, 60);
+        const wavelen  = w * (0.45 + (i % 3) * 0.12);   // vary wavelength per wave
+        const speed    = 0.28 + i * 0.06;               // each wave drifts at its own pace
+        const phase    = i * 0.9;
+        // Alternate teal / cyan / mint per wave for a subtle chroma shift
+        const colors = [
+          [45, 212, 191],   // teal
+          [94, 234, 212],   // mint-teal
+          [56, 189, 248],   // sky
+          [110, 231, 183],  // mint
+          [6, 182, 212]     // cyan
+        ];
+        const c = colors[i % colors.length];
+
+        for (let x = -DOT_SPACING; x <= w + DOT_SPACING; x += DOT_SPACING) {
+          const u = (x / wavelen) * Math.PI * 2 + t * speed + phase;
+          const y = baseY + amp * Math.sin(u);
+          // brightness pulses with the wave so the crest glows brighter than the trough
+          const bright = 0.30 + 0.45 * (0.5 + 0.5 * Math.sin(u + t * 0.4));
+          ctx.fillStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (0.08 + bright * 0.22).toFixed(3) + ')';
+          ctx.beginPath();
+          ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   })();
 
   // 2. Ticking clock

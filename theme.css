@@ -1034,13 +1034,15 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .aur{ opacity: .6; }
 .aur::before{ animation-duration: 18s; }
 
-/* Slow-drifting nebula layer — pure CSS, one painted element, ~free */
+/* Slow-drifting nebula layer — pure CSS, one painted element, ~free.
+   Mouse glow is a small perfect CIRCLE (not an ellipse) with a tight radius
+   so it acts like a focused spotlight instead of a page-wide wash. */
 .aur::before{
   background:
-    radial-gradient(1200px 700px at var(--mx,30%) var(--my,20%), rgba(45,212,191,0.34), transparent 60%),
-    radial-gradient(900px 700px at 90% 90%, rgba(56,189,248,0.22), transparent 60%),
-    radial-gradient(800px 600px at 10% 90%, rgba(110,231,183,0.16), transparent 60%),
-    radial-gradient(1000px 800px at 70% 0%, rgba(6,182,212,0.18), transparent 60%);
+    radial-gradient(circle 320px at var(--mx,30%) var(--my,20%), rgba(45,212,191,0.40), transparent 70%),
+    radial-gradient(circle 680px at 90% 90%, rgba(56,189,248,0.20), transparent 65%),
+    radial-gradient(circle 620px at 10% 90%, rgba(110,231,183,0.14), transparent 65%),
+    radial-gradient(circle 780px at 70% 0%, rgba(6,182,212,0.16), transparent 65%);
 }
 
 /* =================== Drop-to-paste hover state =================== */
@@ -1057,6 +1059,22 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 /* =================== Crosscheck List 2 Paste split (only shown in crosscheck mode) =================== */
 .pane--out #ccPasteSplit{ display: none; }
 body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
+
+/* =================== Flowing dot-waves background =================== */
+/* Canvas sits above the globe/tint but below main content. Dots flow in sine
+   waves across the viewport. Pointer-events off so it never blocks UI. */
+.bg-dotwave{
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.55;
+}
+@media (prefers-reduced-motion: reduce){
+  .bg-dotwave{ display: none; }
+}
 
 /* =================== Animated Lottie globe background =================== */
 /* Fixed, transparent, sits behind everything. Low opacity so content stays readable. */
