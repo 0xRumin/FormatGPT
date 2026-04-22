@@ -174,18 +174,23 @@ main{
   color:rgba(247,242,236,0.55);
   margin:10px 0 0;
   padding:0;
-  display:inline-flex;align-items:center;gap:14px;
-  flex-wrap:nowrap;white-space:nowrap;
+  /* One-liner: flex row, content-sized, no wrapping of any kind. */
+  display:flex;flex-direction:row;align-items:center;gap:14px;
+  flex-wrap:nowrap;white-space:nowrap;word-break:keep-all;
   line-height:1;
-  width:auto;
+  width:max-content;max-width:100%;
+  overflow:visible;
 }
 .hero__sigma > span:not(.dot){
+  display:inline-block;
+  white-space:nowrap;
+  flex:0 0 auto;
   background:linear-gradient(100deg, #94a3b8 0%, #e2e8f0 50%, #64748b 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   text-shadow:0 0 30px rgba(148,163,184,0.15);
-  white-space:nowrap;
 }
 .hero__sigma > .dot{
+  display:inline-block;
   width:4px;height:4px;border-radius:50%;
   background:rgba(247,242,236,0.35);
   flex:0 0 auto;
