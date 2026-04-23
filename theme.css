@@ -231,6 +231,10 @@ body[data-mode="filter"] .work .pane--out{display:none !important}
 /* DAM mode: nuke the entire workbench. DAM doesn't use the input textarea
    OR the output pane — it has its own panel + scrape button + download. */
 body[data-mode="dam"] .work{display:none !important}
+/* Blue toggle and Mail checkbox belong to the standard formatter pipeline,
+   they have no meaning for DAM output — hide them in DAM mode. */
+body[data-mode="dam"] #blueBtn,
+body[data-mode="dam"] .add-mail{display:none !important}
 
 .pane{position:relative;padding:26px 28px;display:flex;flex-direction:column;background:transparent;border:none;border-radius:0;box-shadow:none;margin:0}
 .pane--out{background:linear-gradient(180deg, rgba(45,212,191,0.04), transparent 40%)}
@@ -1537,6 +1541,56 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   display:inline-flex; align-items:center; gap:6px;
 }
 .dam-panel .dam-count b{ color:#6ee7b7; font-size:13px; }
+
+/* Results card (appears below the panel once a scrape lands) */
+.dam-panel .dam-results{
+  margin-top:16px;
+  padding:16px 18px;
+  background:rgba(11,15,20,0.7);
+  border:1px solid rgba(45,212,191,0.25);
+  border-radius:14px;
+  box-shadow: 0 10px 30px -15px rgba(45,212,191,0.25);
+}
+.dam-panel .dam-results-head{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap;
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.dam-panel .dam-results-title{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--muted);
+  display:inline-flex; align-items:center; gap:8px;
+}
+.dam-panel .dam-results-n{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.08em;
+  padding:3px 8px;
+  background:rgba(45,212,191,0.15);
+  color:#6ee7b7;
+  border-radius:999px;
+  border:1px solid rgba(45,212,191,0.35);
+}
+.dam-panel .dam-results-actions{
+  display:flex; gap:8px;
+}
+.dam-panel .dam-results-actions .dp-btn{ padding:8px 14px; font-size:11px; min-width:0; }
+.dam-panel .dam-results-out{
+  margin:0;
+  max-height:420px;
+  overflow:auto;
+  padding:12px 14px;
+  background:rgba(6,10,14,0.85);
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--fg);
+  font-family:var(--font-mono);
+  font-size:13px; line-height:1.55;
+  white-space:pre;
+  tab-size:2;
+}
 
 @media (max-width: 760px){
   .dam-panel{ padding:16px 18px; }

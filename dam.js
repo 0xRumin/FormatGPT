@@ -89,7 +89,20 @@
         '</div>',
       '</div>',
 
-      '<div class="dam-count">Scraped: <b id="damCount">' + (s.lastCount || 0) + '</b> accounts</div>'
+      '<div class="dam-count">Scraped: <b id="damCount">' + (s.lastCount || 0) + '</b> accounts</div>',
+
+      // Results card — appears under the panel once a scrape lands. Copy
+      // pushes the text to the clipboard; Clear wipes state + hides the card.
+      '<div class="dam-results" id="damResults" style="display:none">',
+        '<div class="dam-results-head">',
+          '<span class="dam-results-title">Results <span class="dam-results-n" id="damResultsN">0</span></span>',
+          '<div class="dam-results-actions">',
+            '<button type="button" id="damCopyResults"  class="dp-btn dp-btn--alt">Copy</button>',
+            '<button type="button" id="damClearResults" class="dp-btn dp-btn--alt">Clear</button>',
+          '</div>',
+        '</div>',
+        '<pre class="dam-results-out" id="damResultsOut"></pre>',
+      '</div>'
     ].join('');
 
     // Rehydrate the numeric input for whatever price mode is active
@@ -100,8 +113,28 @@
     var proxyEl = $('#damProxy');
     if (proxyEl && s.customProxy) proxyEl.value = s.customProxy;
 
+    // Rehydrate results card if a previous scrape exists (mode-switch survival)
+    if (s.lastOutput) renderResults();
+
     bindEvents();
     if (s.categories && s.categories.length) renderCats();
+  }
+
+  function renderResults() {
+    var s = state.dam;
+    var card = $('#damResults');
+    var out  = $('#damResultsOut');
+    var nEl  = $('#damResultsN');
+    if (!card || !out) return;
+    if (s.lastOutput) {
+      card.style.display = 'block';
+      out.textContent = s.lastOutput;
+      if (nEl) nEl.textContent = s.lastCount || 0;
+    } else {
+      card.style.display = 'none';
+      out.textContent = '';
+      if (nEl) nEl.textContent = '0';
+    }
   }
 
   function priceFieldFor(mode) {
@@ -149,6 +182,28 @@
         try { localStorage.setItem('damCustomProxy', state.dam.customProxy); } catch (e) {}
       });
     }
+
+    // Results card actions
+    var copyBtn = $('#damCopyResults');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var text = state.dam.lastOutput || '';
+      if (!text) return;
+      var self = this;
+      navigator.clipboard.writeText(text).then(function () {
+        var orig = self.textContent;
+        self.textContent = 'Copied';
+        setTimeout(function () { self.textContent = orig; }, 900);
+      }).catch(function () { alert('Copy failed.'); });
+    });
+
+    var clearBtn = $('#damClearResults');
+    if (clearBtn) clearBtn.addEventListener('click', function () {
+      state.dam.lastOutput = '';
+      state.dam.lastCount  = 0;
+      var cnt = $('#damCount'); if (cnt) cnt.textContent = '0';
+      renderResults();
+      setStatus('Results cleared.', 'ok');
+    });
   }
 
   function setStatus(msg, type) {
@@ -354,12 +409,10 @@
       s.lastCount  = lines.length;
       s.scraping   = false;
 
-      // The standard output pane is hidden in DAM mode (body[data-mode="dam"]
-      // .work { display:none }), so we only update DAM's own count pill.
-      // The full result goes out via the Download .txt button.
       var cnt = $('#damCount'); if (cnt) cnt.textContent = lines.length;
+      renderResults();
 
-      if (lines.length) setStatus('Scraped ' + lines.length + ' accounts \u2014 hit Download to save.', 'ok');
+      if (lines.length) setStatus('Scraped ' + lines.length + ' accounts \u2014 results ready below.', 'ok');
       else              setStatus('Scrape returned 0 rows.', 'err');
     }).catch(function (e) {
       s.scraping = false;
