@@ -16,7 +16,9 @@
         if (!user) return "Sorry, invalid format for plinks.\nExpected: user:pass:... (username required)";
         const rest = parts.filter(p => p !== user);
         const followersRaw = pickFollowersFrom(rest);
-        const show = followersRaw !== "" && Number(followersRaw) >= 30;
+        // pickFollowersFrom already enforces the 30..<500k sanity range, so
+        // any truthy value here is a valid follower count.
+        const show = followersRaw !== "";
         if (show) {
           const n = Number(followersRaw);
           const pretty = n >= 1000 ? formatK(n) : String(n);

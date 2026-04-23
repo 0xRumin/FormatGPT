@@ -11,12 +11,19 @@
     return m ? m[1].toUpperCase() : "";
   };
 
+  // Followers count sanity range: real X/Twitter accounts almost never exceed
+  // 500k followers in these dumps. Anything >= 500k is far more likely a
+  // numeric mail password (e.g. 29377332), so we refuse to classify it as
+  // followers — it falls through to the mailPass slot instead.
+  const FOLLOWERS_MAX = 500000;
+
   function pickFollowersFrom(tokens) {
     for (const t of tokens) {
       const v = (t || "").trim();
       if (!/^\d+$/.test(v)) continue;
       if (U.isYear(v)) continue;
-      if (Number(v) >= 30) return v;
+      const n = Number(v);
+      if (n >= 30 && n < FOLLOWERS_MAX) return v;
     }
     return "";
   }
@@ -47,9 +54,23 @@
       if (!year && U.isYear(p)) { year = p; continue; }
       if (!phone && U.looksPhone(digits)) { phone = digits.startsWith("+") ? digits : "+" + digits; continue; }
 
-      if (followersRaw === "" && /^\d+$/.test(p) && !U.isYear(p)) { followersRaw = p; continue; }
+      // Numeric token — decide between followers count and a numeric mail pass.
+      // Followers: 30 ≤ n < 500k. Anything outside that range (esp. huge
+      // numbers like 29377332) is treated as a mail password candidate.
+      if (/^\d+$/.test(p) && !U.isYear(p)) {
+        const n = Number(p);
+        if (followersRaw === "" && n >= 30 && n < FOLLOWERS_MAX) {
+          followersRaw = p;
+          continue;
+        }
+        if (!mailPass && p.length <= 32) {
+          mailPass = p;
+          continue;
+        }
+        continue;
+      }
 
-      if (!mailPass && p.length <= 32 && !U.isEmail(p) && !U.isCt0(p) && !U.isHex40(p) && !U.is2FAKey(p) && !/2fa\.fb\.rip\//i.test(p) && !U.isYear(p) && !/^\d+$/.test(p)) {
+      if (!mailPass && p.length <= 32 && !U.isEmail(p) && !U.isCt0(p) && !U.isHex40(p) && !U.is2FAKey(p) && !/2fa\.fb\.rip\//i.test(p) && !U.isYear(p)) {
         mailPass = p; continue;
       }
     }
