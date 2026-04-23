@@ -17,7 +17,8 @@
   var U     = App.Utils;
   var $     = function (sel, root) { return (root || document).querySelector(sel); };
 
-  // Lazy-init DAM state (persisted only in memory — no localStorage).
+  // Lazy-init DAM state. Custom proxy URL persists across reloads because
+  // setting it up is a one-time cost the user shouldn't have to redo.
   if (!state.dam) {
     state.dam = {
       categories: [],     // raw API list (first 4 like the python script)
@@ -26,7 +27,11 @@
       priceValue: '',     // numeric input used by custom/markup/perk
       lastOutput: '',
       lastCount:  0,
-      scraping:   false
+      scraping:   false,
+      customProxy: (function () {
+        try { return localStorage.getItem('damCustomProxy') || ''; }
+        catch (e) { return ''; }
+      })()
     };
   }
 
@@ -42,8 +47,8 @@
 
     panel.innerHTML = [
       '<div class="dp-head">',
-        '<div class="dp-title">DAM \u2014 digitalaccountmarket.com</div>',
-        '<div class="dp-sub">Pick categories, choose a price strategy, hit Scrape. Output lands in the right pane, sorted high\u2192low by followers.</div>',
+        '<div class="dp-title">DAM</div>',
+        '<div class="dp-sub">Pick categories, choose a price strategy, hit Scrape \u2192 download the list.</div>',
       '</div>',
 
       '<div class="dam-row">',
@@ -51,6 +56,15 @@
         '<button type="button" id="damScrape"   class="dp-btn dp-btn--alt">Scrape selected \u2192</button>',
         '<button type="button" id="damDownload" class="dp-btn">\u2193 Download .txt</button>',
         '<span class="dam-status" id="damStatus">idle</span>',
+      '</div>',
+
+      // Optional custom proxy URL: lets the user point at their own worker/edge
+      // function when public CORS proxies get rate-limited or challenged by
+      // Cloudflare. Format: "https://your-worker.example.com/?url=" — the
+      // target URL will be appended (URL-encoded).
+      '<div class="dam-proxy-row">',
+        '<label class="dam-label" for="damProxy">Custom proxy URL <span class="dp-optional">(optional \u2014 appends target as ?url=\u2026)</span></label>',
+        '<input type="text" id="damProxy" class="dam-proxy-input" spellcheck="false" placeholder="https://your-worker.example.com/?url="/>',
       '</div>',
 
       '<div class="dam-grid">',
@@ -81,6 +95,10 @@
     // Rehydrate the numeric input for whatever price mode is active
     var curField = priceFieldFor(pm);
     if (curField && s.priceValue) curField.value = s.priceValue;
+
+    // Rehydrate custom proxy input
+    var proxyEl = $('#damProxy');
+    if (proxyEl && s.customProxy) proxyEl.value = s.customProxy;
 
     bindEvents();
     if (s.categories && s.categories.length) renderCats();
@@ -121,6 +139,16 @@
       var el = document.getElementById(id);
       if (el) el.addEventListener('input', function () { state.dam.priceValue = this.value; });
     });
+
+    // Custom proxy URL input — persisted in localStorage so the user only
+    // enters it once.
+    var proxyEl = $('#damProxy');
+    if (proxyEl) {
+      proxyEl.addEventListener('input', function () {
+        state.dam.customProxy = this.value.trim();
+        try { localStorage.setItem('damCustomProxy', state.dam.customProxy); } catch (e) {}
+      });
+    }
   }
 
   function setStatus(msg, type) {
@@ -178,23 +206,23 @@
     allBox.indeterminate = sel > 0 && sel < total;
   }
 
-  // digitalaccountmarket.com sits behind Cloudflare and does not send
-  // Access-Control-Allow-Origin headers for browser clients, so a direct
-  // fetch() from GitHub Pages (or any origin) is blocked. We route requests
-  // through a chain of free CORS proxies — first one that answers with
-  // parseable JSON wins. Python's cloudscraper handles this server-side;
-  // these proxies are our browser-side equivalent.
-  var PROXIES = [
-    function (u) { return 'https://corsproxy.io/?' + encodeURIComponent(u); },
-    function (u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
-    function (u) { return 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u); }
+  // The target site sits behind Cloudflare and does not send CORS headers
+  // to browser origins. The Python script uses cloudscraper server-side;
+  // we have to route through a proxy. Strategy:
+  //   1) Custom proxy (user-supplied) — most reliable if they run their own.
+  //   2) Fallback chain of public CORS proxies — tries each until one returns
+  //      valid JSON. Cloudflare-challenged responses fail JSON.parse and we
+  //      advance to the next proxy.
+  var PUBLIC_PROXIES = [
+    function (u) { return 'https://corsproxy.io/?'                 + encodeURIComponent(u); },
+    function (u) { return 'https://api.allorigins.win/raw?url='    + encodeURIComponent(u); },
+    function (u) { return 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u); },
+    function (u) { return 'https://thingproxy.freeboard.io/fetch/' + u; },
+    function (u) { return 'https://cors-anywhere.herokuapp.com/'   + u; }
   ];
 
-  function fetchViaProxy(url, idx) {
-    idx = idx || 0;
-    if (idx >= PROXIES.length) return Promise.reject(new Error('all proxies failed (CORS / Cloudflare)'));
-    var wrapped = PROXIES[idx](url);
-    return fetch(wrapped, {
+  function tryFetchJson(wrappedUrl) {
+    return fetch(wrappedUrl, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       credentials: 'omit',
@@ -203,28 +231,50 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
     }).then(function (txt) {
-      // Some proxies return plain JSON, others wrap it. We only accept JSON.
+      // Proxies sometimes forward Cloudflare challenge HTML; only JSON counts.
       try { return JSON.parse(txt); }
-      catch (e) { throw new Error('bad JSON from proxy'); }
-    }).catch(function () {
-      return fetchViaProxy(url, idx + 1);
+      catch (e) { throw new Error('non-JSON response'); }
     });
   }
 
   function fetchJson(url) {
-    // Try direct first (fast path — will work if CORS ever gets enabled);
-    // fall back to the proxy chain on any network/CORS error.
-    return fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en;q=0.9' },
-      credentials: 'omit',
-      referrerPolicy: 'no-referrer',
-      mode: 'cors'
-    }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).catch(function () {
-      return fetchViaProxy(url);
+    var s = state.dam;
+    var custom = (s && s.customProxy ? String(s.customProxy).trim() : '');
+
+    // 1) Custom proxy first (if set). Build wrapped URL — if prefix ends with
+    //    ?url= or similar, we append URL-encoded target; otherwise we append
+    //    the raw URL (for prefix-style proxies like /fetch/).
+    var chain = [];
+    if (custom) {
+      chain.push(function () {
+        var needsEncode = /[?&]url=$|[?&]q=$|[?&]quest=$/.test(custom);
+        return tryFetchJson(custom + (needsEncode ? encodeURIComponent(url) : url));
+      });
+    }
+    // 2) Try direct (works only if the target ever opens CORS).
+    chain.push(function () {
+      return fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en;q=0.9' },
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+        mode: 'cors'
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+    });
+    // 3) Public proxy chain.
+    PUBLIC_PROXIES.forEach(function (wrap) {
+      chain.push(function () { return tryFetchJson(wrap(url)); });
+    });
+
+    // Run the chain serially, returning the first success.
+    return chain.reduce(function (prev, attempt) {
+      return prev.catch(attempt);
+    }, Promise.reject(new Error('start')))
+    .catch(function () {
+      throw new Error('all proxies blocked \u2014 set a Custom proxy URL (Cloudflare Worker / your server)');
     });
   }
 

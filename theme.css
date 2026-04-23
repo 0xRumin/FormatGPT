@@ -1385,8 +1385,30 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
 /* Top action row: fetch / scrape / download + status pill */
 .dam-panel .dam-row{
   display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-  margin-bottom:16px;
+  margin-bottom:12px;
 }
+
+/* Custom proxy URL row — optional escape hatch for when public proxies fail */
+.dam-panel .dam-proxy-row{
+  display:flex; flex-direction:column; gap:6px;
+  margin-bottom:14px;
+  padding:10px 12px;
+  background:rgba(11,15,20,0.5);
+  border:1px dashed rgba(255,255,255,0.08);
+  border-radius:10px;
+}
+.dam-panel .dam-proxy-input{
+  padding:8px 12px;
+  background:rgba(11,15,20,0.85);
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--fg);
+  font-family:var(--font-mono); font-size:12px;
+  outline:none;
+  transition:border-color .15s;
+}
+.dam-panel .dam-proxy-input:focus{ border-color:rgba(94,234,212,0.65); }
+.dam-panel .dam-proxy-input::placeholder{ color:rgba(255,255,255,0.25); font-style:italic; }
 .dam-panel .dam-status{
   margin-left:auto;
   font-family:var(--font-mono);

@@ -122,10 +122,12 @@
   function syncDamPanel(mode) {
     const panel = $('#damPanel');
     if (panel) panel.style.display = mode === 'dam' ? 'block' : 'none';
-    // The entire .work area (input pane + axis + output pane) is hidden
-    // in DAM mode via CSS [body[data-mode="dam"] .work { display:none }].
-    // DAM has its own panel + status + download button, so the standard
-    // workbench isn't needed at all.
+    // Hide the entire workbench (input + axis + output) via JS too, not just
+    // CSS. Belt-and-suspenders: if the data-mode attribute gets out of sync
+    // or a cached stylesheet loses the rule, this guarantees the panes are
+    // gone while DAM is active.
+    const work = document.querySelector('.work');
+    if (work) work.style.display = mode === 'dam' ? 'none' : '';
   }
 
   function setModeFromDd(value) {
