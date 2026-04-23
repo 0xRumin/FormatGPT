@@ -1264,6 +1264,14 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
 }
 .deliver-panel .dp-btn:hover{ transform:translateY(-1px); filter:brightness(1.08); }
 .deliver-panel .dp-btn:active{ transform:translateY(0); }
+.deliver-panel .dp-btn.is-spent,
+.deliver-panel .dp-btn[disabled]{
+  opacity:0.32;
+  filter:grayscale(0.55) brightness(0.85);
+  pointer-events:none;
+  cursor:not-allowed;
+  transform:none;
+}
 .deliver-panel .dp-btn--alt{
   background:rgba(11,15,20,0.85);
   color:rgba(94,234,212,0.95);

@@ -90,6 +90,11 @@
     });
 
     $('#dpExtract').addEventListener('click', function () {
+      // One-shot: once an extract has landed this session, the button is
+      // fused until the page is refreshed. Stops accidental re-extracts
+      // chewing more rows out of the input pane.
+      if (state.deliverExtractDone) return;
+
       var inp = $('#inp');
       if (!inp) return;
       var n = parseInt($('#dpCount').value, 10);
@@ -128,9 +133,18 @@
       App.App.rerun();
       updateStats();
 
+      // Fuse Extract for the rest of the session. Refresh re-enables it.
+      state.deliverExtractDone = true;
+      var extractBtn = $('#dpExtract');
+      if (extractBtn) {
+        extractBtn.classList.add('is-spent');
+        extractBtn.disabled = true;
+        extractBtn.title = 'Already extracted — refresh the page to extract again.';
+      }
+
       var dirLabel = (state.deliverDirection === 'bottom') ? 'bottom' : 'top';
       showHint('Extracted ' + take.toLocaleString() + ' from ' + dirLabel + ' \u2192 output. ' +
-               remaining.length.toLocaleString() + ' remain in input.');
+               remaining.length.toLocaleString() + ' remain in input. Refresh to extract again.');
     });
 
     $('#dpDownload').addEventListener('click', function () {
