@@ -350,6 +350,48 @@
 
   function round1(n) { return Math.round(n * 10) / 10; }
 
+  // The /items endpoint paginates at 100 rows per call. Walk pages until the
+  // API returns fewer than 100 rows, or we've collected availableCount, or we
+  // hit the safety cap. If the API ignores ?page=N (unlikely but possible),
+  // the dedup guard below catches "same first item repeated" and stops the
+  // loop so we don't spin forever.
+  var PAGE_SIZE = 100;
+  var MAX_PAGES = 100; // 100 * 100 = 10k rows per category — way above real sizes
+
+  function fetchAllItems(cat) {
+    var slug = cat.slug;
+    var available = cat.availableCount || 0;
+    var collected = [];
+    var firstIdPerPage = {}; // page -> first item key, for loop-detection
+
+    function keyOf(it) {
+      return (it && (it.id || it.uuid || it.display)) || JSON.stringify(it || {});
+    }
+
+    function fetchPage(page) {
+      if (page > MAX_PAGES) return Promise.resolve();
+      var url = BASE + '/api/categories/' + slug + '/items?page=' + page + '&limit=' + PAGE_SIZE;
+      return fetchJson(url).then(function (j) {
+        var items = (j && j.items) || [];
+        if (!items.length) return;
+        var firstKey = keyOf(items[0]);
+        // If page N>1 starts with the same key we've already seen, the server
+        // is ignoring ?page — stop to avoid infinite duplication.
+        for (var p in firstIdPerPage) {
+          if (firstIdPerPage[p] === firstKey) return;
+        }
+        firstIdPerPage[page] = firstKey;
+
+        collected.push.apply(collected, items);
+        if (items.length < PAGE_SIZE) return;                 // last page
+        if (available && collected.length >= available) return; // all caught
+        return fetchPage(page + 1);
+      });
+    }
+
+    return fetchPage(1).then(function () { return { cat: cat, items: collected }; });
+  }
+
   function scrapeSelected() {
     var s = state.dam;
     if (s.scraping) return;
@@ -360,9 +402,7 @@
     setStatus('Scraping ' + picks.length + ' categor' + (picks.length===1?'y':'ies') + '\u2026', 'busy');
 
     var jobs = picks.map(function (cat) {
-      return fetchJson(BASE + '/api/categories/' + cat.slug + '/items')
-        .then(function (j) { return { cat: cat, items: (j && j.items) || [] }; })
-        .catch(function ()  { return { cat: cat, items: [] }; });
+      return fetchAllItems(cat).catch(function () { return { cat: cat, items: [] }; });
     });
 
     Promise.all(jobs).then(function (results) {
