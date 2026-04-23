@@ -119,6 +119,16 @@
     if (panel) panel.style.display = mode === 'deliver' ? 'block' : 'none';
   }
 
+  function syncDamPanel(mode) {
+    const panel = $('#damPanel');
+    if (panel) panel.style.display = mode === 'dam' ? 'block' : 'none';
+    // DAM is driven by its own Scrape button, not by the main input textarea.
+    // Hide the input pane while DAM is active so the UI stays focused on the
+    // scraper controls.
+    const inCard = $('#inp')?.closest('.card') || $('.pane--in');
+    if (inCard) inCard.style.display = mode === 'dam' ? 'none' : '';
+  }
+
   function setModeFromDd(value) {
     Core?.setMode && Core.setMode(value);
     syncReorderPanel(value);
@@ -126,6 +136,7 @@
     syncSorterPanel(value);
     syncCrosscheckPanel(value);
     syncDeliverPanel(value);
+    syncDamPanel(value);
     document.body.dataset.mode = value;
     Core?.rerun && Core.rerun();
   }
@@ -302,6 +313,7 @@
     syncSorterPanel('standard');
     syncCrosscheckPanel('standard');
     syncDeliverPanel('standard');
+    syncDamPanel('standard');
     document.body.dataset.mode = 'standard';
     Core?.rerun && Core.rerun();
   }

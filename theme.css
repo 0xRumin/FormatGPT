@@ -1331,4 +1331,193 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   .drop-hint{ left:10px; right:10px; top:62px; bottom:10px; }
 }
 
+/* =================== DAM-mode panel (digitalaccountmarket.com scraper) =================== */
+/* Reuses most of the deliver-panel shell + dp-* primitives, then layers on
+   DAM-specific bits (category checklist, price-option radios, status pill). */
+.dam-panel{
+  padding:22px 26px;
+  background:rgba(18,13,8,0.55);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);
+  border-radius:20px;
+  color:var(--fg);
+}
+.dam-panel .dp-head{ margin-bottom:14px; }
+.dam-panel .dp-title{
+  font-family:var(--font-serif);
+  font-size:26px; font-weight:400; letter-spacing:-0.01em;
+  color:var(--fg);
+}
+.dam-panel .dp-sub{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--muted);
+  margin-top:4px;
+}
+.dam-panel .dp-btn{
+  padding:11px 20px;
+  background:linear-gradient(180deg, rgba(110,231,183,0.9), rgba(45,212,191,0.8));
+  color:#04261b;
+  border:none;
+  border-radius:12px;
+  font-family:var(--font-mono);
+  font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+  cursor:pointer;
+  transition:transform .15s, filter .15s, background .15s, color .15s;
+  text-align:center;
+}
+.dam-panel .dp-btn:hover{ transform:translateY(-1px); filter:brightness(1.08); }
+.dam-panel .dp-btn--alt{
+  background:rgba(11,15,20,0.85);
+  color:rgba(94,234,212,0.95);
+  border:1px solid rgba(45,212,191,0.55);
+}
+.dam-panel .dp-btn--alt:hover{ background:rgba(20,32,34,0.95); color:#6ee7b7; filter:none; }
+.dam-panel .dp-optional{
+  color:rgba(255,255,255,0.35); font-weight:400; text-transform:none; letter-spacing:0.04em;
+}
+
+/* Top action row: fetch / scrape / download + status pill */
+.dam-panel .dam-row{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.dam-panel .dam-status{
+  margin-left:auto;
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+  color:rgba(255,255,255,0.5);
+  padding:7px 12px;
+  border:1px dashed rgba(255,255,255,0.12);
+  border-radius:999px;
+  background:rgba(11,15,20,0.6);
+  min-width:180px; text-align:center;
+}
+.dam-panel .dam-status.is-busy{ color:#fcd34d; border-color:rgba(252,211,77,0.4); }
+.dam-panel .dam-status.is-ok  { color:#6ee7b7; border-color:rgba(110,231,183,0.5); border-style:solid; }
+.dam-panel .dam-status.is-err { color:#ff7a93; border-color:rgba(255,122,147,0.55); border-style:solid; }
+
+/* Two-column: categories | price options */
+.dam-panel .dam-grid{
+  display:grid;
+  grid-template-columns:minmax(280px, 1fr) minmax(260px, 1fr);
+  gap:18px;
+  margin-bottom:14px;
+}
+.dam-panel .dam-section{
+  padding:14px;
+  background:rgba(11,15,20,0.6);
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+.dam-panel .dam-label{
+  font-family:var(--font-mono);
+  font-size:10px; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+/* Category checklist */
+.dam-panel .dam-cats{
+  display:flex; flex-direction:column; gap:6px;
+  max-height:220px; overflow-y:auto;
+  padding:2px;
+}
+.dam-panel .dam-empty{
+  font-family:var(--font-mono); font-size:12px;
+  color:rgba(255,255,255,0.35);
+  padding:18px 8px; text-align:center;
+  border:1px dashed rgba(255,255,255,0.1);
+  border-radius:10px;
+}
+.dam-panel .dam-cat{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;
+  background:rgba(18,22,28,0.5);
+  cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.dam-panel .dam-cat:hover{ background:rgba(28,36,48,0.7); border-color:rgba(94,234,212,0.25); }
+.dam-panel .dam-cat input[type="checkbox"]{ accent-color:#6ee7b7; }
+.dam-panel .dam-cat-name{
+  flex:1;
+  font-family:var(--font-body); font-size:14px; font-weight:500;
+  color:var(--fg);
+}
+.dam-panel .dam-cat-meta{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:0.05em;
+  color:rgba(94,234,212,0.75);
+}
+.dam-panel .dam-all{
+  display:inline-flex; align-items:center; gap:8px;
+  margin-top:10px;
+  padding:8px 12px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+  color:var(--muted);
+  cursor:pointer;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:rgba(11,15,20,0.4);
+}
+.dam-panel .dam-all input{ accent-color:#6ee7b7; }
+
+/* Price-option radios */
+.dam-panel .dam-prices{ display:flex; flex-direction:column; gap:6px; }
+.dam-panel .dam-radio{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:10px;
+  background:rgba(18,22,28,0.5);
+  cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.dam-panel .dam-radio:hover{ background:rgba(28,36,48,0.7); border-color:rgba(94,234,212,0.25); }
+.dam-panel .dam-radio:has(input:checked){
+  border-color:rgba(94,234,212,0.6);
+  background:rgba(20,36,36,0.7);
+}
+.dam-panel .dam-radio input[type="radio"]{ accent-color:#6ee7b7; }
+.dam-panel .dam-radio > span{
+  flex:1;
+  font-family:var(--font-body); font-size:13px; color:var(--fg);
+}
+.dam-panel .dam-num{
+  width:96px;
+  padding:7px 10px;
+  background:rgba(11,15,20,0.85);
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--fg);
+  font-family:var(--font-mono); font-size:13px;
+  outline:none;
+  transition:border-color .15s;
+}
+.dam-panel .dam-num:focus{ border-color:rgba(94,234,212,0.65); }
+.dam-panel .dam-num::placeholder{ color:rgba(255,255,255,0.25); font-style:italic; }
+
+/* Bottom scraped-count pill */
+.dam-panel .dam-count{
+  font-family:var(--font-mono);
+  font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--muted);
+  padding:10px 14px;
+  background:rgba(11,15,20,0.7);
+  border:1px solid var(--line);
+  border-radius:12px;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.dam-panel .dam-count b{ color:#6ee7b7; font-size:13px; }
+
+@media (max-width: 760px){
+  .dam-panel{ padding:16px 18px; }
+  .dam-panel .dam-grid{ grid-template-columns:1fr; }
+  .dam-panel .dam-row{ gap:8px; }
+  .dam-panel .dam-status{ width:100%; margin-left:0; }
+  .dam-panel .dp-btn{ flex:1; min-width:0; padding:10px 14px; }
+}
+
 /* [Removed for speed] dot-waves canvas + Lottie globe backgrounds. */
