@@ -228,6 +228,10 @@ body[data-mode="filter"] .work{grid-template-columns:1fr}
 body[data-mode="filter"] .work .axis,
 body[data-mode="filter"] .work .pane--out{display:none !important}
 
+/* DAM mode: nuke the entire workbench. DAM doesn't use the input textarea
+   OR the output pane — it has its own panel + scrape button + download. */
+body[data-mode="dam"] .work{display:none !important}
+
 .pane{position:relative;padding:26px 28px;display:flex;flex-direction:column;background:transparent;border:none;border-radius:0;box-shadow:none;margin:0}
 .pane--out{background:linear-gradient(180deg, rgba(45,212,191,0.04), transparent 40%)}
 .pane__head{position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line);gap:12px}

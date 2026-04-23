@@ -122,11 +122,10 @@
   function syncDamPanel(mode) {
     const panel = $('#damPanel');
     if (panel) panel.style.display = mode === 'dam' ? 'block' : 'none';
-    // DAM is driven by its own Scrape button, not by the main input textarea.
-    // Hide the input pane while DAM is active so the UI stays focused on the
-    // scraper controls.
-    const inCard = $('#inp')?.closest('.card') || $('.pane--in');
-    if (inCard) inCard.style.display = mode === 'dam' ? 'none' : '';
+    // The entire .work area (input pane + axis + output pane) is hidden
+    // in DAM mode via CSS [body[data-mode="dam"] .work { display:none }].
+    // DAM has its own panel + status + download button, so the standard
+    // workbench isn't needed at all.
   }
 
   function setModeFromDd(value) {

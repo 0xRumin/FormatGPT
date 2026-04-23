@@ -178,15 +178,53 @@
     allBox.indeterminate = sel > 0 && sel < total;
   }
 
-  function fetchJson(url) {
-    return fetch(url, {
+  // digitalaccountmarket.com sits behind Cloudflare and does not send
+  // Access-Control-Allow-Origin headers for browser clients, so a direct
+  // fetch() from GitHub Pages (or any origin) is blocked. We route requests
+  // through a chain of free CORS proxies — first one that answers with
+  // parseable JSON wins. Python's cloudscraper handles this server-side;
+  // these proxies are our browser-side equivalent.
+  var PROXIES = [
+    function (u) { return 'https://corsproxy.io/?' + encodeURIComponent(u); },
+    function (u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function (u) { return 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u); }
+  ];
+
+  function fetchViaProxy(url, idx) {
+    idx = idx || 0;
+    if (idx >= PROXIES.length) return Promise.reject(new Error('all proxies failed (CORS / Cloudflare)'));
+    var wrapped = PROXIES[idx](url);
+    return fetch(wrapped, {
       method: 'GET',
-      headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en;q=0.9' },
+      headers: { 'Accept': 'application/json' },
       credentials: 'omit',
       referrerPolicy: 'no-referrer'
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).then(function (txt) {
+      // Some proxies return plain JSON, others wrap it. We only accept JSON.
+      try { return JSON.parse(txt); }
+      catch (e) { throw new Error('bad JSON from proxy'); }
+    }).catch(function () {
+      return fetchViaProxy(url, idx + 1);
+    });
+  }
+
+  function fetchJson(url) {
+    // Try direct first (fast path — will work if CORS ever gets enabled);
+    // fall back to the proxy chain on any network/CORS error.
+    return fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en;q=0.9' },
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      mode: 'cors'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
+    }).catch(function () {
+      return fetchViaProxy(url);
     });
   }
 
@@ -266,10 +304,12 @@
       s.lastCount  = lines.length;
       s.scraping   = false;
 
-      var out = $('#out'); if (out) out.textContent = s.lastOutput;
+      // The standard output pane is hidden in DAM mode (body[data-mode="dam"]
+      // .work { display:none }), so we only update DAM's own count pill.
+      // The full result goes out via the Download .txt button.
       var cnt = $('#damCount'); if (cnt) cnt.textContent = lines.length;
 
-      if (lines.length) setStatus('Scraped ' + lines.length + ' accounts.', 'ok');
+      if (lines.length) setStatus('Scraped ' + lines.length + ' accounts \u2014 hit Download to save.', 'ok');
       else              setStatus('Scrape returned 0 rows.', 'err');
     }).catch(function (e) {
       s.scraping = false;
