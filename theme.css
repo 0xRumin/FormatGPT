@@ -1609,3 +1609,144 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
 }
 
 /* [Removed for speed] dot-waves canvas + Lottie globe backgrounds. */
+
+/* ================================================================
+   MOBILE POLISH — consolidated, mobile-only. Desktop (>=761px) is
+   untouched. Each block targets specific modes or shared structures
+   that were either missing responsive rules or had awkward fallbacks.
+   ================================================================ */
+
+/* ---- Shared: ticker, rail, mode dropdown at phone widths ---- */
+@media (max-width: 760px){
+  .ticker{ gap:12px; padding:8px 12px; font-size:9.5px; letter-spacing:0.12em; }
+  .ticker .scroll__inner{ gap:24px; }
+  .ticker .clock{ font-size:10px; }
+  .rail{ padding:12px 14px; }
+  .mode-dd, .mode-dd .dd-btn{ width:100%; min-width:0; }
+  .mode-dd .dd-menu{ width:100%; }
+  .pane__tools{ gap:6px; flex-wrap:wrap; }
+  .head-copy, .head-split .btn-main, .head-split .btn-caret{
+    padding:5px 10px; min-height:26px; font-size:9.5px; letter-spacing:0.12em;
+  }
+}
+
+/* Pane tools: on very narrow screens the inline header copy/paste
+   pair can crowd the title. Allow wrapping with a tiny gap. */
+@media (max-width:480px){
+  .pane__head{ flex-wrap:wrap; row-gap:6px; }
+  .pane__title{ flex:1 1 auto; min-width:0; }
+  .pane__tools{ flex:0 0 auto; }
+}
+
+/* ---- Filter panel: the big offender. Textarea had padding-right:160px
+   to keep text clear of absolute-positioned Paste/Clear buttons. On
+   phones those buttons overlap the text; move them out of the overlay
+   position and below the textarea. ---- */
+@media (max-width: 760px){
+  .fp-usernames{ padding-right:12px; }
+  .fp-ta-btns{
+    position:static;
+    margin-top:8px;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .fp-paste-btn, .fp-clear-btn{ padding:7px 14px; }
+
+  .fp-views{ flex-wrap:wrap; gap:6px; }
+  .fp-view{ flex:1 1 calc(50% - 6px); text-align:center; padding:8px 10px; }
+
+  .fp-block-header{ flex-wrap:wrap; gap:8px; padding:10px 12px; }
+  .fp-block-actions{ flex-wrap:wrap; width:100%; gap:6px; }
+  .fp-block-actions .fp-btn{ flex:1 1 auto; text-align:center; }
+
+  .fp-sum-line{ font-size:11px; }
+  .fp-output{ font-size:11.5px; max-height:260px; }
+}
+
+/* ---- Sorter panel: the order grid can cram at 360–420px. Force single
+   column under ~520px and ensure column chips don't get clipped. ---- */
+@media (max-width: 760px){
+  .sp-title{ font-size:20px; }
+  .sp-cols{ gap:6px; }
+  .sp-col{ padding:7px 12px; }
+}
+@media (max-width: 520px){
+  .sp-orders{ grid-template-columns:1fr; gap:6px; }
+  .sp-order{ padding:10px 14px; }
+}
+
+/* ---- Reorder panel: preset/sep chips already wrap, but padding is
+   heavy on small screens and the field rows have fixed gap:12px
+   between drag/check/name/key which crunches at <380px. ---- */
+@media (max-width: 760px){
+  .rp-presets, .rp-seps{ gap:5px; }
+  .rp-preset{ padding:7px 11px; font-size:9.5px; letter-spacing:0.1em; }
+  .rp-sep{ padding:7px 12px; min-width:38px; font-size:12px; }
+  .rp-field-row{ gap:10px; padding:10px 12px; }
+  .rp-drag{ font-size:16px; }
+  .rp-fname{ font-size:11.5px; }
+  .rp-fkey{ font-size:9.5px; letter-spacing:0.1em; }
+  .rp-preview{ font-size:11px; padding:10px; }
+}
+@media (max-width: 420px){
+  /* Hide the small right-aligned key hint so the field name has room. */
+  .rp-fkey{ display:none; }
+}
+
+/* ---- Crosscheck already has a 760/420 block; just polish the tabs
+   and stats at ultra-narrow widths. ---- */
+@media (max-width: 420px){
+  .cc-tabs{ gap:4px; }
+  .cc-tab{ padding:6px 8px; font-size:9px; letter-spacing:0.08em; min-height:28px; }
+  .cc-stats{ flex-wrap:wrap; gap:5px; }
+}
+
+/* ---- DAM panel: already stacks at 760, but status pill / results
+   card and the custom-proxy input need tightening on phones. ---- */
+@media (max-width: 760px){
+  .dam-panel .dp-title{ font-size:22px; }
+  .dam-panel .dp-sub{ font-size:10px; letter-spacing:0.08em; }
+  .dam-panel .dam-row{ flex-wrap:wrap; }
+  .dam-panel .dam-status{ order:99; text-align:left; font-size:10px; padding:6px 10px; }
+  .dam-panel .dam-proxy-input{ font-size:12px; padding:10px 12px; }
+  .dam-panel .dam-cat{ padding:10px 12px; gap:8px; flex-wrap:wrap; }
+  .dam-panel .dam-cat-name{ font-size:12px; flex:1 1 60%; min-width:0; }
+  .dam-panel .dam-cat-meta{ font-size:10px; letter-spacing:0.06em; text-align:right; }
+  .dam-panel .dam-prices{ gap:8px; }
+  .dam-panel .dam-radio{ padding:10px 12px; flex-wrap:wrap; }
+  .dam-panel .dam-radio span{ font-size:12px; }
+  .dam-panel .dam-num{ width:100%; margin-top:6px; }
+  .dam-panel .dam-results{ padding:12px 14px; }
+  .dam-panel .dam-results-head{ gap:8px; }
+  .dam-panel .dam-results-title{ font-size:11px; }
+  .dam-panel .dam-results-out{ font-size:11.5px; max-height:300px; }
+}
+@media (max-width: 420px){
+  .dam-panel{ padding:14px 16px; }
+  .dam-panel .dp-btn{ padding:10px 12px; font-size:10.5px; letter-spacing:0.1em; }
+  .dam-panel .dam-results-actions{ width:100%; }
+  .dam-panel .dam-results-actions .dp-btn{ flex:1; }
+}
+
+/* ---- Deliver panel: existing 760 rules are good; add phone polish
+   for stat line + direction segmented control. ---- */
+@media (max-width: 520px){
+  .deliver-panel .dp-stats{ flex-wrap:wrap; gap:8px; font-size:11px; }
+  .deliver-panel .dp-stat--hint{ margin-left:0; width:100%; }
+  .deliver-panel .dp-dir-btn{ font-size:10px; padding:9px 10px; letter-spacing:0.1em; }
+  .deliver-panel .dp-btn{ padding:10px 14px; font-size:11px; letter-spacing:0.12em; }
+}
+
+/* ---- Gear popover shouldn't exceed viewport on phones ---- */
+@media (max-width: 520px){
+  .gear-pop{ min-width:0; width:calc(100vw - 28px); left:14px !important; right:14px !important; }
+}
+
+/* ---- Safety: kill any horizontal overflow on narrow phones ---- */
+@media (max-width: 480px){
+  html, body{ overflow-x:hidden; }
+  main{ max-width:100vw; }
+  .card, .work-panel, #crosscheckPanel, .deliver-panel, .dam-panel{
+    max-width:100%; box-sizing:border-box;
+  }
+}

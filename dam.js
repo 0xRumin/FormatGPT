@@ -167,10 +167,31 @@
         if (f) { try { f.focus(); f.select(); } catch (e) {} }
       });
     }
-    // Numeric inputs → update priceValue whenever edited
-    ['damVCustom','damVMarkup','damVPerK'].forEach(function(id){
+    // Numeric inputs → update priceValue whenever edited AND auto-select the
+    // corresponding radio, so typing a number doesn't silently fall under the
+    // wrong price mode.
+    var NUM_TO_MODE = { damVCustom: 'custom', damVMarkup: 'markup', damVPerK: 'perk' };
+    Object.keys(NUM_TO_MODE).forEach(function(id){
       var el = document.getElementById(id);
-      if (el) el.addEventListener('input', function () { state.dam.priceValue = this.value; });
+      if (!el) return;
+      el.addEventListener('input', function () {
+        state.dam.priceValue = this.value;
+        var mode = NUM_TO_MODE[id];
+        if (state.dam.priceMode !== mode) {
+          state.dam.priceMode = mode;
+          var radio = document.querySelector('input[name="damPrice"][value="' + mode + '"]');
+          if (radio) radio.checked = true;
+        }
+      });
+      // Focusing the field alone is also a strong signal of intent.
+      el.addEventListener('focus', function () {
+        var mode = NUM_TO_MODE[id];
+        if (state.dam.priceMode !== mode) {
+          state.dam.priceMode = mode;
+          var radio = document.querySelector('input[name="damPrice"][value="' + mode + '"]');
+          if (radio) radio.checked = true;
+        }
+      });
     });
 
     // Custom proxy URL input — persisted in localStorage so the user only
