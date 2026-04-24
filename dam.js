@@ -286,72 +286,169 @@
   // to browser origins. The Python script uses cloudscraper server-side;
   // we have to route through a proxy. Strategy:
   //   1) Custom proxy (user-supplied) — most reliable if they run their own.
-  //   2) Fallback chain of public CORS proxies — tries each until one returns
-  //      valid JSON. Cloudflare-challenged responses fail JSON.parse and we
-  //      advance to the next proxy.
+  //   2) Parallel race across a bank of public CORS proxies. First one that
+  //      returns a valid JSON wins; the rest are abandoned. This is faster
+  //      and way more resilient than serial — if 3/7 proxies are dead or
+  //      rate-limited, we don't sit through their timeouts.
+  //
+  //   Each entry is { name, build, parse }.
+  //     build(url) -> wrapped URL to fetch
+  //     parse(text) -> parsed JSON (some proxies JSON-wrap the response, so
+  //                    they need a two-step parse like .contents then JSON).
   var PUBLIC_PROXIES = [
-    function (u) { return 'https://corsproxy.io/?'                 + encodeURIComponent(u); },
-    function (u) { return 'https://api.allorigins.win/raw?url='    + encodeURIComponent(u); },
-    function (u) { return 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u); },
-    function (u) { return 'https://thingproxy.freeboard.io/fetch/' + u; },
-    function (u) { return 'https://cors-anywhere.herokuapp.com/'   + u; }
+    { name: 'corsproxy.io',
+      build: function (u) { return 'https://corsproxy.io/?url=' + encodeURIComponent(u); },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'allorigins/raw',
+      build: function (u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+      parse: function (t) { return JSON.parse(t); } },
+    // allorigins /get wraps the body in { contents: "…" } — survives CF HTML
+    // sometimes because the wrapper is always JSON.
+    { name: 'allorigins/get',
+      build: function (u) { return 'https://api.allorigins.win/get?url=' + encodeURIComponent(u); },
+      parse: function (t) {
+        var env = JSON.parse(t);
+        if (!env || typeof env.contents !== 'string') throw new Error('no contents');
+        return JSON.parse(env.contents);
+      } },
+    { name: 'codetabs',
+      build: function (u) { return 'https://api.codetabs.com/v1/proxy/?quest=' + u; },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'corsproxy.org',
+      build: function (u) { return 'https://corsproxy.org/?' + encodeURIComponent(u); },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'thingproxy',
+      build: function (u) { return 'https://thingproxy.freeboard.io/fetch/' + u; },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'cors.eu.org',
+      build: function (u) { return 'https://cors.eu.org/' + u; },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'yacdn',
+      build: function (u) { return 'https://yacdn.org/serve/' + u; },
+      parse: function (t) { return JSON.parse(t); } }
   ];
 
-  function tryFetchJson(wrappedUrl) {
-    return fetch(wrappedUrl, {
+  // fetch + timeout + parse. Parse errors are opaque on purpose — if a proxy
+  // gave back Cloudflare challenge HTML, we don't want partial JSON fragments
+  // leaking through.
+  function fetchWithTimeout(url, ms) {
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+    return fetch(url, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
+      headers: { 'Accept': 'application/json, text/plain;q=0.9, */*;q=0.8' },
       credentials: 'omit',
-      referrerPolicy: 'no-referrer'
+      referrerPolicy: 'no-referrer',
+      signal: ctrl ? ctrl.signal : undefined
     }).then(function (r) {
+      clearTimeout(timer);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
-    }).then(function (txt) {
-      // Proxies sometimes forward Cloudflare challenge HTML; only JSON counts.
-      try { return JSON.parse(txt); }
-      catch (e) { throw new Error('non-JSON response'); }
+    }, function (e) {
+      clearTimeout(timer);
+      throw e;
+    });
+  }
+
+  function attemptProxy(proxy, url, timeoutMs) {
+    return fetchWithTimeout(proxy.build(url), timeoutMs).then(function (text) {
+      try { return proxy.parse(text); }
+      catch (e) { throw new Error(proxy.name + ': non-JSON'); }
+    }).catch(function (e) {
+      throw new Error(proxy.name + ' \u2192 ' + (e && e.message ? e.message : 'failed'));
+    });
+  }
+
+  // Promise.any polyfill for older runtimes. Resolves with the first
+  // fulfilled value, rejects with an aggregate error if every promise fails.
+  function firstOf(promises) {
+    if (typeof Promise.any === 'function') {
+      return Promise.any(promises).catch(function (agg) {
+        // AggregateError has .errors; flatten their messages for the user.
+        var msgs = (agg && agg.errors) ? agg.errors.map(function (e) { return e && e.message; }) : [agg && agg.message];
+        var err = new Error(msgs.filter(Boolean).join(' | ') || 'all proxies failed');
+        err.errors = (agg && agg.errors) || [];
+        throw err;
+      });
+    }
+    return new Promise(function (resolve, reject) {
+      var errors = [];
+      var remaining = promises.length;
+      if (!remaining) { reject(new Error('no proxies')); return; }
+      promises.forEach(function (p) {
+        Promise.resolve(p).then(resolve, function (e) {
+          errors.push(e);
+          if (--remaining === 0) {
+            var msgs = errors.map(function (x) { return x && x.message; }).filter(Boolean);
+            var err = new Error(msgs.join(' | ') || 'all proxies failed');
+            err.errors = errors;
+            reject(err);
+          }
+        });
+      });
     });
   }
 
   function fetchJson(url) {
     var s = state.dam;
     var custom = (s && s.customProxy ? String(s.customProxy).trim() : '');
+    var TIMEOUT = 12000; // per attempt
 
-    // 1) Custom proxy first (if set). Build wrapped URL — if prefix ends with
-    //    ?url= or similar, we append URL-encoded target; otherwise we append
-    //    the raw URL (for prefix-style proxies like /fetch/).
-    var chain = [];
+    // 1) Custom proxy first — if it works, we never hit the public chain.
+    //    Build: if prefix ends with ?url= / ?q= / ?quest=, URL-encode; else
+    //    append raw (prefix-style proxies).
     if (custom) {
-      chain.push(function () {
-        var needsEncode = /[?&]url=$|[?&]q=$|[?&]quest=$/.test(custom);
-        return tryFetchJson(custom + (needsEncode ? encodeURIComponent(url) : url));
-      });
+      var needsEncode = /[?&](url|q|quest)=$/.test(custom);
+      var wrapped = custom + (needsEncode ? encodeURIComponent(url) : url);
+      return fetchWithTimeout(wrapped, TIMEOUT)
+        .then(function (text) {
+          try { return JSON.parse(text); }
+          catch (e) { throw new Error('custom proxy returned non-JSON'); }
+        })
+        .catch(function (customErr) {
+          // Fall back to the public race if the custom one hiccups.
+          return raceProxies(url, TIMEOUT).catch(function (raceErr) {
+            throw new Error(
+              'custom proxy: ' + (customErr && customErr.message || 'failed') +
+              ' \u2014 public proxies also failed'
+            );
+          });
+        });
     }
-    // 2) Try direct (works only if the target ever opens CORS).
-    chain.push(function () {
-      return fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Accept-Language': 'en-US,en;q=0.9' },
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
-        mode: 'cors'
-      }).then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      });
-    });
-    // 3) Public proxy chain.
-    PUBLIC_PROXIES.forEach(function (wrap) {
-      chain.push(function () { return tryFetchJson(wrap(url)); });
+
+    // 2) No custom proxy → try direct (rare success on CF) + public race.
+    //    Direct attempt is cheap and uncontested; if it fires CORS the race
+    //    takes over.
+    var direct = fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      mode: 'cors'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('direct HTTP ' + r.status);
+      return r.json();
     });
 
-    // Run the chain serially, returning the first success.
-    return chain.reduce(function (prev, attempt) {
-      return prev.catch(attempt);
-    }, Promise.reject(new Error('start')))
-    .catch(function () {
-      throw new Error('all proxies blocked \u2014 set a Custom proxy URL (Cloudflare Worker / your server)');
+    return firstOf([direct].concat(
+      PUBLIC_PROXIES.map(function (p) { return attemptProxy(p, url, TIMEOUT); })
+    )).catch(function (aggErr) {
+      // Surface the first few individual proxy errors so the user knows
+      // it's not a code bug.
+      var detail = (aggErr && aggErr.errors)
+        ? aggErr.errors.slice(0, 3).map(function (e) { return e && e.message; }).filter(Boolean).join(' | ')
+        : (aggErr && aggErr.message) || '';
+      var suffix = detail ? (' \u2014 ' + detail) : '';
+      throw new Error('all proxies blocked \u2014 set a Custom proxy URL (Cloudflare Worker / your server)' + suffix);
     });
+  }
+
+  // Helper: run the public proxy race only (used when the custom proxy
+  // fails and we want to fall back).
+  function raceProxies(url, timeoutMs) {
+    return firstOf(PUBLIC_PROXIES.map(function (p) {
+      return attemptProxy(p, url, timeoutMs);
+    }));
   }
 
   function fetchCats() {
