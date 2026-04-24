@@ -386,6 +386,57 @@ body[data-mode="dam"] .add-mail{display:none !important}
 }
 .head-copy.is-copied{background:linear-gradient(180deg, rgba(110,231,183,0.7), rgba(110,231,183,0.35));color:#04261b;border-color:var(--mint)}
 
+/* Copy button + caret wrap — the caret triggers a small menu (e.g. Save as .txt).
+   In most modes the caret + menu are hidden (see body[data-mode] rules below);
+   only Deliver shows the dropdown because saving the raw input to .txt is a
+   common follow-up to extracting a chunk. */
+.head-copy-wrap{
+  position:relative;
+  display:inline-flex;
+  align-items:stretch;
+  gap:0;
+}
+.head-copy-wrap .head-copy{
+  border-top-right-radius:0;
+  border-bottom-right-radius:0;
+  border-right:none;
+}
+.head-copy-caret{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:0 8px; min-height:28px; min-width:26px;
+  font-family:var(--font-mono); font-size:10px;
+  background:linear-gradient(180deg, rgba(110,231,183,0.14) 0%, rgba(110,231,183,0.04) 100%);
+  border:1px solid rgba(110,231,183,0.45);
+  border-left:1px solid rgba(110,231,183,0.25);
+  color:var(--mint);
+  cursor:pointer;
+  border-top-left-radius:0;
+  border-bottom-left-radius:0;
+  border-top-right-radius:999px;
+  border-bottom-right-radius:999px;
+  transition:all .2s;
+}
+.head-copy-caret:hover{
+  background:linear-gradient(180deg, rgba(110,231,183,0.45) 0%, rgba(110,231,183,0.18) 100%);
+  color:#04261b;
+  border-color:var(--mint);
+}
+.head-copy-wrap .menu{ top:calc(100% + 8px); right:0; min-width:180px; }
+
+/* Hide caret + menu outside Deliver mode so the Copy button looks exactly
+   as it always has in every other mode. */
+body:not([data-mode="deliver"]) #copyInputCaret,
+body:not([data-mode="deliver"]) #copyInputMenu{
+  display:none !important;
+}
+/* When the dropdown is hidden, restore the rounded right edge on the Copy
+   button so it doesn't look like a half-split. */
+body:not([data-mode="deliver"]) .head-copy-wrap .head-copy{
+  border-top-right-radius:999px;
+  border-bottom-right-radius:999px;
+  border-right:1px solid rgba(110,231,183,0.45);
+}
+
 /* Inline header variant of the Paste split — sits inside .pane__tools (not floating over textarea) */
 .head-split{
   position:relative !important;

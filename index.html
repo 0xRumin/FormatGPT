@@ -106,7 +106,19 @@
         </div>
         <div class="pane__tools">
           <!-- Order: Copy raw input → Paste (with dropdown) → Settings gear -->
-          <button class="head-copy" id="copyInputBtn" type="button" title="Copy raw input">Copy</button>
+          <!--
+            Copy button with an inline caret + menu. The caret + menu are
+            CSS-gated so they only appear in Deliver mode (where "save the
+            raw input as a .txt" is a common follow-up to extracting). In
+            every other mode the button looks like a simple Copy button.
+          -->
+          <span class="head-copy-wrap" id="copyInputWrap">
+            <button class="head-copy" id="copyInputBtn" type="button" title="Copy raw input">Copy</button>
+            <button class="head-copy-caret" id="copyInputCaret" type="button" aria-haspopup="true" aria-expanded="false" title="Download">&#9662;</button>
+            <div class="menu" id="copyInputMenu" role="menu" aria-label="Input download options">
+              <button type="button" id="menuSaveInputTxt">Save as .txt</button>
+            </div>
+          </span>
 
           <div class="split small head-split" id="pasteSplit">
             <button class="btn-main" id="pasteMain" type="button" title="Paste">Paste</button>
@@ -501,6 +513,47 @@
         copyInputBtn.classList.remove('is-copied');
       }, 900);
     } catch { alert('Copy failed.'); }
+  });
+
+  // 4b-bis. Copy caret dropdown — currently only visible in Deliver mode
+  // (CSS-gated via body[data-mode]). Offers "Save as .txt" for the raw
+  // input, reusing the Deliver filename when set so the file matches the
+  // extracted batch.
+  const copyInputCaret = document.getElementById('copyInputCaret');
+  const copyInputMenu  = document.getElementById('copyInputMenu');
+  copyInputCaret?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = copyInputCaret.getAttribute('aria-expanded') === 'true';
+    copyInputCaret.setAttribute('aria-expanded', open ? 'false' : 'true');
+    copyInputMenu?.classList.toggle('open', !open);
+  });
+  document.addEventListener('click', () => {
+    copyInputMenu?.classList.remove('open');
+    copyInputCaret?.setAttribute('aria-expanded', 'false');
+  });
+  document.getElementById('menuSaveInputTxt')?.addEventListener('click', () => {
+    const text = inp ? inp.value : '';
+    if (!text) { alert('Input is empty \u2014 nothing to save.'); return; }
+    // Prefer the filename the user already typed in the Deliver panel (so
+    // "Gavin620.txt" applies to both the extracted chunk and the remaining
+    // input). Fall back to a unique 6-char name.
+    const custom = (window.App?.State?.state?.deliverFilename || '').trim();
+    let name;
+    if (custom) {
+      const clean = custom.replace(/\.txt$/i, '')
+                          .replace(/[^A-Za-z0-9_\-. ]/g, '')
+                          .replace(/\s+/g, '_');
+      name = (clean || 'input') + '_input.txt';
+    } else {
+      name = (window.App?.Utils?.randFileName?.('txt')) || ('input_' + Date.now() + '.txt');
+    }
+    const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    copyInputMenu?.classList.remove('open');
+    copyInputCaret?.setAttribute('aria-expanded', 'false');
   });
 
   // 4b2. Hero typewriter — cycles key features beside the FormatGPT title.
