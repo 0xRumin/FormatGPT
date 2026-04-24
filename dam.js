@@ -17,6 +17,58 @@
   var U     = App.Utils;
   var $     = function (sel, root) { return (root || document).querySelector(sel); };
 
+  // Paste-ready Cloudflare Worker script. Surfaced in the DAM panel behind
+  // a "How?" toggle so users can deploy their own proxy in ~90s instead of
+  // relying on public CORS proxies (which get CF-challenged or rate-limited).
+  var WORKER_SNIPPET = [
+    '// FormatGPT — DAM proxy (Cloudflare Worker)',
+    '// Deploy: dash.cloudflare.com -> Workers -> Create -> paste -> Save & Deploy',
+    '// Then use:  https://<your-worker>.workers.dev/?url=   as Custom Proxy URL',
+    '',
+    'const ALLOW_ONLY_DAM = false; // set true to restrict to digitalaccountmarket.com',
+    '',
+    'export default {',
+    '  async fetch(request) {',
+    '    const cors = {',
+    '      "Access-Control-Allow-Origin": "*",',
+    '      "Access-Control-Allow-Methods": "GET, OPTIONS",',
+    '      "Access-Control-Allow-Headers": "Content-Type, Accept, Accept-Language",',
+    '    };',
+    '    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });',
+    '',
+    '    const u = new URL(request.url);',
+    '    const target = u.searchParams.get("url");',
+    '    if (!target) return new Response("usage: ?url=https://…", { status: 400, headers: cors });',
+    '',
+    '    let parsed;',
+    '    try { parsed = new URL(target); } catch { return new Response("bad url", { status: 400, headers: cors }); }',
+    '',
+    '    if (ALLOW_ONLY_DAM && !/(^|\\.)digitalaccountmarket\\.com$/i.test(parsed.hostname))',
+    '      return new Response("host not allowed", { status: 403, headers: cors });',
+    '',
+    '    const upstream = await fetch(parsed.toString(), {',
+    '      headers: {',
+    '        "Accept": "application/json, text/plain;q=0.9, */*;q=0.8",',
+    '        "Accept-Language": "en-US,en;q=0.9",',
+    '        "User-Agent": "Mozilla/5.0 (compatible; FormatGPT-DAM/1.0)",',
+    '        "Referer": parsed.origin + "/en",',
+    '      },',
+    '      cf: { cacheTtl: 60, cacheEverything: true },',
+    '    });',
+    '',
+    '    const body = await upstream.text();',
+    '    return new Response(body, {',
+    '      status: upstream.status,',
+    '      headers: {',
+    '        ...cors,',
+    '        "Content-Type": upstream.headers.get("Content-Type") || "application/json; charset=utf-8",',
+    '        "Cache-Control": "public, max-age=60",',
+    '      },',
+    '    });',
+    '  },',
+    '};'
+  ].join('\n');
+
   // Lazy-init DAM state. Custom proxy URL persists across reloads because
   // setting it up is a one-time cost the user shouldn't have to redo.
   if (!state.dam) {
@@ -63,8 +115,27 @@
       // Cloudflare. Format: "https://your-worker.example.com/?url=" — the
       // target URL will be appended (URL-encoded).
       '<div class="dam-proxy-row">',
-        '<label class="dam-label" for="damProxy">Custom proxy URL <span class="dp-optional">(optional \u2014 appends target as ?url=\u2026)</span></label>',
+        '<div class="dam-proxy-head">',
+          '<label class="dam-label" for="damProxy">Custom proxy URL <span class="dp-optional">(optional \u2014 appends target as ?url=\u2026)</span></label>',
+          '<button type="button" id="damWorkerToggle" class="dam-worker-toggle" aria-expanded="false">How? \u203a</button>',
+        '</div>',
         '<input type="text" id="damProxy" class="dam-proxy-input" spellcheck="false" placeholder="https://your-worker.example.com/?url="/>',
+        // Collapsible helper: paste-ready Cloudflare Worker script + deploy steps.
+        // Hidden until the user clicks "How?" so it doesn\u2019t clutter the UI.
+        '<div class="dam-worker-help" id="damWorkerHelp" hidden>',
+          '<div class="dam-worker-steps">',
+            '<b>90-second setup:</b> ',
+            '<a href="https://dash.cloudflare.com/" target="_blank" rel="noopener">dash.cloudflare.com</a> \u2192 Workers &amp; Pages \u2192 Create \u2192 Worker. ',
+            'Paste the snippet below, hit <i>Save and deploy</i>, copy the worker URL ',
+            '(e.g. <code>https://dam-proxy.yourname.workers.dev</code>), ',
+            'then paste <code>&lt;worker-url&gt;/?url=</code> into the field above. Free plan covers it.',
+          '</div>',
+          '<div class="dam-worker-head">',
+            '<span class="dam-worker-title">cloudflare-worker.js</span>',
+            '<button type="button" id="damWorkerCopy" class="dp-btn dp-btn--alt">Copy snippet</button>',
+          '</div>',
+          '<pre class="dam-worker-code" id="damWorkerCode"></pre>',
+        '</div>',
       '</div>',
 
       '<div class="dam-grid">',
@@ -112,6 +183,10 @@
     // Rehydrate custom proxy input
     var proxyEl = $('#damProxy');
     if (proxyEl && s.customProxy) proxyEl.value = s.customProxy;
+
+    // Inject the worker snippet text into the hidden <pre>.
+    var codeEl = $('#damWorkerCode');
+    if (codeEl) codeEl.textContent = WORKER_SNIPPET;
 
     // Rehydrate results card if a previous scrape exists (mode-switch survival)
     if (s.lastOutput) renderResults();
@@ -201,6 +276,35 @@
       proxyEl.addEventListener('input', function () {
         state.dam.customProxy = this.value.trim();
         try { localStorage.setItem('damCustomProxy', state.dam.customProxy); } catch (e) {}
+      });
+    }
+
+    // "How?" toggle — reveals the Cloudflare Worker snippet + deploy steps.
+    var workerToggle = $('#damWorkerToggle');
+    var workerHelp   = $('#damWorkerHelp');
+    if (workerToggle && workerHelp) {
+      workerToggle.addEventListener('click', function () {
+        var open = workerHelp.hasAttribute('hidden') === false;
+        if (open) {
+          workerHelp.setAttribute('hidden', '');
+          workerToggle.setAttribute('aria-expanded', 'false');
+          workerToggle.textContent = 'How? \u203a';
+        } else {
+          workerHelp.removeAttribute('hidden');
+          workerToggle.setAttribute('aria-expanded', 'true');
+          workerToggle.textContent = 'Hide \u00d7';
+        }
+      });
+    }
+    var workerCopy = $('#damWorkerCopy');
+    if (workerCopy) {
+      workerCopy.addEventListener('click', function () {
+        var self = this;
+        navigator.clipboard.writeText(WORKER_SNIPPET).then(function () {
+          var orig = self.textContent;
+          self.textContent = 'Copied';
+          setTimeout(function () { self.textContent = orig; }, 900);
+        }).catch(function () { alert('Copy failed.'); });
       });
     }
 
@@ -325,6 +429,12 @@
       parse: function (t) { return JSON.parse(t); } },
     { name: 'yacdn',
       build: function (u) { return 'https://yacdn.org/serve/' + u; },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'cors.lol',
+      build: function (u) { return 'https://api.cors.lol/?url=' + encodeURIComponent(u); },
+      parse: function (t) { return JSON.parse(t); } },
+    { name: 'corsfix',
+      build: function (u) { return 'https://proxy.corsfix.com/?' + encodeURIComponent(u); },
       parse: function (t) { return JSON.parse(t); } }
   ];
 
