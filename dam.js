@@ -545,11 +545,24 @@
     )).catch(function (aggErr) {
       // Surface the first few individual proxy errors so the user knows
       // it's not a code bug.
-      var detail = (aggErr && aggErr.errors)
-        ? aggErr.errors.slice(0, 3).map(function (e) { return e && e.message; }).filter(Boolean).join(' | ')
-        : (aggErr && aggErr.message) || '';
+      var errs = (aggErr && aggErr.errors) || [];
+      var msgs = errs.map(function (e) { return (e && e.message) || ''; });
+      var detail = msgs.slice(0, 3).filter(Boolean).join(' | ') || (aggErr && aggErr.message) || '';
       var suffix = detail ? (' \u2014 ' + detail) : '';
-      throw new Error('all proxies blocked \u2014 set a Custom proxy URL (Cloudflare Worker / your server)' + suffix);
+
+      // Heuristic: if the dominant failure mode across proxies is 5xx/502/503
+      // upstream errors, the target site is probably down — not the proxies.
+      // Calling it out early saves the user from deploying a CF Worker for
+      // a problem that'll fix itself when the origin comes back.
+      var upstreamDown = 0, blocked = 0;
+      msgs.forEach(function (m) {
+        if (/HTTP\s*(5\d\d)/i.test(m) || /non-JSON/i.test(m) || /failed to fetch/i.test(m)) upstreamDown++;
+        else if (/HTTP\s*(4\d\d)/i.test(m) || /aborted|timeout/i.test(m)) blocked++;
+      });
+      var prefix = (upstreamDown >= Math.max(2, blocked))
+        ? 'target site appears down (upstream 5xx / non-JSON from most proxies)'
+        : 'all proxies blocked \u2014 set a Custom proxy URL (Cloudflare Worker / your server)';
+      throw new Error(prefix + suffix);
     });
   }
 
