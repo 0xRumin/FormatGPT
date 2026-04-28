@@ -47,11 +47,31 @@
   }
   if (!state.reorderSep) state.reorderSep = ':';
 
+  // Find & Replace — applied to each row before classification, so users can
+  // normalize wonky inputs (e.g. ; → :) without editing the input box.
+  if (typeof state.reorderFindStr !== 'string') {
+    var savedFind = localStorage.getItem('reorderFindStr');
+    state.reorderFindStr = savedFind == null ? '' : savedFind;
+  }
+  if (typeof state.reorderReplStr !== 'string') {
+    var savedRepl = localStorage.getItem('reorderReplStr');
+    state.reorderReplStr = savedRepl == null ? '' : savedRepl;
+  }
+
   function saveState() {
     localStorage.setItem('reorderFields', JSON.stringify(state.reorderFields));
     localStorage.setItem('reorderEnabled', JSON.stringify(state.reorderEnabled));
     localStorage.setItem('reorderSep', state.reorderSep);
     localStorage.setItem('reorderPreset', state.reorderPreset);
+    localStorage.setItem('reorderFindStr', state.reorderFindStr || '');
+    localStorage.setItem('reorderReplStr', state.reorderReplStr || '');
+  }
+
+  function applyFindReplace(s) {
+    var find = state.reorderFindStr || '';
+    if (!find) return s;
+    // Plain string replace-all (split/join), no regex surprises.
+    return String(s).split(find).join(state.reorderReplStr || '');
   }
 
   /* ======== Field Classification ======== */
@@ -101,7 +121,7 @@
     }
     var foundTypes = {};
     for (var r = 0; r < rows.length; r++) {
-      var parts = U.splitFlexible(rows[r]);
+      var parts = U.splitFlexible(applyFindReplace(rows[r]));
       var classified = classifyParts(parts);
       for (var type in classified) foundTypes[type] = true;
     }
@@ -112,7 +132,7 @@
 
   /* ======== Process one line ======== */
   function processLine(row) {
-    var parts = U.splitFlexible(row);
+    var parts = U.splitFlexible(applyFindReplace(row));
     var classified = classifyParts(parts);
     var result = [];
     var fields  = state.reorderFields  || ALL_FIELDS;
@@ -190,6 +210,19 @@
     });
     h += '</div></div>';
 
+    // Find & Replace
+    var fAttr = (state.reorderFindStr || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    var rAttr = (state.reorderReplStr || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    h += '<div class="rp-section"><div class="rp-label">FIND &amp; REPLACE</div>';
+    h += '<div class="rp-fr" id="rpFr">';
+    h += '<input type="text" class="rp-fr-input" id="rpFrFind" placeholder="Find (e.g. ;)" value="' + fAttr + '" spellcheck="false" autocomplete="off">';
+    h += '<span class="rp-fr-arrow">→</span>';
+    h += '<input type="text" class="rp-fr-input" id="rpFrRepl" placeholder="Replace (e.g. :)" value="' + rAttr + '" spellcheck="false" autocomplete="off">';
+    h += '<button type="button" class="rp-fr-clear" id="rpFrClear" title="Clear find &amp; replace">✕</button>';
+    h += '</div>';
+    h += '<div class="rp-fr-hint" id="rpFrHint">Plain text replace, applied to every row before parsing.</div>';
+    h += '</div>';
+
     // Fields & Order
     h += '<div class="rp-section"><div class="rp-label">FIELDS & ORDER';
     h += '<span class="rp-sel-acts"><a href="#" id="rpSelectAll">Select all</a> / <a href="#" id="rpDeselectAll">Deselect all</a></span>';
@@ -248,6 +281,33 @@
       syncSepBtns();
       syncPresetBtns();
       refresh();
+    });
+
+    // Find & Replace
+    var frFind = $('#rpFrFind');
+    var frRepl = $('#rpFrRepl');
+    var frClear = $('#rpFrClear');
+    function commitFr() {
+      state.reorderFindStr = frFind ? frFind.value : '';
+      state.reorderReplStr = frRepl ? frRepl.value : '';
+      saveState();
+      // If "Original" preset is active, the field-presence detection depends
+      // on the post-replacement text — re-run it so toggles update.
+      if (state.reorderPreset === 'original') {
+        var inp = $('#inp');
+        var text = inp ? inp.value : '';
+        state.reorderEnabled = detectPresentFields(text);
+        syncFieldRows();
+      }
+      refresh();
+    }
+    if (frFind) frFind.addEventListener('input', commitFr);
+    if (frRepl) frRepl.addEventListener('input', commitFr);
+    if (frClear) frClear.addEventListener('click', function () {
+      if (frFind) frFind.value = '';
+      if (frRepl) frRepl.value = '';
+      commitFr();
+      if (frFind) frFind.focus();
     });
 
     // Checkboxes
