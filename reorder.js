@@ -58,16 +58,11 @@
     state.reorderReplStr = savedRepl == null ? '' : savedRepl;
   }
 
-  // Field Swap — purely positional ops (swap/move/delete) on the split parts.
-  // Mirrors the standalone Fields-Swap python script. When at least one op is
-  // queued, classification is bypassed and the line is rebuilt from the raw
-  // split parts in their post-op order.
-  if (!Array.isArray(state.reorderFieldOps)) {
-    try {
-      var savedOps = JSON.parse(localStorage.getItem('reorderFieldOps') || '[]');
-      state.reorderFieldOps = Array.isArray(savedOps) ? savedOps : [];
-    } catch (e) { state.reorderFieldOps = []; }
-  }
+  // Field Swap — purely positional ops (swap/move/delete). Intentionally NOT
+  // persisted: the queue resets on every page load so a stale "Delete pos 4"
+  // doesn't quietly mangle tomorrow's input. In-memory only.
+  state.reorderFieldOps = [];
+  try { localStorage.removeItem('reorderFieldOps'); } catch (e) {}
 
   function saveState() {
     localStorage.setItem('reorderFields', JSON.stringify(state.reorderFields));
@@ -76,7 +71,7 @@
     localStorage.setItem('reorderPreset', state.reorderPreset);
     localStorage.setItem('reorderFindStr', state.reorderFindStr || '');
     localStorage.setItem('reorderReplStr', state.reorderReplStr || '');
-    localStorage.setItem('reorderFieldOps', JSON.stringify(state.reorderFieldOps || []));
+    // reorderFieldOps is intentionally session-only — never written.
   }
 
   function applyFindReplace(s) {
@@ -285,11 +280,17 @@
          (state.reorderFieldOps && state.reorderFieldOps.length ? 'positional override active' : 'optional / 1-indexed') +
          '</span></div>';
     h += '<div class="rp-fs-add">';
-    h += '<select class="rp-fs-op" id="rpFsOp">';
-    h += '<option value="swap">Swap</option>';
-    h += '<option value="move">Move</option>';
-    h += '<option value="delete">Delete</option>';
-    h += '</select>';
+    h += '<div class="rp-fs-dd" id="rpFsDd" data-value="swap">';
+    h += '  <button type="button" class="rp-fs-dd-btn" id="rpFsOpBtn" aria-haspopup="listbox" aria-expanded="false">';
+    h += '    <span class="rp-fs-dd-label" id="rpFsOpLabel">Swap</span>';
+    h += '    <svg class="rp-fs-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>';
+    h += '  </button>';
+    h += '  <ul class="rp-fs-dd-menu" id="rpFsOpMenu" role="listbox">';
+    h += '    <li class="rp-fs-dd-item active" data-value="swap"   role="option" aria-selected="true">Swap</li>';
+    h += '    <li class="rp-fs-dd-item"        data-value="move"   role="option">Move</li>';
+    h += '    <li class="rp-fs-dd-item"        data-value="delete" role="option">Delete</li>';
+    h += '  </ul>';
+    h += '</div>';
     h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP1" placeholder="Pos">';
     h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP2" placeholder="Pos">';
     h += '<button type="button" class="rp-fs-add-btn" id="rpFsAdd">+ Add</button>';
@@ -402,23 +403,67 @@
     });
 
     // Field Swap
-    var fsOp = $('#rpFsOp');
-    var fsP1 = $('#rpFsP1');
-    var fsP2 = $('#rpFsP2');
-    var fsAdd = $('#rpFsAdd');
-    var fsList = $('#rpFsList');
+    var fsDd       = $('#rpFsDd');
+    var fsOpBtn    = $('#rpFsOpBtn');
+    var fsOpLabel  = $('#rpFsOpLabel');
+    var fsOpMenu   = $('#rpFsOpMenu');
+    var fsP1       = $('#rpFsP1');
+    var fsP2       = $('#rpFsP2');
+    var fsAdd      = $('#rpFsAdd');
+    var fsList     = $('#rpFsList');
+
+    function getFsOp() { return (fsDd && fsDd.dataset.value) || 'swap'; }
+
+    function setFsOp(val, labelText) {
+      if (!fsDd) return;
+      fsDd.dataset.value = val;
+      if (fsOpLabel && labelText) fsOpLabel.textContent = labelText;
+      // Sync active class on items
+      if (fsOpMenu) {
+        var items = fsOpMenu.querySelectorAll('.rp-fs-dd-item');
+        for (var i = 0; i < items.length; i++) {
+          var on = items[i].dataset.value === val;
+          items[i].classList.toggle('active', on);
+          items[i].setAttribute('aria-selected', on ? 'true' : 'false');
+        }
+      }
+      syncFsP2Visibility();
+    }
+
+    function openFsMenu(open) {
+      if (!fsDd || !fsOpBtn) return;
+      fsDd.classList.toggle('open', !!open);
+      fsOpBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
 
     function syncFsP2Visibility() {
-      if (!fsOp || !fsP2) return;
-      var hide = fsOp.value === 'delete';
+      if (!fsP2) return;
+      var hide = getFsOp() === 'delete';
       fsP2.style.visibility = hide ? 'hidden' : 'visible';
       if (hide) fsP2.value = '';
     }
-    if (fsOp) fsOp.addEventListener('change', syncFsP2Visibility);
     syncFsP2Visibility();
 
+    if (fsOpBtn) fsOpBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openFsMenu(!fsDd.classList.contains('open'));
+    });
+    if (fsOpMenu) fsOpMenu.addEventListener('click', function (e) {
+      var item = e.target.closest('.rp-fs-dd-item');
+      if (!item) return;
+      setFsOp(item.dataset.value, item.textContent.trim());
+      openFsMenu(false);
+    });
+    document.addEventListener('click', function (e) {
+      if (!fsDd) return;
+      if (fsDd.classList.contains('open') && !fsDd.contains(e.target)) openFsMenu(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') openFsMenu(false);
+    });
+
     if (fsAdd) fsAdd.addEventListener('click', function () {
-      var op = fsOp ? fsOp.value : 'swap';
+      var op = getFsOp();
       var p1 = parseInt(fsP1 ? fsP1.value : '', 10);
       var p2 = parseInt(fsP2 ? fsP2.value : '', 10);
       if (!isFinite(p1) || p1 < 1) {
