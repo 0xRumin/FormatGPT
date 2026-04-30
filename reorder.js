@@ -293,7 +293,7 @@
     h += '</div>';
     h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP1" placeholder="Pos">';
     h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP2" placeholder="Pos">';
-    h += '<button type="button" class="rp-fs-add-btn" id="rpFsAdd">+ Add</button>';
+    h += '<button type="button" class="rp-fs-add-btn" id="rpFsAdd">Apply</button>';
     h += '</div>';
     h += '<div class="rp-fs-list" id="rpFsList">' + buildFieldOpRows() + '</div>';
     h += '<div class="rp-fs-hint">When at least one op is queued, output is built positionally — smart classification is bypassed.</div>';
@@ -327,7 +327,7 @@
 
   function buildFieldOpRows() {
     var ops = state.reorderFieldOps || [];
-    if (!ops.length) return '<div class="rp-fs-empty">No operations \u2014 add Swap / Move / Delete above.</div>';
+    if (!ops.length) return '<div class="rp-fs-empty">No operations \u2014 pick Swap / Move / Delete and hit Apply.</div>';
     var h = '';
     for (var i = 0; i < ops.length; i++) {
       h += '<div class="rp-fs-item" data-idx="' + i + '">';
