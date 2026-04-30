@@ -58,6 +58,17 @@
     state.reorderReplStr = savedRepl == null ? '' : savedRepl;
   }
 
+  // Field Swap — purely positional ops (swap/move/delete) on the split parts.
+  // Mirrors the standalone Fields-Swap python script. When at least one op is
+  // queued, classification is bypassed and the line is rebuilt from the raw
+  // split parts in their post-op order.
+  if (!Array.isArray(state.reorderFieldOps)) {
+    try {
+      var savedOps = JSON.parse(localStorage.getItem('reorderFieldOps') || '[]');
+      state.reorderFieldOps = Array.isArray(savedOps) ? savedOps : [];
+    } catch (e) { state.reorderFieldOps = []; }
+  }
+
   function saveState() {
     localStorage.setItem('reorderFields', JSON.stringify(state.reorderFields));
     localStorage.setItem('reorderEnabled', JSON.stringify(state.reorderEnabled));
@@ -65,6 +76,7 @@
     localStorage.setItem('reorderPreset', state.reorderPreset);
     localStorage.setItem('reorderFindStr', state.reorderFindStr || '');
     localStorage.setItem('reorderReplStr', state.reorderReplStr || '');
+    localStorage.setItem('reorderFieldOps', JSON.stringify(state.reorderFieldOps || []));
   }
 
   function applyFindReplace(s) {
@@ -72,6 +84,36 @@
     if (!find) return s;
     // Plain string replace-all (split/join), no regex surprises.
     return String(s).split(find).join(state.reorderReplStr || '');
+  }
+
+  function applyFieldOps(parts) {
+    var arr = parts.slice();
+    var ops = state.reorderFieldOps || [];
+    for (var i = 0; i < ops.length; i++) {
+      var o = ops[i];
+      var a = o.a, b = o.b;
+      if (o.op === 'swap') {
+        if (a >= 0 && b >= 0 && a < arr.length && b < arr.length && a !== b) {
+          var t = arr[a]; arr[a] = arr[b]; arr[b] = t;
+        }
+      } else if (o.op === 'move') {
+        if (a >= 0 && b >= 0 && a < arr.length && b < arr.length && a !== b) {
+          var x = arr.splice(a, 1)[0];
+          arr.splice(b, 0, x);
+        }
+      } else if (o.op === 'delete') {
+        if (a >= 0 && a < arr.length) arr.splice(a, 1);
+      }
+    }
+    return arr;
+  }
+
+  function describeOp(o) {
+    var a1 = (o.a | 0) + 1, b1 = (o.b | 0) + 1;
+    if (o.op === 'swap')   return 'Swap ' + a1 + ' ↔ ' + b1;
+    if (o.op === 'move')   return 'Move ' + a1 + ' → ' + b1;
+    if (o.op === 'delete') return 'Delete ' + a1;
+    return '?';
   }
 
   /* ======== Field Classification ======== */
@@ -132,12 +174,20 @@
 
   /* ======== Process one line ======== */
   function processLine(row) {
+    var sep = state.reorderSep || ':';
     var parts = U.splitFlexible(applyFindReplace(row));
+
+    // Field Swap mode — purely positional, bypasses classification.
+    var ops = state.reorderFieldOps || [];
+    if (ops.length > 0) {
+      return applyFieldOps(parts).join(sep);
+    }
+
+    // Smart classification mode (default).
     var classified = classifyParts(parts);
     var result = [];
     var fields  = state.reorderFields  || ALL_FIELDS;
     var enabled = state.reorderEnabled || {};
-    var sep     = state.reorderSep     || ':';
 
     for (var i = 0; i < fields.length; i++) {
       if (!enabled[fields[i]]) continue;
@@ -230,6 +280,24 @@
     h += buildFieldRows();
     h += '</div></div>';
 
+    // Field Swap (positional ops sub-module)
+    h += '<div class="rp-section"><div class="rp-label">FIELD SWAP <span class="rp-fs-mode" id="rpFsMode">' +
+         (state.reorderFieldOps && state.reorderFieldOps.length ? 'positional override active' : 'optional / 1-indexed') +
+         '</span></div>';
+    h += '<div class="rp-fs-add">';
+    h += '<select class="rp-fs-op" id="rpFsOp">';
+    h += '<option value="swap">Swap</option>';
+    h += '<option value="move">Move</option>';
+    h += '<option value="delete">Delete</option>';
+    h += '</select>';
+    h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP1" placeholder="Pos">';
+    h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP2" placeholder="Pos">';
+    h += '<button type="button" class="rp-fs-add-btn" id="rpFsAdd">+ Add</button>';
+    h += '</div>';
+    h += '<div class="rp-fs-list" id="rpFsList">' + buildFieldOpRows() + '</div>';
+    h += '<div class="rp-fs-hint">When at least one op is queued, output is built positionally — smart classification is bypassed.</div>';
+    h += '</div>';
+
     // Preview
     h += '<div class="rp-section"><div class="rp-label">\u25C9 PREVIEW</div>';
     h += '<pre class="rp-preview" id="rpPreview">(paste data above to see preview)</pre>';
@@ -254,6 +322,29 @@
       h += '</div>';
     });
     return h;
+  }
+
+  function buildFieldOpRows() {
+    var ops = state.reorderFieldOps || [];
+    if (!ops.length) return '<div class="rp-fs-empty">No operations \u2014 add Swap / Move / Delete above.</div>';
+    var h = '';
+    for (var i = 0; i < ops.length; i++) {
+      h += '<div class="rp-fs-item" data-idx="' + i + '">';
+      h += '<span class="rp-fs-num-tag">' + (i + 1) + '</span>';
+      h += '<span class="rp-fs-desc">' + describeOp(ops[i]) + '</span>';
+      h += '<button type="button" class="rp-fs-del" title="Remove">\u00d7</button>';
+      h += '</div>';
+    }
+    return h;
+  }
+
+  function rebuildFieldOpRows() {
+    var c = $('#rpFsList');
+    if (c) c.innerHTML = buildFieldOpRows();
+    var modeTag = $('#rpFsMode');
+    if (modeTag) modeTag.textContent = (state.reorderFieldOps && state.reorderFieldOps.length)
+      ? 'positional override active'
+      : 'optional / 1-indexed';
   }
 
   /* ======== Panel event bindings ======== */
@@ -308,6 +399,62 @@
       if (frRepl) frRepl.value = '';
       commitFr();
       if (frFind) frFind.focus();
+    });
+
+    // Field Swap
+    var fsOp = $('#rpFsOp');
+    var fsP1 = $('#rpFsP1');
+    var fsP2 = $('#rpFsP2');
+    var fsAdd = $('#rpFsAdd');
+    var fsList = $('#rpFsList');
+
+    function syncFsP2Visibility() {
+      if (!fsOp || !fsP2) return;
+      var hide = fsOp.value === 'delete';
+      fsP2.style.visibility = hide ? 'hidden' : 'visible';
+      if (hide) fsP2.value = '';
+    }
+    if (fsOp) fsOp.addEventListener('change', syncFsP2Visibility);
+    syncFsP2Visibility();
+
+    if (fsAdd) fsAdd.addEventListener('click', function () {
+      var op = fsOp ? fsOp.value : 'swap';
+      var p1 = parseInt(fsP1 ? fsP1.value : '', 10);
+      var p2 = parseInt(fsP2 ? fsP2.value : '', 10);
+      if (!isFinite(p1) || p1 < 1) {
+        if (fsP1) { fsP1.focus(); fsP1.style.borderColor = '#e84855'; setTimeout(function(){fsP1.style.borderColor='';}, 800); }
+        return;
+      }
+      if (op !== 'delete') {
+        if (!isFinite(p2) || p2 < 1) {
+          if (fsP2) { fsP2.focus(); fsP2.style.borderColor = '#e84855'; setTimeout(function(){fsP2.style.borderColor='';}, 800); }
+          return;
+        }
+        if (p1 === p2) {
+          if (fsP2) { fsP2.focus(); fsP2.style.borderColor = '#e84855'; setTimeout(function(){fsP2.style.borderColor='';}, 800); }
+          return;
+        }
+      }
+      var entry = { op: op, a: p1 - 1, b: (op === 'delete' ? null : p2 - 1) };
+      state.reorderFieldOps = (state.reorderFieldOps || []).concat([entry]);
+      saveState();
+      if (fsP1) fsP1.value = '';
+      if (fsP2) fsP2.value = '';
+      rebuildFieldOpRows();
+      refresh();
+    });
+
+    if (fsList) fsList.addEventListener('click', function (e) {
+      var btn = e.target.closest('.rp-fs-del');
+      if (!btn) return;
+      var item = btn.closest('.rp-fs-item');
+      if (!item) return;
+      var idx = parseInt(item.dataset.idx, 10);
+      if (!isFinite(idx)) return;
+      state.reorderFieldOps.splice(idx, 1);
+      saveState();
+      rebuildFieldOpRows();
+      refresh();
     });
 
     // Checkboxes

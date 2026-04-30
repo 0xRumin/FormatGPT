@@ -959,6 +959,83 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
   letter-spacing:0.08em;color:var(--muted);text-transform:uppercase
 }
 
+/* Field Swap (positional ops sub-module) */
+.rp-fs-mode{
+  font-family:var(--font-mono);font-size:9px;color:var(--muted);
+  letter-spacing:0.1em;text-transform:uppercase;font-weight:500;
+  margin-left:8px
+}
+.rp-fs-add{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+.rp-fs-op{
+  flex-shrink:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(247,242,236,0.04);color:var(--fg);
+  font-family:var(--font-mono);font-size:12px;font-weight:600;
+  cursor:pointer;outline:none;
+  transition:border-color .18s, background .18s
+}
+.rp-fs-op:hover{background:rgba(247,242,236,0.08)}
+.rp-fs-op:focus{border-color:var(--accent)}
+.rp-fs-num{
+  flex:1;min-width:0;width:60px;
+  padding:8px 10px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(247,242,236,0.04);color:var(--fg);
+  font-family:var(--font-mono);font-size:13px;font-weight:600;
+  text-align:center;outline:none;
+  transition:border-color .18s, background .18s;
+  -moz-appearance:textfield
+}
+.rp-fs-num::-webkit-outer-spin-button, .rp-fs-num::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0
+}
+.rp-fs-num::placeholder{color:var(--muted);opacity:.6}
+.rp-fs-num:hover{background:rgba(247,242,236,0.06)}
+.rp-fs-num:focus{border-color:var(--accent);background:rgba(45,212,191,0.06)}
+.rp-fs-add-btn{
+  flex-shrink:0;padding:8px 14px;border-radius:10px;
+  border:1px solid var(--accent);background:rgba(45,212,191,0.12);color:var(--accent);
+  font-family:var(--font-mono);font-size:11px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+  transition:all .18s;white-space:nowrap
+}
+.rp-fs-add-btn:hover{background:rgba(45,212,191,0.22)}
+.rp-fs-add-btn:active{transform:translateY(1px)}
+
+.rp-fs-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.rp-fs-empty{
+  font-family:var(--font-mono);font-size:10.5px;color:var(--muted);
+  letter-spacing:0.08em;padding:10px 12px;text-align:center;
+  border:1px dashed var(--line);border-radius:10px;
+  background:rgba(247,242,236,0.02)
+}
+.rp-fs-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:10px;
+  background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.25)
+}
+.rp-fs-num-tag{
+  flex-shrink:0;width:20px;height:20px;border-radius:6px;
+  background:rgba(45,212,191,0.18);color:var(--accent);
+  font-family:var(--font-mono);font-size:10px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center
+}
+.rp-fs-desc{
+  flex:1;font-family:var(--font-mono);font-size:12.5px;
+  color:var(--fg);font-weight:500;letter-spacing:0.02em
+}
+.rp-fs-del{
+  flex-shrink:0;width:24px;height:24px;border-radius:6px;
+  border:1px solid transparent;background:transparent;color:var(--muted);
+  font-size:14px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .15s
+}
+.rp-fs-del:hover{background:rgba(232,72,85,0.12);color:#e84855;border-color:rgba(232,72,85,0.3)}
+
+.rp-fs-hint{
+  margin-top:8px;font-family:var(--font-mono);font-size:9.5px;
+  letter-spacing:0.08em;color:var(--muted);text-transform:uppercase
+}
+
 .rp-sel-acts{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase}
 .rp-sel-acts a{color:var(--accent);text-decoration:none;cursor:pointer}
 .rp-sel-acts a:hover{text-decoration:underline}
@@ -1825,12 +1902,22 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   .rp-fr{ gap:6px; }
   .rp-fr-input{ padding:7px 10px; font-size:12px; }
   .rp-fr-clear{ width:28px; height:28px; }
+  .rp-fs-add{ gap:5px; flex-wrap:wrap; }
+  .rp-fs-op{ padding:7px 9px; font-size:11.5px; }
+  .rp-fs-num{ padding:7px 8px; font-size:12px; width:50px; }
+  .rp-fs-add-btn{ padding:7px 11px; font-size:10px; }
+  .rp-fs-item{ padding:8px 10px; gap:8px; }
+  .rp-fs-desc{ font-size:11.5px; }
 }
 @media (max-width: 420px){
   /* Hide the small right-aligned key hint so the field name has room. */
   .rp-fkey{ display:none; }
   .rp-fr-arrow{ font-size:12px; }
   .rp-fr-input{ font-size:11.5px; padding:6px 9px; }
+  .rp-fs-add{ gap:4px; }
+  .rp-fs-op{ flex:1 0 100%; }
+  .rp-fs-num{ font-size:11.5px; }
+  .rp-fs-add-btn{ flex:1 0 100%; padding:8px 10px; }
 }
 
 /* ---- Crosscheck already has a 760/420 block; just polish the tabs
