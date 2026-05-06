@@ -69,22 +69,109 @@
     '};'
   ].join('\n');
 
+  // User-tunable boot defaults — loaded from localStorage if the user has
+  // saved their preferences via "Save as default", otherwise these hardcoded
+  // values kick in on first run. Hitting "Save as default" overwrites them.
+  var HARDCODED_DEFAULTS = {
+    priceMode:       'perk',
+    priceValue:      '12',
+    selectedSlugs:   [],            // populated after first save
+    fallbackPattern: '1000+'        // first-run name match for category auto-select
+  };
+
+  function loadDamDefaults() {
+    try {
+      var raw = localStorage.getItem('damDefaults');
+      if (raw) {
+        var obj = JSON.parse(raw);
+        if (obj && typeof obj === 'object') {
+          return {
+            priceMode:       obj.priceMode       || HARDCODED_DEFAULTS.priceMode,
+            priceValue:      (typeof obj.priceValue === 'string') ? obj.priceValue : HARDCODED_DEFAULTS.priceValue,
+            selectedSlugs:   Array.isArray(obj.selectedSlugs) ? obj.selectedSlugs : [],
+            fallbackPattern: obj.fallbackPattern || HARDCODED_DEFAULTS.fallbackPattern
+          };
+        }
+      }
+    } catch (e) {}
+    return {
+      priceMode:       HARDCODED_DEFAULTS.priceMode,
+      priceValue:      HARDCODED_DEFAULTS.priceValue,
+      selectedSlugs:   HARDCODED_DEFAULTS.selectedSlugs.slice(),
+      fallbackPattern: HARDCODED_DEFAULTS.fallbackPattern
+    };
+  }
+
+  function saveDamDefaults() {
+    var s = state.dam;
+    var slugs = [];
+    for (var i = 0; i < (s.categories || []).length; i++) {
+      var slug = s.categories[i].slug;
+      if (s.selected[slug]) slugs.push(slug);
+    }
+    var payload = {
+      priceMode:       s.priceMode,
+      priceValue:      s.priceValue || '',
+      selectedSlugs:   slugs,
+      // Keep the fallback pattern around so a future re-fetch still has
+      // something to match if the saved slugs disappear from the API.
+      fallbackPattern: (s.damDefaults && s.damDefaults.fallbackPattern) || HARDCODED_DEFAULTS.fallbackPattern
+    };
+    try { localStorage.setItem('damDefaults', JSON.stringify(payload)); } catch (e) {}
+    s.damDefaults = payload;
+  }
+
   // Lazy-init DAM state. Custom proxy URL persists across reloads because
   // setting it up is a one-time cost the user shouldn't have to redo.
   if (!state.dam) {
+    var defs = loadDamDefaults();
     state.dam = {
       categories: [],     // raw API list (first 4 like the python script)
       selected:   {},     // { slug: true } — which categories to scrape
-      priceMode:  'keep', // 'keep' | 'remove' | 'custom' | 'markup' | 'perk'
-      priceValue: '',     // numeric input used by custom/markup/perk
+      priceMode:  defs.priceMode,
+      priceValue: defs.priceValue,
       lastOutput: '',
       lastCount:  0,
       scraping:   false,
+      damDefaults: defs,  // hold onto the loaded defaults for fetchCats auto-select
       customProxy: (function () {
         try { return localStorage.getItem('damCustomProxy') || ''; }
         catch (e) { return ''; }
       })()
     };
+  }
+
+  // Auto-select categories on fetch based on the saved defaults. Tries explicit
+  // slugs first; falls back to a fuzzy name match (e.g. "1000+" matches both
+  // "1000+ followers" and "1K+ followers" once whitespace/commas are stripped).
+  function applyDefaultSelection(list) {
+    var s = state.dam;
+    var defs = s.damDefaults || HARDCODED_DEFAULTS;
+    s.selected = {};
+
+    var slugs = Array.isArray(defs.selectedSlugs) ? defs.selectedSlugs : [];
+    if (slugs.length) {
+      var slugSet = {};
+      for (var i = 0; i < slugs.length; i++) slugSet[slugs[i]] = true;
+      var hit = false;
+      for (var j = 0; j < list.length; j++) {
+        if (slugSet[list[j].slug]) { s.selected[list[j].slug] = true; hit = true; }
+      }
+      if (hit) return;
+      // Saved slugs don't match anything in this fetch (API renamed categories?)
+      // — fall through to pattern match below.
+    }
+
+    var pattern = String(defs.fallbackPattern || '').toLowerCase().replace(/[,.\s]+/g, '');
+    if (!pattern) return;
+    // Also try a "1k+" variant when user typed a "1000+" pattern (and vice versa).
+    var altPattern = pattern.replace(/1000\+/, '1k+').replace(/^1k\+$/, '1000+');
+    for (var k = 0; k < list.length; k++) {
+      var nm = (list[k].name || '').toLowerCase().replace(/[,.\s]+/g, '');
+      if (nm.indexOf(pattern) >= 0 || (altPattern && nm.indexOf(altPattern) >= 0)) {
+        s.selected[list[k].slug] = true;
+      }
+    }
   }
 
   var panelBuilt = false;
@@ -160,6 +247,16 @@
         '</div>',
       '</div>',
 
+      // "Save as default" — snapshots current price mode/value + selected
+      // categories to localStorage so they auto-load on every refresh.
+      '<div class="dam-defaults-row">',
+        '<button type="button" id="damSaveDefaults" class="dam-defaults-btn" title="Save current price + selected categories as defaults that load on every refresh">',
+          '<span class="dam-defaults-icon">★</span>',
+          '<span class="dam-defaults-text">Save as default</span>',
+        '</button>',
+        '<span class="dam-defaults-hint">Loads on every refresh — overwrite any time.</span>',
+      '</div>',
+
       '<div class="dam-count">Scraped: <b id="damCount">' + (s.lastCount || 0) + '</b> accounts</div>',
 
       // Results card — appears under the panel once a scrape lands. Copy
@@ -171,8 +268,14 @@
           '<span class="dam-results-title">Results <span class="dam-results-n" id="damResultsN">0</span></span>',
           '<div class="dam-results-trim" id="damTrim">',
             '<span class="dam-trim-lbl">Trim</span>',
-            '<input type="number" min="0" id="damTrimFirst" class="dam-trim-num" placeholder="first" title="Skip first N lines" autocomplete="off">',
-            '<input type="number" min="0" id="damTrimLast"  class="dam-trim-num" placeholder="last"  title="Skip last N lines"  autocomplete="off">',
+            '<span class="dam-trim-pair">',
+              '<span class="dam-trim-tag">First</span>',
+              '<input type="number" min="0" id="damTrimFirst" class="dam-trim-num" title="Skip first N lines" autocomplete="off">',
+            '</span>',
+            '<span class="dam-trim-pair">',
+              '<span class="dam-trim-tag">Last</span>',
+              '<input type="number" min="0" id="damTrimLast" class="dam-trim-num" title="Skip last N lines" autocomplete="off">',
+            '</span>',
           '</div>',
           '<div class="dam-results-actions">',
             '<button type="button" id="damCopyResults"  class="dp-btn dp-btn--alt">Copy</button>',
@@ -370,6 +473,22 @@
     }
     if (trimFirst) trimFirst.addEventListener('input', commitTrim);
     if (trimLast)  trimLast.addEventListener('input',  commitTrim);
+
+    // Save current settings as boot defaults
+    var saveDef = $('#damSaveDefaults');
+    if (saveDef) saveDef.addEventListener('click', function () {
+      saveDamDefaults();
+      var self = this;
+      var txt = self.querySelector('.dam-defaults-text');
+      if (!txt) return;
+      var orig = txt.textContent;
+      txt.textContent = 'Saved!';
+      self.classList.add('is-saved');
+      setTimeout(function () {
+        txt.textContent = orig;
+        self.classList.remove('is-saved');
+      }, 1100);
+    });
   }
 
   function setStatus(msg, type) {
@@ -621,10 +740,16 @@
       // Python uses [:4] — keep the same slice for parity.
       var list = Array.isArray(data) ? data.slice(0, 4) : [];
       state.dam.categories = list;
-      state.dam.selected   = {};
+      // Apply saved defaults: auto-tick the user's preferred categories so
+      // they don't have to re-select them on every fetch.
+      applyDefaultSelection(list);
       renderCats();
       if (!list.length) { setStatus('No categories returned.', 'err'); return; }
-      setStatus('Loaded ' + list.length + ' categor' + (list.length===1?'y':'ies') + '.', 'ok');
+      var preselected = 0;
+      for (var pk in state.dam.selected) if (state.dam.selected[pk]) preselected++;
+      var msg = 'Loaded ' + list.length + ' categor' + (list.length===1?'y':'ies') + '.';
+      if (preselected) msg += ' (' + preselected + ' pre-selected)';
+      setStatus(msg, 'ok');
     }).catch(function (e) {
       setStatus('Fetch failed \u2014 ' + (e && e.message ? e.message : 'CORS or network error'), 'err');
     });
