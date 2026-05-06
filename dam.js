@@ -164,9 +164,16 @@
 
       // Results card — appears under the panel once a scrape lands. Copy
       // pushes the text to the clipboard; Clear wipes state + hides the card.
+      // Trim inputs strip the first/last N lines from view + copy. They are
+      // session-only (no localStorage), so they reset on every refresh.
       '<div class="dam-results" id="damResults" style="display:none">',
         '<div class="dam-results-head">',
           '<span class="dam-results-title">Results <span class="dam-results-n" id="damResultsN">0</span></span>',
+          '<div class="dam-results-trim" id="damTrim">',
+            '<span class="dam-trim-lbl">Trim</span>',
+            '<input type="number" min="0" id="damTrimFirst" class="dam-trim-num" placeholder="first" title="Skip first N lines" autocomplete="off">',
+            '<input type="number" min="0" id="damTrimLast"  class="dam-trim-num" placeholder="last"  title="Skip last N lines"  autocomplete="off">',
+          '</div>',
           '<div class="dam-results-actions">',
             '<button type="button" id="damCopyResults"  class="dp-btn dp-btn--alt">Copy</button>',
             '<button type="button" id="damClearResults" class="dp-btn dp-btn--alt">Clear</button>',
@@ -195,6 +202,23 @@
     if (s.categories && s.categories.length) renderCats();
   }
 
+  // Slice the raw output by trim inputs (session-only, no localStorage).
+  // Returns { text, count } — `count` is the number of *visible* lines after
+  // trimming, so the badge stays honest.
+  function getTrimmedOutput() {
+    var s = state.dam;
+    var raw = s.lastOutput || '';
+    if (!raw) return { text: '', count: 0 };
+    var first = Math.max(0, parseInt(s.trimFirst, 10) || 0);
+    var last  = Math.max(0, parseInt(s.trimLast,  10) || 0);
+    if (!first && !last) return { text: raw, count: s.lastCount || 0 };
+    var lines = raw.split(/\r?\n/);
+    var endIdx = lines.length - last;
+    if (endIdx < first) endIdx = first; // empty if trim eats everything
+    var sliced = lines.slice(first, endIdx);
+    return { text: sliced.join('\n'), count: sliced.length };
+  }
+
   function renderResults() {
     var s = state.dam;
     var card = $('#damResults');
@@ -203,8 +227,9 @@
     if (!card || !out) return;
     if (s.lastOutput) {
       card.style.display = 'block';
-      out.textContent = s.lastOutput;
-      if (nEl) nEl.textContent = s.lastCount || 0;
+      var trimmed = getTrimmedOutput();
+      out.textContent = trimmed.text;
+      if (nEl) nEl.textContent = trimmed.count;
     } else {
       card.style.display = 'none';
       out.textContent = '';
@@ -311,7 +336,7 @@
     // Results card actions
     var copyBtn = $('#damCopyResults');
     if (copyBtn) copyBtn.addEventListener('click', function () {
-      var text = state.dam.lastOutput || '';
+      var text = getTrimmedOutput().text;
       if (!text) return;
       var self = this;
       navigator.clipboard.writeText(text).then(function () {
@@ -325,10 +350,26 @@
     if (clearBtn) clearBtn.addEventListener('click', function () {
       state.dam.lastOutput = '';
       state.dam.lastCount  = 0;
+      // Reset trim too — empty result → empty inputs make sense.
+      state.dam.trimFirst = 0;
+      state.dam.trimLast  = 0;
+      var tF = $('#damTrimFirst'); if (tF) tF.value = '';
+      var tL = $('#damTrimLast');  if (tL) tL.value = '';
       var cnt = $('#damCount'); if (cnt) cnt.textContent = '0';
       renderResults();
       setStatus('Results cleared.', 'ok');
     });
+
+    // Trim inputs — session-only, never persisted. Re-render on every keystroke.
+    var trimFirst = $('#damTrimFirst');
+    var trimLast  = $('#damTrimLast');
+    function commitTrim() {
+      state.dam.trimFirst = Math.max(0, parseInt(trimFirst && trimFirst.value, 10) || 0);
+      state.dam.trimLast  = Math.max(0, parseInt(trimLast  && trimLast.value,  10) || 0);
+      renderResults();
+    }
+    if (trimFirst) trimFirst.addEventListener('input', commitTrim);
+    if (trimLast)  trimLast.addEventListener('input',  commitTrim);
   }
 
   function setStatus(msg, type) {
