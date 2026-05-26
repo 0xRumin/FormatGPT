@@ -141,22 +141,31 @@
   var SLUG_TO_MODE = {};
   for (var k in MODE_SLUGS) SLUG_TO_MODE[MODE_SLUGS[k]] = k;
 
+  // Detect base path once (/ for user pages, /RepoName for project pages)
+  var APP_BASE = (function () {
+    var path = location.pathname.replace(/\/$/, '');
+    var last = path.split('/').pop() || '';
+    // If last segment is a known mode slug, strip it to get the base
+    if (SLUG_TO_MODE[last]) return path.replace(/\/[^/]*$/, '') || '';
+    // If we got here via ?p= redirect, the path is the base
+    if (location.search.indexOf('p=') > -1) return path || '';
+    // Otherwise current path IS the base (e.g. / or /FormatGPT)
+    return path || '';
+  })();
+
   function pushModeUrl(mode) {
     var slug = MODE_SLUGS[mode] || mode;
-    var path = slug === 'standard' ? '' : '/' + slug;
-    var base = location.pathname.replace(/\/[^/]*$/, '');
-    try { history.replaceState(null, '', base + path || '/'); } catch (e) {}
+    var url = slug === 'standard' ? (APP_BASE || '/') : APP_BASE + '/' + slug;
+    try { history.replaceState(null, '', url); } catch (e) {}
   }
 
   function readModeFromUrl() {
-    // Handle SPA redirect from 404.html (?p=/FormatGPT/sorter)
+    // Handle SPA redirect from 404.html (?p=sorter)
     var params = new URLSearchParams(location.search);
-    var redirectPath = params.get('p');
-    if (redirectPath) {
-      var slug = redirectPath.replace(/\/$/, '').split('/').pop() || '';
-      var mode = SLUG_TO_MODE[slug] || slug;
-      // Clean URL
-      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    var redirectSlug = params.get('p');
+    if (redirectSlug) {
+      var mode = SLUG_TO_MODE[redirectSlug] || redirectSlug;
+      try { history.replaceState(null, '', APP_BASE || '/'); } catch (e) {}
       if (mode && mode !== 'FormatGPT' && mode !== 'index.html') return mode;
       return 'standard';
     }
