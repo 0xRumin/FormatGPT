@@ -5,6 +5,8 @@
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
 
   var panelBuilt = false;
+  var lastFormat = null;
+  var lastSortCol = -1;
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -178,6 +180,48 @@
       syncOrderBtns();
       App.App.rerun();
     });
+
+    // Breakdown: Remove + Download buttons (event delegation)
+    $('#spBdBody').addEventListener('click', function (e) {
+      var btn = e.target.closest('.sp-bd-remove, .sp-bd-download');
+      if (!btn) return;
+      var yearVal = btn.dataset.year;
+      if (!yearVal || !lastFormat) return;
+
+      var inp = $('#inp');
+      if (!inp) return;
+      var rows = inp.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+      var col = lastSortCol;
+      var totalCols = lastFormat.totalColumns;
+
+      // Collect lines matching this year
+      var matching = [];
+      var remaining = [];
+      for (var i = 0; i < rows.length; i++) {
+        var parts = rows[i].split(':');
+        if (parts.length === totalCols && (parts[col] || '').trim() === yearVal) {
+          matching.push(rows[i]);
+        } else {
+          remaining.push(rows[i]);
+        }
+      }
+
+      if (btn.classList.contains('sp-bd-download')) {
+        // Download only matching lines
+        if (!matching.length) return;
+        var token = U.randToken(5);
+        var filename = 'year_' + yearVal + '_' + token + '.txt';
+        var blob = new Blob(['﻿' + matching.join('\n')], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+      } else {
+        // Remove: update textarea with remaining lines, rerun
+        inp.value = remaining.join('\n');
+        App.App.rerun();
+      }
+    });
   }
 
   /* ======== UI sync ======== */
@@ -293,6 +337,8 @@
         h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + barW + '%"></div></div>';
         h += '<span class="sp-bd-count">' + cnt + '</span>';
         h += '<span class="sp-bd-pct">' + pctT + '%</span>';
+        h += '<button class="sp-bd-download" data-year="' + years[j] + '" title="Download ' + years[j] + ' accounts">Save</button>';
+        h += '<button class="sp-bd-remove" data-year="' + years[j] + '" title="Remove ' + years[j] + ' from output">✕</button>';
         h += '</div>';
       }
     } else {
@@ -415,6 +461,9 @@
         state.sorterColumn = 0;
         saveSorterState();
       }
+
+      lastFormat = format;
+      lastSortCol = state.sorterColumn;
 
       renderCols(format);
       renderBreakdown(rows, format);
