@@ -149,6 +149,12 @@
     });
     h += '</div></div>';
 
+    // Year breakdown (hidden until Year column is selected)
+    h += '<div class="sp-breakdown" id="spBreakdown" style="display:none">';
+    h += '<div class="sp-label">📅 YEAR BREAKDOWN</div>';
+    h += '<div class="sp-bd-body" id="spBdBody"></div>';
+    h += '</div>';
+
     panel.innerHTML = h;
     bindEvents();
   }
@@ -209,6 +215,64 @@
       btns[i].classList.toggle('sp-active', btns[i].dataset.order === state.sorterOrder);
   }
 
+  /* ======== Year breakdown ======== */
+  function renderBreakdown(rows, format) {
+    var wrap = $('#spBreakdown');
+    var body = $('#spBdBody');
+    if (!wrap || !body) return;
+
+    var colType = format.columnTypes[state.sorterColumn];
+    if (colType !== 'year' && colType !== 'counts') {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    // Count per value
+    var counts = {};
+    var totalCols = format.totalColumns;
+    var col = state.sorterColumn;
+    for (var i = 0; i < rows.length; i++) {
+      var parts = rows[i].split(':');
+      if (parts.length !== totalCols) continue;
+      var val = (parts[col] || '').trim();
+      if (!val) continue;
+      counts[val] = (counts[val] || 0) + 1;
+    }
+
+    var keys = Object.keys(counts);
+    if (!keys.length) { wrap.style.display = 'none'; return; }
+
+    // Sort keys: years descending, counts descending by count
+    if (colType === 'year') {
+      keys.sort(function (a, b) { return +b - +a; });
+    } else {
+      keys.sort(function (a, b) { return counts[b] - counts[a]; });
+    }
+
+    var max = 0;
+    for (var k = 0; k < keys.length; k++) {
+      if (counts[keys[k]] > max) max = counts[keys[k]];
+    }
+
+    var total = rows.length;
+    var h = '<div class="sp-bd-total">' + keys.length + ' unique values · ' + total + ' accounts</div>';
+    for (var j = 0; j < keys.length; j++) {
+      var key = keys[j];
+      var cnt = counts[key];
+      var pct = max > 0 ? Math.round((cnt / max) * 100) : 0;
+      var pctTotal = total > 0 ? ((cnt / total) * 100).toFixed(1) : '0';
+      h += '<div class="sp-bd-row">';
+      h += '<span class="sp-bd-key">' + key + '</span>';
+      h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + pct + '%"></div></div>';
+      h += '<span class="sp-bd-count">' + cnt + '</span>';
+      h += '<span class="sp-bd-pct">' + pctTotal + '%</span>';
+      h += '</div>';
+    }
+
+    body.innerHTML = h;
+    wrap.style.display = 'block';
+  }
+
   /* ======== Sort logic ======== */
   function sortLines(lines, format) {
     var totalCols = format.totalColumns;
@@ -266,6 +330,7 @@
       var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
       if (!rows.length) {
         renderCols(null);
+        var bd = $('#spBreakdown'); if (bd) bd.style.display = 'none';
         return '';
       }
 
@@ -279,6 +344,7 @@
       }
 
       renderCols(format);
+      renderBreakdown(rows, format);
       var sorted = sortLines(rows, format);
       return sorted.join('\n');
     }
