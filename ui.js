@@ -130,6 +130,42 @@
     if (work) work.style.display = mode === 'dam' ? 'none' : '';
   }
 
+  // URL ↔ mode mapping
+  var MODE_SLUGS = {
+    standard:'standard', reorder:'reorder', filter:'filter', sorter:'sorter',
+    plinksWith:'plinks-with', plinksWithout:'plinks-without',
+    convertUsers:'usernames-to-plinks', plinksToUsers:'plinks-to-usernames',
+    mailChanger:'mail-changer', xfly:'xfly', reverse:'reverse',
+    crosscheck:'crosscheck', deliver:'deliver', dam:'dam'
+  };
+  var SLUG_TO_MODE = {};
+  for (var k in MODE_SLUGS) SLUG_TO_MODE[MODE_SLUGS[k]] = k;
+
+  function pushModeUrl(mode) {
+    var slug = MODE_SLUGS[mode] || mode;
+    var path = slug === 'standard' ? '' : '/' + slug;
+    var base = location.pathname.replace(/\/[^/]*$/, '');
+    try { history.replaceState(null, '', base + path || '/'); } catch (e) {}
+  }
+
+  function readModeFromUrl() {
+    // Handle SPA redirect from 404.html (?p=/FormatGPT/sorter)
+    var params = new URLSearchParams(location.search);
+    var redirectPath = params.get('p');
+    if (redirectPath) {
+      var slug = redirectPath.replace(/\/$/, '').split('/').pop() || '';
+      var mode = SLUG_TO_MODE[slug] || slug;
+      // Clean URL
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      if (mode && mode !== 'FormatGPT' && mode !== 'index.html') return mode;
+      return 'standard';
+    }
+    var path = location.pathname.replace(/\/$/, '');
+    var slug = path.split('/').pop() || '';
+    if (!slug || slug === 'FormatGPT' || slug === 'index.html') return 'standard';
+    return SLUG_TO_MODE[slug] || slug;
+  }
+
   function setModeFromDd(value) {
     Core?.setMode && Core.setMode(value);
     syncReorderPanel(value);
@@ -139,6 +175,7 @@
     syncDeliverPanel(value);
     syncDamPanel(value);
     document.body.dataset.mode = value;
+    pushModeUrl(value);
     Core?.rerun && Core.rerun();
   }
 
@@ -307,16 +344,9 @@
       showSettings();
     });
 
-    // Initial render
-    Core?.setMode && Core.setMode('standard');
-    syncReorderPanel('standard');
-    syncFilterPanel('standard');
-    syncSorterPanel('standard');
-    syncCrosscheckPanel('standard');
-    syncDeliverPanel('standard');
-    syncDamPanel('standard');
-    document.body.dataset.mode = 'standard';
-    Core?.rerun && Core.rerun();
+    // Initial render — read mode from URL if present
+    var initMode = readModeFromUrl();
+    setModeFromDd(initMode);
   }
 
   window.App.UI = { boot };

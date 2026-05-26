@@ -7,6 +7,7 @@
   var panelBuilt = false;
   var lastFormat = null;
   var lastSortCol = -1;
+  var excludedYears = {}; // year values excluded from output via ✕ button
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -167,6 +168,7 @@
       var btn = e.target.closest('.sp-col');
       if (!btn) return;
       state.sorterColumn = +btn.dataset.col;
+      excludedYears = {};
       saveSorterState();
       syncColBtns();
       App.App.rerun();
@@ -188,26 +190,20 @@
       var yearVal = btn.dataset.year;
       if (!yearVal || !lastFormat) return;
 
-      var inp = $('#inp');
-      if (!inp) return;
-      var rows = inp.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-      var col = lastSortCol;
-      var totalCols = lastFormat.totalColumns;
-
-      // Collect lines matching this year
-      var matching = [];
-      var remaining = [];
-      for (var i = 0; i < rows.length; i++) {
-        var parts = rows[i].split(':');
-        if (parts.length === totalCols && (parts[col] || '').trim() === yearVal) {
-          matching.push(rows[i]);
-        } else {
-          remaining.push(rows[i]);
-        }
-      }
-
       if (btn.classList.contains('sp-bd-download')) {
         // Download only matching lines
+        var inp = $('#inp');
+        if (!inp) return;
+        var rows = inp.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+        var col = lastSortCol;
+        var totalCols = lastFormat.totalColumns;
+        var matching = [];
+        for (var i = 0; i < rows.length; i++) {
+          var parts = rows[i].split(':');
+          if (parts.length === totalCols && (parts[col] || '').trim() === yearVal) {
+            matching.push(rows[i]);
+          }
+        }
         if (!matching.length) return;
         var token = U.randToken(5);
         var filename = 'year_' + yearVal + '_' + token + '.txt';
@@ -217,8 +213,12 @@
         a.href = url; a.download = filename; document.body.appendChild(a); a.click();
         setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
       } else {
-        // Remove: update textarea with remaining lines, rerun
-        inp.value = remaining.join('\n');
+        // Toggle exclusion from output (input stays untouched)
+        if (excludedYears[yearVal]) {
+          delete excludedYears[yearVal];
+        } else {
+          excludedYears[yearVal] = true;
+        }
         App.App.rerun();
       }
     });
@@ -337,8 +337,9 @@
         h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + barW + '%"></div></div>';
         h += '<span class="sp-bd-count">' + cnt + '</span>';
         h += '<span class="sp-bd-pct">' + pctT + '%</span>';
+        var isExcl = excludedYears[years[j]] ? ' sp-bd-excluded' : '';
+        h += '<button class="sp-bd-remove' + isExcl + '" data-year="' + years[j] + '" title="Remove ' + years[j] + ' from output">' + (excludedYears[years[j]] ? 'Undo' : '✕') + '</button>';
         h += '<button class="sp-bd-download" data-year="' + years[j] + '" title="Download ' + years[j] + ' accounts">Save</button>';
-        h += '<button class="sp-bd-remove" data-year="' + years[j] + '" title="Remove ' + years[j] + ' from output">✕</button>';
         h += '</div>';
       }
     } else {
@@ -399,13 +400,19 @@
     var sortBy = state.sorterColumn;
     var order = state.sorterOrder;
 
-    // Parse
+    // Parse (filter out excluded years/values)
+    var hasExclusions = Object.keys(excludedYears).length > 0;
+    var colType = colTypes[sortBy] || '';
     var parsed = [];
     for (var i = 0; i < lines.length; i++) {
       if (!lines[i]) continue;
       var cols = lines[i].split(':');
-      if (cols.length === totalCols) parsed.push(cols);
-      // mismatched column counts are skipped silently
+      if (cols.length !== totalCols) continue;
+      if (hasExclusions && (colType === 'year' || colType === 'counts')) {
+        var val = (cols[sortBy] || '').trim();
+        if (excludedYears[val]) continue;
+      }
+      parsed.push(cols);
     }
 
     if (order === 'random') {
