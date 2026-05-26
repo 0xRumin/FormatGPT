@@ -3,9 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <script>
-    // SPA redirect for GitHub Pages: preserves the path so index.html can read it
-    var path = location.pathname;
-    location.replace(location.origin + '/FormatGPT/' + '?p=' + encodeURIComponent(path));
+    // SPA redirect for GitHub Pages
+    // Extract the mode slug (last path segment) and redirect to base with ?p=
+    var segs = location.pathname.split('/').filter(Boolean);
+    var slug = segs.pop() || '';
+    var base = segs.length ? '/' + segs.join('/') : '';
+    location.replace(location.origin + base + '/?p=' + encodeURIComponent(slug));
   </script>
 </head>
 <body></body>
