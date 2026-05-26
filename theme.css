@@ -1275,6 +1275,12 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .sp-bd-remove{color:var(--bad,#ef4444);border-color:rgba(239,68,68,.3);min-width:28px;text-align:center}
 .sp-bd-remove:hover{background:rgba(239,68,68,.1);border-color:#ef4444}
 .sp-bd-download:active,.sp-bd-remove:active{transform:translateY(1px)}
+.sp-bd-remove.sp-bd-excluded{color:var(--accent);border-color:rgba(45,212,191,.3);font-size:10px}
+.sp-bd-remove.sp-bd-excluded:hover{background:rgba(45,212,191,.1);border-color:var(--accent)}
+.sp-bd-row:has(.sp-bd-excluded) .sp-bd-bar{opacity:.25}
+.sp-bd-row:has(.sp-bd-excluded) .sp-bd-key,
+.sp-bd-row:has(.sp-bd-excluded) .sp-bd-count,
+.sp-bd-row:has(.sp-bd-excluded) .sp-bd-pct{opacity:.4;text-decoration:line-through}
 @media(max-width:600px){
   .sp-bd-key{min-width:36px;font-size:12px}
   .sp-bd-count{min-width:30px;font-size:12px}
