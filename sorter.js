@@ -149,9 +149,9 @@
     });
     h += '</div></div>';
 
-    // Year breakdown (hidden until Year column is selected)
+    // Breakdown (hidden until Year or Counts column is selected)
     h += '<div class="sp-breakdown" id="spBreakdown" style="display:none">';
-    h += '<div class="sp-label">📅 YEAR BREAKDOWN</div>';
+    h += '<div class="sp-label" id="spBdLabel">📅 YEAR BREAKDOWN</div>';
     h += '<div class="sp-bd-body" id="spBdBody"></div>';
     h += '</div>';
 
@@ -215,10 +215,29 @@
       btns[i].classList.toggle('sp-active', btns[i].dataset.order === state.sorterOrder);
   }
 
-  /* ======== Year breakdown ======== */
+  /* ======== Breakdown (Year + Counts) ======== */
+
+  // Pick smart step/ranges based on the max value in the data
+  function pickCountRanges(maxVal) {
+    var step, ranges = [];
+    if (maxVal <= 30)       step = 5;
+    else if (maxVal <= 100) step = 10;
+    else if (maxVal <= 500) step = 100;
+    else if (maxVal <= 2000) step = 250;
+    else if (maxVal <= 10000) step = 1000;
+    else                     step = 5000;
+
+    for (var lo = 0; lo <= maxVal; lo += step) {
+      var hi = lo + step - 1;
+      ranges.push({ lo: lo, hi: hi, label: lo + ' – ' + hi });
+    }
+    return ranges;
+  }
+
   function renderBreakdown(rows, format) {
     var wrap = $('#spBreakdown');
     var body = $('#spBdBody');
+    var label = $('#spBdLabel');
     if (!wrap || !body) return;
 
     var colType = format.columnTypes[state.sorterColumn];
@@ -227,46 +246,100 @@
       return;
     }
 
-    // Count per value
-    var counts = {};
+    // Update label
+    if (label) {
+      label.textContent = colType === 'year'
+        ? '📅 YEAR BREAKDOWN'
+        : '🔢 COUNTS BREAKDOWN';
+    }
+
+    // Collect numeric values
     var totalCols = format.totalColumns;
     var col = state.sorterColumn;
+    var values = [];
     for (var i = 0; i < rows.length; i++) {
       var parts = rows[i].split(':');
       if (parts.length !== totalCols) continue;
-      var val = (parts[col] || '').trim();
-      if (!val) continue;
-      counts[val] = (counts[val] || 0) + 1;
+      var raw = (parts[col] || '').trim();
+      if (!raw) continue;
+      var num = parseInt(raw, 10);
+      if (!isNaN(num)) values.push(num);
     }
 
-    var keys = Object.keys(counts);
-    if (!keys.length) { wrap.style.display = 'none'; return; }
+    if (!values.length) { wrap.style.display = 'none'; return; }
 
-    // Sort keys: years descending, counts descending by count
+    var total = values.length;
+    var h = '';
+
     if (colType === 'year') {
-      keys.sort(function (a, b) { return +b - +a; });
+      // Year: count per individual year, sorted newest-first
+      var yearCounts = {};
+      for (var y = 0; y < values.length; y++) {
+        var yr = String(values[y]);
+        yearCounts[yr] = (yearCounts[yr] || 0) + 1;
+      }
+      var years = Object.keys(yearCounts).sort(function (a, b) { return +b - +a; });
+      var maxCnt = 0;
+      for (var m = 0; m < years.length; m++) {
+        if (yearCounts[years[m]] > maxCnt) maxCnt = yearCounts[years[m]];
+      }
+      h += '<div class="sp-bd-total">' + years.length + ' unique years · ' + total + ' accounts</div>';
+      for (var j = 0; j < years.length; j++) {
+        var cnt = yearCounts[years[j]];
+        var barW = maxCnt > 0 ? Math.round((cnt / maxCnt) * 100) : 0;
+        var pctT = ((cnt / total) * 100).toFixed(1);
+        h += '<div class="sp-bd-row">';
+        h += '<span class="sp-bd-key">' + years[j] + '</span>';
+        h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + barW + '%"></div></div>';
+        h += '<span class="sp-bd-count">' + cnt + '</span>';
+        h += '<span class="sp-bd-pct">' + pctT + '%</span>';
+        h += '</div>';
+      }
     } else {
-      keys.sort(function (a, b) { return counts[b] - counts[a]; });
-    }
+      // Counts: smart range grouping
+      var maxVal = 0;
+      for (var v = 0; v < values.length; v++) {
+        if (values[v] > maxVal) maxVal = values[v];
+      }
 
-    var max = 0;
-    for (var k = 0; k < keys.length; k++) {
-      if (counts[keys[k]] > max) max = counts[keys[k]];
-    }
+      var ranges = pickCountRanges(maxVal);
 
-    var total = rows.length;
-    var h = '<div class="sp-bd-total">' + keys.length + ' unique values · ' + total + ' accounts</div>';
-    for (var j = 0; j < keys.length; j++) {
-      var key = keys[j];
-      var cnt = counts[key];
-      var pct = max > 0 ? Math.round((cnt / max) * 100) : 0;
-      var pctTotal = total > 0 ? ((cnt / total) * 100).toFixed(1) : '0';
-      h += '<div class="sp-bd-row">';
-      h += '<span class="sp-bd-key">' + key + '</span>';
-      h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + pct + '%"></div></div>';
-      h += '<span class="sp-bd-count">' + cnt + '</span>';
-      h += '<span class="sp-bd-pct">' + pctTotal + '%</span>';
-      h += '</div>';
+      // Tally into ranges
+      var rangeCounts = [];
+      for (var r = 0; r < ranges.length; r++) rangeCounts.push(0);
+      for (var w = 0; w < values.length; w++) {
+        for (var ri = 0; ri < ranges.length; ri++) {
+          if (values[w] >= ranges[ri].lo && values[w] <= ranges[ri].hi) {
+            rangeCounts[ri]++;
+            break;
+          }
+        }
+      }
+
+      // Find max count for bar scaling
+      var maxRC = 0;
+      for (var mc = 0; mc < rangeCounts.length; mc++) {
+        if (rangeCounts[mc] > maxRC) maxRC = rangeCounts[mc];
+      }
+
+      // Count non-empty ranges
+      var nonEmpty = 0;
+      for (var ne = 0; ne < rangeCounts.length; ne++) {
+        if (rangeCounts[ne] > 0) nonEmpty++;
+      }
+
+      h += '<div class="sp-bd-total">' + nonEmpty + ' ranges · ' + total + ' accounts · max ' + maxVal + '</div>';
+      for (var g = 0; g < ranges.length; g++) {
+        if (rangeCounts[g] === 0) continue;
+        var bW = maxRC > 0 ? Math.round((rangeCounts[g] / maxRC) * 100) : 0;
+        var pT = ((rangeCounts[g] / total) * 100).toFixed(1);
+        h += '<div class="sp-bd-row">';
+        h += '<span class="sp-bd-key">' + ranges[g].label + '</span>';
+        h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + bW + '%"></div></div>';
+        h += '<span class="sp-bd-count">' + rangeCounts[g] + '</span>';
+        h += '<span class="sp-bd-pct">' + pT + '%</span>';
+        h += '</div>';
+      }
     }
 
     body.innerHTML = h;
