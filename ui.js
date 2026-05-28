@@ -15,21 +15,12 @@
   }
 
   // ---- Full theme system ----
-  const THEMES = [
-    { name:'Ocean',   swatch:'linear-gradient(135deg,#06b6d4,#2dd4bf)', accent:'#2dd4bf', accent2:'#5eead4', accent3:'#06b6d4', bg:'hsl(201,100%,6%)', bg2:'hsl(201,60%,4%)', card:'rgba(8,22,32,.75)',  input:'rgba(4,14,22,.6)',  line:'rgba(45,212,191,.12)',  glow:'rgba(45,212,191,.25)', muted:'#6b8a9e', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Midnight',swatch:'linear-gradient(135deg,#3b82f6,#1d4ed8)', accent:'#3b82f6', accent2:'#60a5fa', accent3:'#2563eb', bg:'hsl(222,47%,6%)',  bg2:'hsl(222,47%,3%)',  card:'rgba(10,15,30,.75)', input:'rgba(5,10,22,.6)',  line:'rgba(59,130,246,.12)',  glow:'rgba(59,130,246,.25)', muted:'#6b7fa0', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Violet',  swatch:'linear-gradient(135deg,#8b5cf6,#6d28d9)', accent:'#8b5cf6', accent2:'#a78bfa', accent3:'#7c3aed', bg:'hsl(263,40%,6%)',  bg2:'hsl(263,40%,3%)',  card:'rgba(18,10,30,.75)', input:'rgba(12,6,22,.6)',  line:'rgba(139,92,246,.12)',  glow:'rgba(139,92,246,.25)', muted:'#8b7fa6', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Ember',   swatch:'linear-gradient(135deg,#f97316,#ea580c)', accent:'#f97316', accent2:'#fb923c', accent3:'#ea580c', bg:'hsl(15,30%,5%)',   bg2:'hsl(15,25%,3%)',   card:'rgba(30,15,8,.75)',  input:'rgba(20,10,5,.6)',  line:'rgba(249,115,22,.12)',  glow:'rgba(249,115,22,.25)', muted:'#9e7e6b', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Rose',    swatch:'linear-gradient(135deg,#f43f5e,#e11d48)', accent:'#f43f5e', accent2:'#fb7185', accent3:'#e11d48', bg:'hsl(345,30%,5%)',  bg2:'hsl(345,25%,3%)',  card:'rgba(30,8,14,.75)',  input:'rgba(22,5,10,.6)',  line:'rgba(244,63,94,.12)',   glow:'rgba(244,63,94,.25)',  muted:'#9e6b7e', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Pink',    swatch:'linear-gradient(135deg,#ec4899,#db2777)', accent:'#ec4899', accent2:'#f472b6', accent3:'#db2777', bg:'hsl(330,28%,5%)',  bg2:'hsl(330,25%,3%)',  card:'rgba(28,8,20,.75)',  input:'rgba(20,5,14,.6)',  line:'rgba(236,72,153,.12)',  glow:'rgba(236,72,153,.25)', muted:'#9e6b8e', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Amber',   swatch:'linear-gradient(135deg,#f59e0b,#d97706)', accent:'#f59e0b', accent2:'#fbbf24', accent3:'#d97706', bg:'hsl(35,30%,5%)',   bg2:'hsl(35,25%,3%)',   card:'rgba(28,20,6,.75)',  input:'rgba(20,14,4,.6)',  line:'rgba(245,158,11,.12)',  glow:'rgba(245,158,11,.25)', muted:'#9e8e6b', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Emerald', swatch:'linear-gradient(135deg,#10b981,#059669)', accent:'#10b981', accent2:'#34d399', accent3:'#059669', bg:'hsl(160,30%,5%)',  bg2:'hsl(160,25%,3%)',  card:'rgba(6,28,18,.75)',  input:'rgba(4,20,12,.6)',  line:'rgba(16,185,129,.12)',  glow:'rgba(16,185,129,.25)', muted:'#6b9e82', ok:'#6ee7b7', bad:'#ff5a7a' },
-    { name:'Mono',    swatch:'linear-gradient(135deg,#a1a1aa,#71717a)', accent:'#a1a1aa', accent2:'#d4d4d8', accent3:'#71717a', bg:'hsl(0,0%,5%)',     bg2:'hsl(0,0%,3%)',     card:'rgba(18,18,18,.75)', input:'rgba(10,10,10,.6)', line:'rgba(161,161,170,.12)', glow:'rgba(161,161,170,.15)', muted:'#71717a', ok:'#6ee7b7', bad:'#ff5a7a' },
-  ];
+  const THEMES = window._FGPT_THEMES || [];
 
-  const THEME_VARS = ['accent','accent2','accent3','bg','bg2','card','input','line','glow','muted','ok','bad'];
   const CSS_MAP = {
     accent:'--accent', accent2:'--accent-2', accent3:'--accent-3',
+    accentRgb:'--accent-rgb', accent2Rgb:'--accent2-rgb', okRgb:'--ok-rgb',
+    cardRgb:'--card-rgb', tintRgb:'--tint-rgb',
     bg:'--bg0', bg2:'--bg1', card:'--panel', input:'--input-bg',
     line:'--line', glow:'--glow', muted:'--muted', ok:'--ok', bad:'--bad'
   };
@@ -39,11 +30,11 @@
     for (var k in CSS_MAP) {
       if (t[k]) root.style.setProperty(CSS_MAP[k], t[k]);
     }
-    root.style.setProperty('--line-strong', t.line.replace(/[\d.]+\)$/, m => (parseFloat(m)*2.5).toFixed(2)+')'));
+    root.style.setProperty('--line-strong', t.line.replace(/[\d.]+\)$/, function(m) {
+      return (parseFloat(m)*2.5).toFixed(2)+')';
+    }));
     root.style.setProperty('--fg', 'hsl(0,0%,100%)');
-    // Update backgrounds that reference bg0
     document.body.style.background = t.bg;
-    // Aurora tint
     var aur = document.querySelector('.aur');
     if (aur) aur.style.background = 'radial-gradient(ellipse at 50% 0%,' + t.glow + ' 0%,transparent 70%)';
   }
