@@ -14,6 +14,45 @@
     menuEl?.classList.remove('open');
   }
 
+  // ---- Accent color system ----
+  const ACCENT_PRESETS = [
+    { name: 'Teal',    accent: '#2dd4bf', accent2: '#5eead4', accent3: '#06b6d4' },
+    { name: 'Cyan',    accent: '#22d3ee', accent2: '#67e8f9', accent3: '#0ea5e9' },
+    { name: 'Blue',    accent: '#3b82f6', accent2: '#60a5fa', accent3: '#2563eb' },
+    { name: 'Violet',  accent: '#8b5cf6', accent2: '#a78bfa', accent3: '#7c3aed' },
+    { name: 'Purple',  accent: '#a855f7', accent2: '#c084fc', accent3: '#9333ea' },
+    { name: 'Pink',    accent: '#ec4899', accent2: '#f472b6', accent3: '#db2777' },
+    { name: 'Rose',    accent: '#f43f5e', accent2: '#fb7185', accent3: '#e11d48' },
+    { name: 'Orange',  accent: '#f97316', accent2: '#fb923c', accent3: '#ea580c' },
+    { name: 'Amber',   accent: '#f59e0b', accent2: '#fbbf24', accent3: '#d97706' },
+    { name: 'Green',   accent: '#22c55e', accent2: '#4ade80', accent3: '#16a34a' },
+    { name: 'Emerald', accent: '#10b981', accent2: '#34d399', accent3: '#059669' },
+    { name: 'Mint',    accent: '#6ee7b7', accent2: '#a7f3d0', accent3: '#34d399' },
+  ];
+
+  function applyAccentColor(accent, accent2, accent3) {
+    var root = document.documentElement;
+    root.style.setProperty('--accent', accent);
+    root.style.setProperty('--accent-2', accent2);
+    root.style.setProperty('--accent-3', accent3);
+  }
+
+  function loadSavedAccent() {
+    var saved = localStorage.getItem('accentColor');
+    if (!saved) return;
+    try {
+      var c = JSON.parse(saved);
+      if (c.accent) applyAccentColor(c.accent, c.accent2, c.accent3);
+    } catch (e) {}
+  }
+
+  function saveAccent(accent, accent2, accent3) {
+    localStorage.setItem('accentColor', JSON.stringify({ accent, accent2, accent3 }));
+  }
+
+  // Apply on load
+  loadSavedAccent();
+
   function createSettingsPanel() {
     if ($('#settingsPanel')) return $('#settingsPanel');
 
@@ -26,26 +65,54 @@
     panel.style.zIndex = '9999';
     panel.style.display = 'none';
 
+    // Build accent swatch HTML
+    let swatchHtml = ACCENT_PRESETS.map((p, i) =>
+      `<button class="sp-swatch" data-idx="${i}" title="${p.name}" style="background:${p.accent}"></button>`
+    ).join('');
+
     panel.innerHTML = `
-      <div id="sp-backdrop" style="position:absolute;inset:0;background:#0006;"></div>
+      <div id="sp-backdrop" style="position:absolute;inset:0;background:#0006;backdrop-filter:blur(4px)"></div>
       <div id="sp-card" style="
-        position:absolute;left:50%;top:20%;
-        transform:translateX(-50%);
-        width:min(560px,92vw);
-        background:#0f1318;border:1px solid #2a3340;border-radius:12px;
-        padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);color:#e6edf3;
-        font:14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <strong style="font-weight:700">Settings</strong>
-          <button id="sp-close" title="Close" style="border:0;background:#111726;color:#b9c7dc;border-radius:8px;padding:6px 8px">✕</button>
+        position:absolute;left:50%;top:50%;
+        transform:translate(-50%,-50%);
+        width:min(560px,92vw);max-height:90vh;overflow-y:auto;
+        background:rgba(15,19,24,.97);border:1px solid #2a3340;border-radius:14px;
+        padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#e6edf3;
+        font:14px/1.45 var(--font-mono, ui-monospace, monospace);">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <strong style="font-weight:700;font-size:15px">Settings</strong>
+          <button id="sp-close" title="Close" style="border:0;background:#111726;color:#b9c7dc;border-radius:8px;padding:6px 10px;cursor:pointer">✕</button>
         </div>
-        <label style="display:block;margin:8px 0 4px">Mail Access URL</label>
-        <input id="sp-mail" type="text" spellcheck="false" style="
-          width:100%;padding:10px;border:1px solid #2a3340;border-radius:10px;
-          background:#0b0f14;color:#d9e7ff" />
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="sp-reset" type="button" style="border:1px solid #3b4656;background:#121925;color:#9fb3ca;border-radius:10px;padding:8px 12px">Reset</button>
-          <button id="sp-apply" type="button" style="border:0;background:#16a34a;color:#041014;border-radius:10px;padding:8px 12px;font-weight:600">Apply ✓</button>
+
+        <!-- Accent Color -->
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:8px;font-size:11px;letter-spacing:.5px;color:#9fb0c6;font-weight:600;text-transform:uppercase">Accent Color</label>
+          <div id="sp-swatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+            ${swatchHtml}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="sp-color-preview" style="width:32px;height:32px;border-radius:8px;border:2px solid #2a3340;flex-shrink:0"></div>
+            <span style="color:#9fb0c6;font-size:12px">Custom</span>
+            <input id="sp-color-hex" type="text" maxlength="7" spellcheck="false" placeholder="#2dd4bf" style="
+              width:90px;padding:8px 10px;border:1px solid #2a3340;border-radius:8px;
+              background:#0b0f14;color:#d9e7ff;font-size:13px;font-family:inherit" />
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #1b2330;margin:14px 0"></div>
+
+        <!-- Mail Access URL -->
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:11px;letter-spacing:.5px;color:#9fb0c6;font-weight:600;text-transform:uppercase">Mail Access URL</label>
+          <input id="sp-mail" type="text" spellcheck="false" style="
+            width:100%;padding:10px;border:1px solid #2a3340;border-radius:10px;
+            background:#0b0f14;color:#d9e7ff" />
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button id="sp-reset" type="button" style="border:1px solid #3b4656;background:#121925;color:#9fb3ca;border-radius:10px;padding:8px 14px;cursor:pointer">Reset All</button>
+          <button id="sp-apply" type="button" style="border:0;background:var(--accent,#16a34a);color:#041014;border-radius:10px;padding:8px 14px;font-weight:600;cursor:pointer">Save ✓</button>
         </div>
       </div>
     `;
@@ -60,13 +127,65 @@
     const applyBtn = $('#sp-apply');
     const closeBtn = $('#sp-close');
     const back = $('#sp-backdrop');
+    const swatches = $('#sp-swatches');
+    const hexInput = $('#sp-color-hex');
+    const colorPreview = $('#sp-color-preview');
 
     input.value = (State?.state?.mailAccess) || '';
 
+    // Init color state
+    let pendingColor = null;
+    const saved = localStorage.getItem('accentColor');
+    let current = saved ? JSON.parse(saved) : ACCENT_PRESETS[0];
+    if (colorPreview) colorPreview.style.background = current.accent;
+    if (hexInput) hexInput.value = current.accent;
+    syncSwatchActive(current.accent);
+
     panel.style.display = 'block';
-    setTimeout(() => { input.focus(); input.select(); }, 0);
 
     function close() { panel.style.display = 'none'; }
+
+    function syncSwatchActive(hex) {
+      const all = swatches?.querySelectorAll('.sp-swatch') || [];
+      for (const s of all) {
+        const idx = +s.dataset.idx;
+        const match = ACCENT_PRESETS[idx]?.accent === hex;
+        s.style.outline = match ? '2px solid #fff' : 'none';
+        s.style.outlineOffset = match ? '2px' : '0';
+      }
+    }
+
+    function lighten(hex, amt) {
+      let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      r = Math.min(255, r + amt); g = Math.min(255, g + amt); b = Math.min(255, b + amt);
+      return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+    }
+    function darken(hex, amt) { return lighten(hex, -amt); }
+
+    function pickColor(accent, accent2, accent3) {
+      pendingColor = { accent, accent2, accent3 };
+      applyAccentColor(accent, accent2, accent3);
+      if (colorPreview) colorPreview.style.background = accent;
+      if (hexInput) hexInput.value = accent;
+      syncSwatchActive(accent);
+    }
+
+    // Swatch clicks
+    swatches?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.sp-swatch');
+      if (!btn) return;
+      const p = ACCENT_PRESETS[+btn.dataset.idx];
+      if (p) pickColor(p.accent, p.accent2, p.accent3);
+    });
+
+    // Custom hex
+    hexInput?.addEventListener('input', () => {
+      let v = hexInput.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        pickColor(v, lighten(v, 30), darken(v, 20));
+      }
+    });
 
     function normalize(url) {
       const v = (url || '').trim();
@@ -79,16 +198,30 @@
     resetBtn.onclick = () => {
       const d = State.normalizeMailAccess('');
       input.value = d;
+      // Reset accent to default
+      const def = ACCENT_PRESETS[0];
+      pickColor(def.accent, def.accent2, def.accent3);
+      localStorage.removeItem('accentColor');
     };
     applyBtn.onclick = () => {
       const next = normalize(input.value);
       if (Core?.setMailAccess) Core.setMailAccess(next);
       else if (State?.setMailAccess) State.setMailAccess(next);
+      if (pendingColor) saveAccent(pendingColor.accent, pendingColor.accent2, pendingColor.accent3);
       Core?.rerun && Core.rerun();
       close();
     };
-    closeBtn.onclick = back.onclick = close;
-    panel.onkeydown = (e) => { if (e.key === 'Escape') close(); };
+    closeBtn.onclick = back.onclick = () => {
+      // If not saved, revert to last saved
+      if (!pendingColor) { close(); return; }
+      const prev = saved ? JSON.parse(saved) : ACCENT_PRESETS[0];
+      applyAccentColor(prev.accent, prev.accent2, prev.accent3);
+      pendingColor = null;
+      close();
+    };
+    panel.onkeydown = (e) => {
+      if (e.key === 'Escape') { closeBtn.onclick(); }
+    };
   }
 
   function syncReorderPanel(mode) {
