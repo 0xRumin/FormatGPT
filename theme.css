@@ -1342,6 +1342,15 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
   .sp-tab-pre{max-height:200px;font-size:11px}
 }
 
+/* =================== Settings panel swatches =================== */
+.sp-swatch{
+  width:36px;height:36px;border-radius:50%;border:2px solid transparent;
+  cursor:pointer;transition:transform .15s,outline-color .15s;
+  box-shadow:0 2px 8px rgba(0,0,0,.3)
+}
+.sp-swatch:hover{transform:scale(1.15)}
+.sp-swatch:active{transform:scale(.95)}
+
 /* =================== Settings popover =================== */
 .gear-pop{
   position:absolute;
