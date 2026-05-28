@@ -1287,6 +1287,61 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
   .sp-bd-pct{min-width:40px;font-size:11px}
 }
 
+/* Year tabs */
+.sp-tabs-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.sp-tabs-bar{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0}
+.sp-tab{
+  padding:8px 14px;border:1px solid var(--line);border-bottom:none;
+  border-radius:8px 8px 0 0;background:transparent;color:var(--muted);
+  font-family:var(--font-mono);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s
+}
+.sp-tab:hover{background:rgba(247,242,236,.04);color:var(--fg)}
+.sp-tab.sp-tab-active{
+  background:rgba(45,212,191,.08);border-color:var(--accent);
+  color:var(--accent);position:relative
+}
+.sp-tab.sp-tab-active::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;
+  background:rgba(45,212,191,.08)
+}
+.sp-tab-count{
+  display:inline-block;min-width:20px;padding:2px 6px;border-radius:10px;
+  background:rgba(255,255,255,.06);font-size:10px;margin-left:4px;text-align:center
+}
+.sp-tab.sp-tab-active .sp-tab-count{background:rgba(45,212,191,.15)}
+
+.sp-tab-pane{
+  border:1px solid var(--line);border-radius:0 8px 8px 8px;
+  background:rgba(0,0,0,.2);overflow:hidden
+}
+.sp-tab-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;border-bottom:1px solid var(--line);
+  background:rgba(0,0,0,.15)
+}
+.sp-tab-info{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.sp-tab-actions{display:flex;gap:6px}
+.sp-tab-copy,.sp-tab-save{
+  padding:4px 12px;border-radius:6px;border:1px solid rgba(45,212,191,.3);
+  background:transparent;color:var(--accent);cursor:pointer;
+  font-family:var(--font-mono);font-size:11px;font-weight:600;transition:all .12s
+}
+.sp-tab-copy:hover,.sp-tab-save:hover{background:rgba(45,212,191,.1);border-color:var(--accent)}
+.sp-tab-save{border-color:var(--line);color:var(--muted)}
+.sp-tab-save:hover{border-color:var(--fg);color:var(--fg)}
+.sp-tab-copy:active,.sp-tab-save:active{transform:translateY(1px)}
+
+.sp-tab-pre{
+  margin:0;padding:12px;max-height:320px;overflow-y:auto;
+  color:var(--fg);font-family:var(--font-mono);font-size:12px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-all
+}
+@media(max-width:600px){
+  .sp-tab{padding:6px 10px;font-size:11px}
+  .sp-tab-pre{max-height:200px;font-size:11px}
+}
+
 /* =================== Settings popover =================== */
 .gear-pop{
   position:absolute;

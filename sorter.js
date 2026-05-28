@@ -7,7 +7,8 @@
   var panelBuilt = false;
   var lastFormat = null;
   var lastSortCol = -1;
-  var excludedYears = {}; // year values excluded from output via ✕ button
+  var excludedYears = {};
+  var yearGroups = {}; // { '2025': ['full:line:1', ...], ... }
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -158,6 +159,12 @@
     h += '<div class="sp-bd-body" id="spBdBody"></div>';
     h += '</div>';
 
+    // Year tabs (hidden until Year column selected)
+    h += '<div class="sp-tabs-wrap" id="spTabsWrap" style="display:none">';
+    h += '<div class="sp-tabs-bar" id="spTabsBar"></div>';
+    h += '<div class="sp-tabs-content" id="spTabsContent"></div>';
+    h += '</div>';
+
     panel.innerHTML = h;
     bindEvents();
   }
@@ -222,6 +229,50 @@
         App.App.rerun();
       }
     });
+
+    // Year tabs: switch + copy
+    $('#spTabsBar').addEventListener('click', function (e) {
+      var tab = e.target.closest('.sp-tab');
+      if (!tab) return;
+      activateTab(tab.dataset.year);
+    });
+
+    $('#spTabsContent').addEventListener('click', function (e) {
+      var btn = e.target.closest('.sp-tab-copy');
+      if (!btn) return;
+      var yr = btn.dataset.year;
+      var lines = yearGroups[yr];
+      if (!lines || !lines.length) return;
+      navigator.clipboard.writeText(lines.join('\n')).then(function () {
+        var orig = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = orig; }, 900);
+      }).catch(function () { alert('Copy failed.'); });
+    });
+
+    $('#spTabsContent').addEventListener('click', function (e) {
+      var btn = e.target.closest('.sp-tab-save');
+      if (!btn) return;
+      var yr = btn.dataset.year;
+      var lines = yearGroups[yr];
+      if (!lines || !lines.length) return;
+      var token = U.randToken(5);
+      var filename = 'year_' + yr + '_' + token + '.txt';
+      var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+    });
+  }
+
+  function activateTab(yr) {
+    var tabs = document.querySelectorAll('#spTabsBar .sp-tab');
+    for (var i = 0; i < tabs.length; i++)
+      tabs[i].classList.toggle('sp-tab-active', tabs[i].dataset.year === yr);
+    var panes = document.querySelectorAll('#spTabsContent .sp-tab-pane');
+    for (var j = 0; j < panes.length; j++)
+      panes[j].style.display = panes[j].dataset.year === yr ? 'block' : 'none';
   }
 
   /* ======== UI sync ======== */
@@ -391,6 +442,77 @@
 
     body.innerHTML = h;
     wrap.style.display = 'block';
+
+    // Build year tabs (only for year column)
+    renderYearTabs(rows, format, colType);
+  }
+
+  /* ======== Year tabs ======== */
+  function renderYearTabs(rows, format, colType) {
+    var tabsWrap = $('#spTabsWrap');
+    if (!tabsWrap) return;
+
+    if (colType !== 'year') {
+      tabsWrap.style.display = 'none';
+      yearGroups = {};
+      return;
+    }
+
+    var totalCols = format.totalColumns;
+    var col = state.sorterColumn;
+
+    // Group lines by year
+    yearGroups = {};
+    for (var i = 0; i < rows.length; i++) {
+      var parts = rows[i].split(':');
+      if (parts.length !== totalCols) continue;
+      var yr = (parts[col] || '').trim();
+      if (!yr || !/^\d{4}$/.test(yr)) continue;
+      if (!yearGroups[yr]) yearGroups[yr] = [];
+      yearGroups[yr].push(rows[i]);
+    }
+
+    var years = Object.keys(yearGroups).sort(function (a, b) { return +b - +a; });
+    if (!years.length) { tabsWrap.style.display = 'none'; return; }
+
+    // Tabs bar
+    var bar = $('#spTabsBar');
+    var content = $('#spTabsContent');
+    var firstYear = years[0];
+
+    var bh = '';
+    for (var t = 0; t < years.length; t++) {
+      var yr = years[t];
+      var cnt = yearGroups[yr].length;
+      var active = t === 0 ? ' sp-tab-active' : '';
+      bh += '<button class="sp-tab' + active + '" data-year="' + yr + '">';
+      bh += yr + ' <span class="sp-tab-count">' + cnt + '</span>';
+      bh += '</button>';
+    }
+    bar.innerHTML = bh;
+
+    // Tab panes
+    var ch = '';
+    for (var p = 0; p < years.length; p++) {
+      var y = years[p];
+      var lines = yearGroups[y];
+      var show = p === 0 ? 'block' : 'none';
+      ch += '<div class="sp-tab-pane" data-year="' + y + '" style="display:' + show + '">';
+      ch += '<div class="sp-tab-header">';
+      ch += '<span class="sp-tab-info">' + y + ' · ' + lines.length + ' accounts</span>';
+      ch += '<div class="sp-tab-actions">';
+      ch += '<button class="sp-tab-copy" data-year="' + y + '">Copy</button>';
+      ch += '<button class="sp-tab-save" data-year="' + y + '">Save .txt</button>';
+      ch += '</div></div>';
+      ch += '<pre class="sp-tab-pre">' + escHtml(lines.join('\n')) + '</pre>';
+      ch += '</div>';
+    }
+    content.innerHTML = ch;
+    tabsWrap.style.display = 'block';
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   /* ======== Sort logic ======== */
@@ -457,6 +579,7 @@
       if (!rows.length) {
         renderCols(null);
         var bd = $('#spBreakdown'); if (bd) bd.style.display = 'none';
+        var tw = $('#spTabsWrap'); if (tw) tw.style.display = 'none';
         return '';
       }
 
