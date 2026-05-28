@@ -8,7 +8,7 @@
   var lastFormat = null;
   var lastSortCol = -1;
   var excludedYears = {};
-  var yearGroups = {}; // { '2025': ['full:line:1', ...], ... }
+  var tabGroups = {}; // { 'key': ['full:line:1', ...], ... }
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -241,7 +241,7 @@
       var btn = e.target.closest('.sp-tab-copy');
       if (!btn) return;
       var yr = btn.dataset.year;
-      var lines = yearGroups[yr];
+      var lines = tabGroups[yr];
       if (!lines || !lines.length) return;
       navigator.clipboard.writeText(lines.join('\n')).then(function () {
         var orig = btn.textContent;
@@ -254,10 +254,11 @@
       var btn = e.target.closest('.sp-tab-save');
       if (!btn) return;
       var yr = btn.dataset.year;
-      var lines = yearGroups[yr];
+      var lines = tabGroups[yr];
       if (!lines || !lines.length) return;
       var token = U.randToken(5);
-      var filename = 'year_' + yr + '_' + token + '.txt';
+      var prefix = btn.dataset.prefix || 'data_' + yr.replace(/\s+/g, '').replace(/–/g, '-');
+      var filename = prefix + '_' + token + '.txt';
       var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
@@ -443,66 +444,107 @@
     body.innerHTML = h;
     wrap.style.display = 'block';
 
-    // Build year tabs (only for year column)
-    renderYearTabs(rows, format, colType);
+    // Build tabs for year or counts
+    renderValueTabs(rows, format, colType);
   }
 
-  /* ======== Year tabs ======== */
-  function renderYearTabs(rows, format, colType) {
+  /* ======== Value tabs (year + counts) ======== */
+  function renderValueTabs(rows, format, colType) {
     var tabsWrap = $('#spTabsWrap');
     if (!tabsWrap) return;
 
-    if (colType !== 'year') {
+    if (colType !== 'year' && colType !== 'counts') {
       tabsWrap.style.display = 'none';
-      yearGroups = {};
+      tabGroups = {};
       return;
     }
 
     var totalCols = format.totalColumns;
     var col = state.sorterColumn;
+    tabGroups = {};
 
-    // Group lines by year
-    yearGroups = {};
-    for (var i = 0; i < rows.length; i++) {
-      var parts = rows[i].split(':');
-      if (parts.length !== totalCols) continue;
-      var yr = (parts[col] || '').trim();
-      if (!yr || !/^\d{4}$/.test(yr)) continue;
-      if (!yearGroups[yr]) yearGroups[yr] = [];
-      yearGroups[yr].push(rows[i]);
+    if (colType === 'year') {
+      // Group by individual year
+      for (var i = 0; i < rows.length; i++) {
+        var parts = rows[i].split(':');
+        if (parts.length !== totalCols) continue;
+        var yr = (parts[col] || '').trim();
+        if (!yr || !/^\d{4}$/.test(yr)) continue;
+        if (!tabGroups[yr]) tabGroups[yr] = [];
+        tabGroups[yr].push(rows[i]);
+      }
+    } else {
+      // Group by count ranges
+      var maxVal = 0;
+      for (var m = 0; m < rows.length; m++) {
+        var mp = rows[m].split(':');
+        if (mp.length !== totalCols) continue;
+        var mv = parseInt((mp[col] || '').trim(), 10);
+        if (!isNaN(mv) && mv > maxVal) maxVal = mv;
+      }
+      var ranges = pickCountRanges(maxVal);
+      for (var r = 0; r < ranges.length; r++) {
+        tabGroups[ranges[r].label] = [];
+      }
+      for (var j = 0; j < rows.length; j++) {
+        var jp = rows[j].split(':');
+        if (jp.length !== totalCols) continue;
+        var jv = parseInt((jp[col] || '').trim(), 10);
+        if (isNaN(jv)) continue;
+        for (var ri = 0; ri < ranges.length; ri++) {
+          if (jv >= ranges[ri].lo && jv <= ranges[ri].hi) {
+            tabGroups[ranges[ri].label].push(rows[j]);
+            break;
+          }
+        }
+      }
+      // Remove empty ranges
+      for (var key in tabGroups) {
+        if (!tabGroups[key].length) delete tabGroups[key];
+      }
     }
 
-    var years = Object.keys(yearGroups).sort(function (a, b) { return +b - +a; });
-    if (!years.length) { tabsWrap.style.display = 'none'; return; }
+    var keys = Object.keys(tabGroups);
+    if (!keys.length) { tabsWrap.style.display = 'none'; return; }
 
-    // Tabs bar
+    // Sort: years newest-first, count ranges by their numeric start
+    if (colType === 'year') {
+      keys.sort(function (a, b) { return +b - +a; });
+    } else {
+      keys.sort(function (a, b) {
+        return parseInt(a, 10) - parseInt(b, 10);
+      });
+    }
+
     var bar = $('#spTabsBar');
     var content = $('#spTabsContent');
-    var firstYear = years[0];
+    var prefix = colType === 'year' ? 'year' : 'range';
 
+    // Tabs
     var bh = '';
-    for (var t = 0; t < years.length; t++) {
-      var yr = years[t];
-      var cnt = yearGroups[yr].length;
+    for (var t = 0; t < keys.length; t++) {
+      var k = keys[t];
+      var cnt = tabGroups[k].length;
       var active = t === 0 ? ' sp-tab-active' : '';
-      bh += '<button class="sp-tab' + active + '" data-year="' + yr + '">';
-      bh += yr + ' <span class="sp-tab-count">' + cnt + '</span>';
+      bh += '<button class="sp-tab' + active + '" data-year="' + k + '">';
+      bh += k + ' <span class="sp-tab-count">' + cnt + '</span>';
       bh += '</button>';
     }
     bar.innerHTML = bh;
 
-    // Tab panes
+    // Panes
     var ch = '';
-    for (var p = 0; p < years.length; p++) {
-      var y = years[p];
-      var lines = yearGroups[y];
+    for (var p = 0; p < keys.length; p++) {
+      var pk = keys[p];
+      var lines = tabGroups[pk];
       var show = p === 0 ? 'block' : 'none';
-      ch += '<div class="sp-tab-pane" data-year="' + y + '" style="display:' + show + '">';
+      var fileLabel = pk.replace(/\s+/g, '').replace(/–/g, '-');
+      ch += '<div class="sp-tab-pane" data-year="' + pk + '" style="display:' + show + '">';
       ch += '<div class="sp-tab-header">';
-      ch += '<span class="sp-tab-info">' + y + ' · ' + lines.length + ' accounts</span>';
+      ch += '<span class="sp-tab-info">' + pk + ' · ' + lines.length + ' accounts</span>';
       ch += '<div class="sp-tab-actions">';
-      ch += '<button class="sp-tab-copy" data-year="' + y + '">Copy</button>';
-      ch += '<button class="sp-tab-save" data-year="' + y + '">Save .txt</button>';
+      ch += '<button class="sp-tab-copy" data-year="' + pk + '">Copy</button>';
+      ch += '<button class="sp-tab-save" data-year="' + pk + '" data-prefix="' + prefix + '_' + fileLabel + '">Save .txt</button>';
       ch += '</div></div>';
       ch += '<pre class="sp-tab-pre">' + escHtml(lines.join('\n')) + '</pre>';
       ch += '</div>';
