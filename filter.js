@@ -225,8 +225,11 @@
       raw.split(/\r?\n/).forEach(function (line) {
         var orig = line.trim();
         if (!orig) return;
-        var key = orig.toLowerCase();
-        if (!targets.hasOwnProperty(key)) { targets[key] = orig; numTargets++; }
+        // If the pasted line contains colons, extract the first field (username)
+        var username = orig.split(':')[0].trim();
+        if (!username) return;
+        var key = username.toLowerCase();
+        if (!targets.hasOwnProperty(key)) { targets[key] = username; numTargets++; }
       });
     }
 
