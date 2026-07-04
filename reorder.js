@@ -184,6 +184,9 @@
       if (bundle[1] != null && String(bundle[1]).trim()) fields.mailpass = String(bundle[1]).trim();
       if (bundle[2] != null && String(bundle[2]).trim()) fields.refresh  = String(bundle[2]).trim();
       if (bundle[3] != null && String(bundle[3]).trim()) fields.clientid = String(bundle[3]).trim();
+      // Flag so the output keeps the mail-chunk fields joined by | (not the
+      // main separator). Not a real field — no FIELD_TO_TYPE maps to it.
+      fields.__bundle = true;
     }
     return fields;
   }
@@ -226,10 +229,34 @@
     var fields  = state.reorderFields  || ALL_FIELDS;
     var enabled = state.reorderEnabled || {};
 
+    // When the line is a pipe mail-bundle, the four mail-chunk fields
+    // (email|emailpassword|refresh_token|client_id) stay joined by "|" as a
+    // single output token — the main separator is NOT used between them.
+    var isBundle = !!classified.__bundle;
+    var BUNDLE_FIELDS = { email:1, emailpassword:1, refresh_token:1, client_id:1 };
+    var bundleEmitted = false;
+
     for (var i = 0; i < fields.length; i++) {
-      if (!enabled[fields[i]]) continue;
-      var val = classified[FIELD_TO_TYPE[fields[i]]];
-      if (val) result.push(val);
+      var f = fields[i];
+      if (!enabled[f]) continue;
+      var val = classified[FIELD_TO_TYPE[f]];
+      if (!val) continue;
+
+      if (isBundle && BUNDLE_FIELDS[f]) {
+        if (bundleEmitted) continue; // whole chunk already emitted at first hit
+        var chunk = [];
+        for (var j = 0; j < fields.length; j++) {
+          var bf = fields[j];
+          if (!BUNDLE_FIELDS[bf] || !enabled[bf]) continue;
+          var bv = classified[FIELD_TO_TYPE[bf]];
+          if (bv) chunk.push(bv);
+        }
+        result.push(chunk.join('|'));
+        bundleEmitted = true;
+        continue;
+      }
+
+      result.push(val);
     }
     return result.join(sep);
   }
