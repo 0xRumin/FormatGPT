@@ -41,6 +41,28 @@
     pass = pass || "";
 
     let mail = "", mailPass = "", token = "", raw2fa = "", followersRaw = "", year = "", phone = "";
+    let refreshToken = "", clientId = "";
+
+    // Detect the pipe-delimited mail chunk:
+    //   mail|mailpass|refresh_token|clientID
+    // First segment must be an email; if matched, all 4 sub-fields are pulled
+    // out here and the chunk is skipped in the main loop below.
+    for (let i = 0; i < rest.length; i++) {
+      const p = (rest[i] || "").trim();
+      if (!p || p.indexOf("|") < 0) continue;
+      const sub = p.split("|");
+      if (sub.length < 2) continue;
+      const first = (sub[0] || "").trim();
+      if (!U.isEmail(first)) continue;
+
+      mail         = first;
+      mailPass     = (sub[1] || "").trim() || mailPass;
+      refreshToken = (sub[2] || "").trim() || refreshToken;
+      clientId     = (sub[3] || "").trim() || clientId;
+      // Blank out so the main loop skips this position
+      rest[i] = "";
+      break;
+    }
 
     for (const p0 of rest) {
       const p = (p0 || "").trim(); if (!p) continue;
@@ -81,6 +103,8 @@
     if (phone) lines.push(`Phone: ${phone}`);
     if (mail) lines.push(`Mail: \`${mail}\``);
     if (mail && mailPass) lines.push(`Mail Pass: \`${mailPass}\``);
+    if (refreshToken) lines.push(`Refresh Token: \`${refreshToken}\``);
+    if (clientId) lines.push(`Client ID: \`${clientId}\``);
     if (token) lines.push(`Auth Token: \`${token}\``);
     if (raw2fa) lines.push(`2FA: https://www.browserscan.net/2fa#${raw2fa}`);
     if (year) lines.push(`Joined: ${year}`);
