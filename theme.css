@@ -1107,7 +1107,11 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .rp-fname{font-family:var(--font-mono);font-size:12px;color:var(--fg);flex:1;font-weight:500;letter-spacing:0.04em}
 .rp-field-row:not(.rp-on) .rp-fname{color:var(--muted)}
 
-.rp-fkey{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase}
+.rp-fkey{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;flex-shrink:0}
+/* Real sample value from the pasted data (not a placeholder label). Keep
+   original case + tighten spacing so emails/usernames read naturally. */
+.rp-fkey-real{color:var(--accent);text-transform:none;letter-spacing:0.02em;opacity:0.85}
+.rp-field-row:not(.rp-on) .rp-fkey-real{color:var(--muted);opacity:0.6}
 
 .rp-preview{
   background:rgba(0,0,0,0.35);border:1px solid var(--line);border-radius:12px;
@@ -2171,8 +2175,10 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   .rp-fs-desc{ font-size:11.5px; }
 }
 @media (max-width: 420px){
-  /* Hide the small right-aligned key hint so the field name has room. */
-  .rp-fkey{ display:none; }
+  /* Hide the placeholder-only key hint so the field name has room — but keep
+     the real sample value (it's the useful bit) at a tighter width. */
+  .rp-fkey:not(.rp-fkey-real){ display:none; }
+  .rp-fkey-real{ max-width:40%; font-size:9.5px; }
   .rp-fr-arrow{ font-size:12px; }
   .rp-fr-input{ font-size:11.5px; padding:6px 9px; }
   .rp-fs-add{ gap:4px; }

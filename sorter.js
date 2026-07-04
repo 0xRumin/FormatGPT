@@ -13,9 +13,11 @@
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
     email:         { emoji: '\uD83D\uDCE7', name: 'Email' },         // 📧
+    mail_bundle:   { emoji: '\uD83D\uDCE6', name: 'Mail Bundle' },   // 📦 mail|pass|refresh|clientID
     phone:         { emoji: '\uD83D\uDCDE', name: 'Phone' },         // 📞
     password:      { emoji: '\uD83D\uDD11', name: 'Password' },      // 🔑
     mail_password: { emoji: '\uD83D\uDD11', name: 'Mail Password' }, // 🔑
+    ct0:           { emoji: '\uD83E\uDDE9', name: 'ct0' },           // 🧩
     auth_token:    { emoji: '\uD83D\uDD10', name: 'Auth Token' },    // 🔐
     twofa_key:     { emoji: '\uD83D\uDD12', name: '2FA Key' },       // 🔒
     counts:        { emoji: '\uD83D\uDD22', name: 'Counts' },        // 🔢
@@ -35,7 +37,14 @@
   function classifyCol(col) {
     col = (col || '').trim();
     if (!col) return null;
+    // Pipe-mail-bundle: mail|mailpass|refresh_token|clientID. Detect BEFORE the
+    // plain-email check so the whole chunk isn't mislabeled as "Email".
+    if (col.indexOf('|') > -1) {
+      var first = col.split('|')[0];
+      if (first.indexOf('@') > -1 && first.indexOf('.') > -1) return 'mail_bundle';
+    }
     if (col.indexOf('@') > -1 && col.indexOf('.') > -1) return 'email';
+    if (/^[0-9a-f]{160}$/i.test(col)) return 'ct0';
     if (/^[0-9a-f]{40}$/i.test(col)) return 'auth_token';
     if (/^[A-Z0-9]{16}$/.test(col)) return 'twofa_key';
     if (/^\+\d/.test(col)) return 'phone';
