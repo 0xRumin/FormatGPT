@@ -4,29 +4,48 @@
   var state = App.State.state;
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
 
+  // First real value per field from the pasted data — shown on each row in
+  // place of the static placeholder label. Recomputed on every run().
+  var lastSamples = {};
+  var SAMPLE_MAX = 22;
+
+  function truncate(s, n) {
+    s = String(s == null ? '' : s);
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+    });
+  }
+
   /* ======== Constants ======== */
   var ALL_FIELDS = [
-    'username', 'password', 'email', 'emailpassword', 'phone',
-    'ct0', 'auth_token', 'twofa', 'counts', 'date'
+    'username', 'password', 'phone', 'email', 'emailpassword',
+    'refresh_token', 'client_id', 'ct0', 'auth_token', 'twofa', 'counts', 'date'
   ];
 
   var FIELD_LABELS = {
-    username: 'username', password: 'password', email: 'email',
-    emailpassword: 'emailpassword', phone: 'phone', ct0: 'ct0',
-    auth_token: 'auth_token', twofa: 'twofa', counts: 'counts', date: 'date'
+    username: 'username', password: 'password', phone: 'phone',
+    email: 'email', emailpassword: 'emailpassword',
+    refresh_token: 'refresh_token', client_id: 'client_id',
+    ct0: 'ct0', auth_token: 'auth_token', twofa: 'twofa',
+    counts: 'counts', date: 'date'
   };
 
   // Panel field ID → classifier type key
   var FIELD_TO_TYPE = {
-    username: 'user', password: 'pass', email: 'mail',
-    emailpassword: 'mailpass', phone: 'phone', ct0: 'ct0',
-    auth_token: 'auth', twofa: '2fa', counts: 'counts', date: 'year'
+    username: 'user', password: 'pass', phone: 'phone',
+    email: 'mail', emailpassword: 'mailpass',
+    refresh_token: 'refresh', client_id: 'clientid',
+    ct0: 'ct0', auth_token: 'auth', twofa: '2fa',
+    counts: 'counts', date: 'year'
   };
 
   var PRESETS = {
     original:    ALL_FIELDS.slice(),
     login:       ['username', 'password'],
-    fullCreds:   ['username', 'password', 'email', 'emailpassword', 'auth_token', 'twofa'],
+    fullCreds:   ['username', 'password', 'phone', 'email', 'emailpassword', 'refresh_token', 'client_id', 'auth_token', 'twofa'],
     apiBot:      ['username', 'password', 'auth_token', 'ct0', 'twofa'],
     accountInfo: ['username', 'email', 'phone', 'date', 'counts'],
     allFields:   ALL_FIELDS.slice()
@@ -113,7 +132,21 @@
 
   /* ======== Field Classification ======== */
   function classifyParts(parts) {
+    // Detect a pipe-mail-bundle: mail|mailpass|refresh_token|clientID.
+    // First sub-part must be an email. When found, that index is excluded from
+    // positional user/pass detection and its 4 sub-fields are pulled directly.
+    var bundle = null, bundleIdx = -1;
+    for (var bi = 0; bi < parts.length; bi++) {
+      var bp = (parts[bi] || '').trim();
+      if (bp.indexOf('|') < 0) continue;
+      var subs = bp.split('|');
+      if (subs.length >= 2 && U.isEmail((subs[0] || '').trim())) {
+        bundle = subs; bundleIdx = bi; break;
+      }
+    }
+
     var tagged = parts.map(function (raw, i) {
+      if (i === bundleIdx) return { value: '', type: null, idx: i }; // consumed by bundle
       var p = (raw || '').trim();
       if (!p) return { value: p, type: null, idx: i };
       if (U.isCt0(p))   return { value: p, type: 'ct0',    idx: i };
@@ -135,7 +168,9 @@
 
     if (unknowns.length >= 1) unknowns[0].type = 'user';
     if (unknowns.length >= 2) unknowns[1].type = 'pass';
-    if (emailIdx >= 0) {
+    // Positional mail-pass only applies when the email is a standalone column
+    // (not a bundle — the bundle already carries its own mailpass sub-field).
+    if (emailIdx >= 0 && !bundle) {
       for (var i = 2; i < unknowns.length; i++) {
         if (unknowns[i].idx > emailIdx) { unknowns[i].type = 'mailpass'; break; }
       }
@@ -143,6 +178,13 @@
 
     var fields = {};
     tagged.forEach(function (t) { if (t.type) fields[t.type] = t.value; });
+
+    if (bundle) {
+      fields.mail = (bundle[0] || '').trim();
+      if (bundle[1] != null && String(bundle[1]).trim()) fields.mailpass = String(bundle[1]).trim();
+      if (bundle[2] != null && String(bundle[2]).trim()) fields.refresh  = String(bundle[2]).trim();
+      if (bundle[3] != null && String(bundle[3]).trim()) fields.clientid = String(bundle[3]).trim();
+    }
     return fields;
   }
 
@@ -312,17 +354,57 @@
 
   function buildFieldRows() {
     var h = '';
+    var samples = lastSamples || {};
     (state.reorderFields || ALL_FIELDS).forEach(function (f) {
       var chk = state.reorderEnabled[f] ? ' checked' : '';
       var on  = state.reorderEnabled[f] ? ' rp-on'   : '';
+      var sample = samples[f];
+      var keyTxt = sample ? truncate(sample, SAMPLE_MAX) : FIELD_LABELS[f];
+      var keyCls = sample ? 'rp-fkey rp-fkey-real' : 'rp-fkey';
       h += '<div class="rp-field-row' + on + '" data-field="' + f + '">';
       h += '<span class="rp-drag" aria-label="Drag to reorder">\u2807</span>';
       h += '<input type="checkbox" class="rp-check"' + chk + '>';
       h += '<span class="rp-fname">' + FIELD_LABELS[f] + '</span>';
-      h += '<span class="rp-fkey">' + FIELD_LABELS[f] + '</span>';
+      h += '<span class="' + keyCls + '" title="' + escapeHtml(sample || '') + '">' + escapeHtml(keyTxt) + '</span>';
       h += '</div>';
     });
     return h;
+  }
+
+  // Pull the first real value for each field from the first non-empty row.
+  function computeSamples(text) {
+    var rows = String(text || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var samples = {};
+    if (!rows.length) return samples;
+    var parts = U.splitFlexible(applyFindReplace(rows[0]));
+    var classified = classifyParts(parts);
+    ALL_FIELDS.forEach(function (f) {
+      var v = classified[FIELD_TO_TYPE[f]];
+      if (v) samples[f] = v;
+    });
+    return samples;
+  }
+
+  // Update the right-hand preview text on every field row in place (no rebuild,
+  // so drag/checkbox state is preserved). Uses textContent to stay XSS-safe.
+  function updateFieldSamples() {
+    var samples = lastSamples || {};
+    var rows = document.querySelectorAll('#rpFields .rp-field-row');
+    for (var i = 0; i < rows.length; i++) {
+      var f = rows[i].dataset.field;
+      var key = rows[i].querySelector('.rp-fkey');
+      if (!key) continue;
+      var s = samples[f];
+      if (s) {
+        key.textContent = truncate(s, SAMPLE_MAX);
+        key.title = s;
+        key.classList.add('rp-fkey-real');
+      } else {
+        key.textContent = FIELD_LABELS[f];
+        key.title = '';
+        key.classList.remove('rp-fkey-real');
+      }
+    }
   }
 
   function buildFieldOpRows() {
@@ -621,6 +703,7 @@
   function rebuildFieldRows() {
     var c = $('#rpFields');
     if (c) c.innerHTML = buildFieldRows();
+    updateFieldSamples();
   }
 
   function updatePreview() {
@@ -699,6 +782,9 @@
     run: function (text) {
       if (!panelBuilt) buildPanel();
 
+      // Refresh the per-row sample previews from the current input.
+      lastSamples = computeSamples(text);
+
       // "Original" preset: auto-detect fields present in the input
       if (state.reorderPreset === 'original') {
         state.reorderEnabled = detectPresentFields(text);
@@ -706,6 +792,7 @@
         if (panelBuilt) syncFieldRows();
       }
 
+      if (panelBuilt) updateFieldSamples();
       updatePreview();
 
       var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
