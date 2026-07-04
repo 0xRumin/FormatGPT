@@ -33,8 +33,11 @@
 
         const user   = get("user:");
         const pass   = get("pass:");
+        const phone  = get("phone:");
         const mail   = get("mail:");
         const mailPw = get("mail pass:");
+        const refTok = get("refresh token:");
+        const cliId  = get("client id:");
         const token  = get("auth token:");
         let twofa    = get("2fa:");
         const joined = get("joined:");
@@ -54,7 +57,15 @@
           }
         }
 
-        out.push([user, pass, mail, mailPw, token, twofa, countTok, joined].filter(s => s && String(s).trim() !== "").join(":"));
+        // If refresh token / client ID are present, emit the pipe-chunk
+        // format: mail|mailpass|refresh_token|clientID. Otherwise keep the
+        // legacy layout with mail and mailPw as separate colon-delimited fields.
+        if (refTok || cliId) {
+          const chunk = [mail, mailPw, refTok, cliId].join("|");
+          out.push([user, pass, phone, chunk, token, twofa, countTok, joined].filter(s => s && String(s).trim() !== "").join(":"));
+        } else {
+          out.push([user, pass, phone, mail, mailPw, token, twofa, countTok, joined].filter(s => s && String(s).trim() !== "").join(":"));
+        }
       }
       return out.join("\n");
     }
