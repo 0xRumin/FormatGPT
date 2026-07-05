@@ -9,6 +9,10 @@
   var lastSamples = {};
   var SAMPLE_MAX = 22;
 
+  // Tracks the last input text so run() can tell a genuine change (new paste)
+  // apart from a re-render — used to snap the preset back to "Original".
+  var lastRunText = null;
+
   function truncate(s, n) {
     s = String(s == null ? '' : s);
     return s.length > n ? s.slice(0, n) + '…' : s;
@@ -811,6 +815,18 @@
 
       // Refresh the per-row sample previews from the current input.
       lastSamples = computeSamples(text);
+
+      // Auto-return to "Original" whenever fresh input arrives (a new paste or
+      // an edit). This snaps the preset back so newly pasted data is always
+      // auto-detected, even if the user had switched to a Custom layout.
+      var changed = (text !== lastRunText);
+      lastRunText = text;
+      if (changed && text.trim() && state.reorderPreset !== 'original') {
+        state.reorderPreset = 'original';
+        state.reorderFields = ALL_FIELDS.slice();
+        saveState();
+        if (panelBuilt) { syncPresetBtns(); rebuildFieldRows(); }
+      }
 
       // "Original" preset: auto-detect fields present in the input
       if (state.reorderPreset === 'original') {
