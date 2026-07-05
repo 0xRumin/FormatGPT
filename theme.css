@@ -1353,6 +1353,32 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
   .sp-tab-pre{max-height:200px;font-size:11px}
 }
 
+/* =================== Sorter — skipped (mismatched) lines =================== */
+.sp-mismatch{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.sp-mm-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.sp-mm-head .sp-label{margin:0}
+.sp-mm-actions{display:flex;gap:6px}
+.sp-mm-copy,.sp-mm-save{
+  padding:4px 12px;border-radius:6px;border:1px solid var(--line);
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-family:var(--font-mono);font-size:11px;font-weight:600;transition:all .12s
+}
+.sp-mm-copy:hover,.sp-mm-save:hover{border-color:var(--fg);color:var(--fg)}
+.sp-mm-copy:active,.sp-mm-save:active{transform:translateY(1px)}
+.sp-mm-sub{
+  font-family:var(--font-mono);font-size:11px;line-height:1.5;
+  color:var(--bad,#ef4444);margin-bottom:8px
+}
+.sp-mm-box{
+  width:100%;box-sizing:border-box;min-height:90px;max-height:260px;resize:vertical;
+  padding:12px;border:1px solid rgba(239,68,68,.3);border-radius:8px;
+  background:rgba(0,0,0,.25);color:var(--fg);
+  font-family:var(--font-mono);font-size:12px;line-height:1.5;
+  white-space:pre;overflow:auto
+}
+.sp-mm-box:focus{outline:none;border-color:var(--bad,#ef4444)}
+@media(max-width:600px){.sp-mm-box{font-size:11px;max-height:200px}}
+
 /* =================== Settings panel — theme grid =================== */
 .sp-settings-label{
   display:block;margin-bottom:8px;font-size:11px;letter-spacing:.5px;
