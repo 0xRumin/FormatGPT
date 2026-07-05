@@ -375,15 +375,18 @@
 
     var total = values.length;
     var h = '';
+    // Graph rows follow the chosen sort direction: ascending orders (Small→Big
+    // / A→Z) list smallest values first; everything else lists largest first.
+    var asc = (state.sorterOrder === 'asc' || state.sorterOrder === 'az');
 
     if (colType === 'year') {
-      // Year: count per individual year, sorted newest-first
+      // Year: count per individual year, ordered to match the sort direction
       var yearCounts = {};
       for (var y = 0; y < values.length; y++) {
         var yr = String(values[y]);
         yearCounts[yr] = (yearCounts[yr] || 0) + 1;
       }
-      var years = Object.keys(yearCounts).sort(function (a, b) { return +b - +a; });
+      var years = Object.keys(yearCounts).sort(function (a, b) { return asc ? (+a - +b) : (+b - +a); });
       var maxCnt = 0;
       for (var m = 0; m < years.length; m++) {
         if (yearCounts[years[m]] > maxCnt) maxCnt = yearCounts[years[m]];
@@ -437,7 +440,13 @@
       }
 
       h += '<div class="sp-bd-total">' + nonEmpty + ' ranges · ' + total + ' accounts · max ' + maxVal + '</div>';
-      for (var g = 0; g < ranges.length; g++) {
+      // Ranges are built low→high; reverse the display order for descending sorts
+      // so the graph mirrors the output (big ranges first on Big→Small).
+      var rOrder = [];
+      for (var ro = 0; ro < ranges.length; ro++) rOrder.push(ro);
+      if (!asc) rOrder.reverse();
+      for (var gi = 0; gi < rOrder.length; gi++) {
+        var g = rOrder[gi];
         if (rangeCounts[g] === 0) continue;
         var bW = maxRC > 0 ? Math.round((rangeCounts[g] / maxRC) * 100) : 0;
         var pT = ((rangeCounts[g] / total) * 100).toFixed(1);
