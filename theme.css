@@ -847,6 +847,30 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .add-mail input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
 .add-mail input[type=checkbox]:checked::after{transform:translateX(16px);background:#fff}
 
+/* ===== Chunk Mode toggle (above the input textarea, Standard mode only) ===== */
+.chunk-toggle{ display:none; }               /* only shown in Standard mode */
+body[data-mode="standard"] .chunk-toggle{
+  display:inline-flex;align-self:flex-start;align-items:center;gap:10px;
+  margin:0 0 10px;padding:7px 13px;
+  border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--muted);cursor:pointer;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;
+  transition:all 0.2s;user-select:none;
+}
+.chunk-toggle input[type=checkbox]{
+  appearance:none;-webkit-appearance:none;
+  width:32px;height:16px;border-radius:999px;
+  background:rgba(var(--tint-rgb),0.08);border:1px solid var(--line-strong);
+  position:relative;cursor:pointer;margin:0;transition:background 0.2s, border-color 0.2s;
+}
+.chunk-toggle input[type=checkbox]::after{
+  content:"";position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;
+  background:var(--muted);transition:transform 0.35s cubic-bezier(.34,1.56,.64,1), background 0.2s;
+}
+.chunk-toggle:hover{color:var(--fg);border-color:var(--line-strong)}
+.chunk-toggle:has(input:checked){color:var(--fg);border-color:var(--accent)}
+.chunk-toggle input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.chunk-toggle input[type=checkbox]:checked::after{transform:translateX(16px);background:#fff}
+
 #clearBtn{
   display:inline-flex;align-items:center;padding:9px 16px;
   border-radius:999px;

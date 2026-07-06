@@ -55,10 +55,18 @@
       const first = (sub[0] || "").trim();
       if (!U.isEmail(first)) continue;
 
-      mail         = first;
-      mailPass     = (sub[1] || "").trim() || mailPass;
-      refreshToken = (sub[2] || "").trim() || refreshToken;
-      clientId     = (sub[3] || "").trim() || clientId;
+      if (state.chunkMode) {
+        // Chunk Mode: keep the whole mail chunk
+        //   email|mailpass|refresh_token|clientID
+        // intact as a single Mail field (needed as one unit for mail reading)
+        // instead of splitting it into Mail / Mail Pass / Refresh / Client ID.
+        mail = p;
+      } else {
+        mail         = first;
+        mailPass     = (sub[1] || "").trim() || mailPass;
+        refreshToken = (sub[2] || "").trim() || refreshToken;
+        clientId     = (sub[3] || "").trim() || clientId;
+      }
       // Blank out so the main loop skips this position
       rest[i] = "";
       break;

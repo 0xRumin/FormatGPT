@@ -400,6 +400,17 @@
       Core?.rerun && Core.rerun();
     });
 
+    // Chunk Mode checkbox — keeps the mail chunk intact in Standard output
+    const chunkChk = $('#chunkChk');
+    if (chunkChk) {
+      chunkChk.checked = !!(State?.state && State.state.chunkMode);
+      chunkChk.addEventListener('change', () => {
+        if (State?.state) State.state.chunkMode = !!chunkChk.checked;
+        try { localStorage.setItem('chunkMode', chunkChk.checked ? '1' : '0'); } catch (e) {}
+        Core?.rerun && Core.rerun();
+      });
+    }
+
     // Paste
     $('#pasteMain')?.addEventListener('click', async () => {
       try {
