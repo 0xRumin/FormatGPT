@@ -8,6 +8,7 @@
   var lastFormat = null;
   var lastSortCol = -1;
   var excludedYears = {};
+  var excludedRanges = {}; // counts ranges excluded from output: { 'lo – hi': {lo,hi} }
   var tabGroups = {}; // { 'key': ['full:line:1', ...], ... }
   var mismatchLines = []; // raw input lines whose column count != detected total
 
@@ -34,6 +35,14 @@
     localStorage.setItem('sorterColumn', String(state.sorterColumn));
     localStorage.setItem('sorterOrder', state.sorterOrder);
     localStorage.setItem('sorterForce', state.sorterForce ? '1' : '0');
+  }
+
+  function downloadTxt(lines, filename) {
+    var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
   }
 
   /* ======== Column type classification ======== */
@@ -221,6 +230,7 @@
       if (!btn) return;
       state.sorterColumn = +btn.dataset.col;
       excludedYears = {};
+      excludedRanges = {};
       saveSorterState();
       syncColBtns();
       App.App.rerun();
@@ -239,16 +249,43 @@
     $('#spBdBody').addEventListener('click', function (e) {
       var btn = e.target.closest('.sp-bd-remove, .sp-bd-download');
       if (!btn) return;
-      var yearVal = btn.dataset.year;
-      if (!yearVal || !lastFormat) return;
+      if (!lastFormat) return;
+      var isDownload = btn.classList.contains('sp-bd-download');
+      var col = lastSortCol;
+      var totalCols = lastFormat.totalColumns;
 
-      if (btn.classList.contains('sp-bd-download')) {
-        // Download only matching lines
-        var inp = $('#inp');
-        if (!inp) return;
+      // Counts row carries a range (data-lo / data-hi); Year row carries a
+      // single value (data-year). Handle the range case first.
+      if (btn.dataset.lo != null && btn.dataset.hi != null) {
+        var lo = parseInt(btn.dataset.lo, 10);
+        var hi = parseInt(btn.dataset.hi, 10);
+        var rLabel = btn.dataset.label;
+        if (isDownload) {
+          var inpR = $('#inp'); if (!inpR) return;
+          var rowsR = inpR.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+          var matchR = [];
+          for (var ir = 0; ir < rowsR.length; ir++) {
+            var pR = rowsR[ir].split(':');
+            if (pR.length !== totalCols) continue;
+            var nvR = parseInt((pR[col] || '').trim(), 10);
+            if (!isNaN(nvR) && nvR >= lo && nvR <= hi) matchR.push(rowsR[ir]);
+          }
+          if (!matchR.length) return;
+          downloadTxt(matchR, 'count_' + lo + '-' + hi + '_' + U.randToken(5) + '.txt');
+        } else {
+          if (excludedRanges[rLabel]) delete excludedRanges[rLabel];
+          else excludedRanges[rLabel] = { lo: lo, hi: hi };
+          App.App.rerun();
+        }
+        return;
+      }
+
+      // Year value row
+      var yearVal = btn.dataset.year;
+      if (!yearVal) return;
+      if (isDownload) {
+        var inp = $('#inp'); if (!inp) return;
         var rows = inp.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-        var col = lastSortCol;
-        var totalCols = lastFormat.totalColumns;
         var matching = [];
         for (var i = 0; i < rows.length; i++) {
           var parts = rows[i].split(':');
@@ -257,20 +294,11 @@
           }
         }
         if (!matching.length) return;
-        var token = U.randToken(5);
-        var filename = 'year_' + yearVal + '_' + token + '.txt';
-        var blob = new Blob(['﻿' + matching.join('\n')], { type: 'text/plain;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-        setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+        downloadTxt(matching, 'year_' + yearVal + '_' + U.randToken(5) + '.txt');
       } else {
         // Toggle exclusion from output (input stays untouched)
-        if (excludedYears[yearVal]) {
-          delete excludedYears[yearVal];
-        } else {
-          excludedYears[yearVal] = true;
-        }
+        if (excludedYears[yearVal]) delete excludedYears[yearVal];
+        else excludedYears[yearVal] = true;
         App.App.rerun();
       }
     });
@@ -517,11 +545,16 @@
         if (rangeCounts[g] === 0) continue;
         var bW = maxRC > 0 ? Math.round((rangeCounts[g] / maxRC) * 100) : 0;
         var pT = ((rangeCounts[g] / total) * 100).toFixed(1);
+        var rLabel = ranges[g].label;
+        var rlo = ranges[g].lo, rhi = ranges[g].hi;
+        var rExcl = excludedRanges[rLabel] ? ' sp-bd-excluded' : '';
         h += '<div class="sp-bd-row">';
-        h += '<span class="sp-bd-key">' + ranges[g].label + '</span>';
+        h += '<span class="sp-bd-key">' + rLabel + '</span>';
         h += '<div class="sp-bd-bar-wrap"><div class="sp-bd-bar" style="width:' + bW + '%"></div></div>';
         h += '<span class="sp-bd-count">' + rangeCounts[g] + '</span>';
         h += '<span class="sp-bd-pct">' + pT + '%</span>';
+        h += '<button class="sp-bd-remove' + rExcl + '" data-lo="' + rlo + '" data-hi="' + rhi + '" data-label="' + rLabel + '" title="Remove ' + rLabel + ' from output">' + (excludedRanges[rLabel] ? 'Undo' : '✕') + '</button>';
+        h += '<button class="sp-bd-download" data-lo="' + rlo + '" data-hi="' + rhi + '" data-label="' + rLabel + '" title="Download ' + rLabel + ' accounts">Save</button>';
         h += '</div>';
       }
     }
@@ -662,18 +695,39 @@
   // are correctly-shaped rows, so they're NOT column mismatches — but they do
   // widen the input/output gap, so the header must account for them too. Mirrors
   // the exclusion filter in sortLines exactly.
+  // Is a numeric value inside any currently-excluded counts range?
+  function valueInExcludedRange(sv) {
+    var nv = parseInt((sv || '').trim(), 10);
+    if (isNaN(nv)) return false;
+    for (var rk in excludedRanges) {
+      var er = excludedRanges[rk];
+      if (nv >= er.lo && nv <= er.hi) return true;
+    }
+    return false;
+  }
+
+  // How many rows the current exclusions drop from the output. Mirrors the
+  // pool-membership + exclusion predicate used in sortLines so the header count
+  // stays accurate for both Year values and Counts ranges.
   function countExcluded(rows, format) {
-    if (!Object.keys(excludedYears).length) return 0;
     var colType = format.columnTypes[state.sorterColumn] || '';
     if (colType !== 'year' && colType !== 'counts') return 0;
+    if (colType === 'year' && !Object.keys(excludedYears).length) return 0;
+    if (colType === 'counts' && !Object.keys(excludedRanges).length) return 0;
     var totalCols = format.totalColumns;
     var col = state.sorterColumn;
+    var columnTypes = format.columnTypes;
     var c = 0;
     for (var i = 0; i < rows.length; i++) {
       if (!rows[i]) continue;
       var cols = rows[i].split(':');
-      if (cols.length !== totalCols) continue;
-      if (excludedYears[(cols[col] || '').trim()]) c++;
+      if (cols.length !== totalCols && !state.sorterForce) continue;
+      var sv = sortValueFor(cols, col, columnTypes);
+      if (colType === 'year') {
+        if (excludedYears[(sv || '').trim()]) c++;
+      } else if (valueInExcludedRange(sv)) {
+        c++;
+      }
     }
     return c;
   }
@@ -802,7 +856,8 @@
     // Parse (filter out excluded years/values). Each entry carries the row's
     // columns plus its resolved sort value (sv), so type-recovery runs once per
     // row instead of on every comparison.
-    var hasExclusions = Object.keys(excludedYears).length > 0;
+    var hasYearExcl = Object.keys(excludedYears).length > 0;
+    var hasRangeExcl = Object.keys(excludedRanges).length > 0;
     var colType = colTypes[sortBy] || '';
     var parsed = [];
     for (var i = 0; i < lines.length; i++) {
@@ -812,8 +867,12 @@
       // in which case they join the pool and are realigned by type below.
       if (cols.length !== totalCols && !state.sorterForce) continue;
       var sv = sortValueFor(cols, sortBy, colTypes);
-      if (hasExclusions && (colType === 'year' || colType === 'counts')) {
+      // Year: exclude by exact value. Counts: exclude any value inside a
+      // removed range. Both are toggled from the breakdown ✕ buttons.
+      if (colType === 'year' && hasYearExcl) {
         if (excludedYears[(sv || '').trim()]) continue;
+      } else if (colType === 'counts' && hasRangeExcl && valueInExcludedRange(sv)) {
+        continue;
       }
       parsed.push({ cols: cols, sv: sv });
     }
