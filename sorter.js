@@ -647,6 +647,26 @@
     return out;
   }
 
+  // Count rows dropped by active Year/Counts exclusions (the ✕ buttons). These
+  // are correctly-shaped rows, so they're NOT column mismatches — but they do
+  // widen the input/output gap, so the header must account for them too. Mirrors
+  // the exclusion filter in sortLines exactly.
+  function countExcluded(rows, format) {
+    if (!Object.keys(excludedYears).length) return 0;
+    var colType = format.columnTypes[state.sorterColumn] || '';
+    if (colType !== 'year' && colType !== 'counts') return 0;
+    var totalCols = format.totalColumns;
+    var col = state.sorterColumn;
+    var c = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (!rows[i]) continue;
+      var cols = rows[i].split(':');
+      if (cols.length !== totalCols) continue;
+      if (excludedYears[(cols[col] || '').trim()]) c++;
+    }
+    return c;
+  }
+
   function renderMismatch(mism, expected) {
     var wrap = $('#spMismatch');
     var box = $('#spMmBox');
@@ -772,14 +792,19 @@
 
       renderCols(format);
 
-      // Surface any rows that don't match the detected column count — they are
-      // excluded from the sorted output, which is why input/output counts can
-      // differ. Reflect the skip count in the sub-header too.
+      // Surface the two reasons the sorted output can be shorter than the input:
+      //   • rows whose colon-field count != the detected total (structural), and
+      //   • rows removed by active Year/Counts ✕ exclusions (deliberate).
+      // Report both in the sub-header so the count fully explains the gap. Only
+      // the structural mismatches go in the SKIPPED LINES box below.
       var mism = collectMismatches(rows, format);
+      var excluded = countExcluded(rows, format);
       var sub = $('#spSub');
       if (sub) {
-        sub.textContent = 'Detected ' + format.totalColumns + ' columns' +
-          (mism.length ? ' · ' + mism.length + ' line' + (mism.length === 1 ? '' : 's') + ' skipped' : '');
+        var parts = ['Detected ' + format.totalColumns + ' columns'];
+        if (mism.length) parts.push(mism.length + ' line' + (mism.length === 1 ? '' : 's') + ' skipped');
+        if (excluded) parts.push(excluded + ' excluded');
+        sub.textContent = parts.join(' · ');
       }
       renderMismatch(mism, format.totalColumns);
 
