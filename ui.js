@@ -209,6 +209,11 @@
     if (panel) panel.style.display = mode === 'sorter' ? 'block' : 'none';
   }
 
+  function syncPlinksPricesPanel(mode) {
+    const panel = $('#plinksPricesPanel');
+    if (panel) panel.style.display = mode === 'plinksPrices' ? 'block' : 'none';
+  }
+
   function syncCrosscheckPanel(mode) {
     const panel = $('#crosscheckPanel');
     if (panel) panel.style.display = mode === 'crosscheck' ? 'flex' : 'none';
@@ -233,7 +238,7 @@
   // URL ↔ mode mapping
   var MODE_SLUGS = {
     standard:'standard', reorder:'reorder', filter:'filter', sorter:'sorter',
-    plinksWith:'plinks-with', plinksWithout:'plinks-without',
+    plinksWith:'plinks-with', plinksPrices:'plinks-with-prices', plinksWithout:'plinks-without',
     convertUsers:'usernames-to-plinks', plinksToUsers:'plinks-to-usernames',
     mailChanger:'mail-changer', xfly:'xfly', reverse:'reverse',
     crosscheck:'crosscheck', deliver:'deliver', dam:'dam'
@@ -280,6 +285,7 @@
     syncReorderPanel(value);
     syncFilterPanel(value);
     syncSorterPanel(value);
+    syncPlinksPricesPanel(value);
     syncCrosscheckPanel(value);
     syncDeliverPanel(value);
     syncDamPanel(value);
