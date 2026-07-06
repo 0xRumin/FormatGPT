@@ -28,6 +28,7 @@
     filterView:      localStorage.getItem("filterView") || "both",
     sorterColumn:    parseInt(localStorage.getItem("sorterColumn") || "0", 10) || 0,
     sorterOrder:     localStorage.getItem("sorterOrder") || "desc",
+    sorterForce:     localStorage.getItem("sorterForce") === "1",
   };
 
   function setMailAccess(v) {

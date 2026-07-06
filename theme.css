@@ -1357,14 +1357,19 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
 .sp-mismatch{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 .sp-mm-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
 .sp-mm-head .sp-label{margin:0}
-.sp-mm-actions{display:flex;gap:6px}
-.sp-mm-copy,.sp-mm-save{
+.sp-mm-actions{display:flex;gap:6px;flex-wrap:wrap}
+.sp-mm-copy,.sp-mm-save,.sp-mm-force{
   padding:4px 12px;border-radius:6px;border:1px solid var(--line);
   background:transparent;color:var(--muted);cursor:pointer;
   font-family:var(--font-mono);font-size:11px;font-weight:600;transition:all .12s
 }
-.sp-mm-copy:hover,.sp-mm-save:hover{border-color:var(--fg);color:var(--fg)}
-.sp-mm-copy:active,.sp-mm-save:active{transform:translateY(1px)}
+.sp-mm-copy:hover,.sp-mm-save:hover,.sp-mm-force:hover{border-color:var(--fg);color:var(--fg)}
+.sp-mm-copy:active,.sp-mm-save:active,.sp-mm-force:active{transform:translateY(1px)}
+/* Force toggle — accent-lit when active so it's clearly a persistent state. */
+.sp-mm-force.sp-mm-force-on{
+  border-color:var(--accent);color:var(--accent);background:rgba(var(--accent-rgb),.1)
+}
+.sp-mm-force.sp-mm-force-on:hover{border-color:var(--accent);color:var(--accent)}
 .sp-mm-sub{
   font-family:var(--font-mono);font-size:11px;line-height:1.5;
   color:var(--bad,#ef4444);margin-bottom:8px
@@ -1377,6 +1382,10 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
   white-space:pre;overflow:auto
 }
 .sp-mm-box:focus{outline:none;border-color:var(--bad,#ef4444)}
+/* Forced-in state: these lines are now part of the output, so drop the red. */
+.sp-mismatch-forced .sp-mm-sub{color:var(--muted)}
+.sp-mismatch-forced .sp-mm-box{border-color:rgba(var(--accent-rgb),.35)}
+.sp-mismatch-forced .sp-mm-box:focus{border-color:var(--accent)}
 @media(max-width:600px){.sp-mm-box{font-size:11px;max-height:200px}}
 
 /* =================== Settings panel — theme grid =================== */
@@ -1521,6 +1530,23 @@ body[data-mode="crosscheck"] .pane--out #ccPasteSplit{ display: inline-flex; }
   border:1px solid rgba(var(--accent-rgb),0.25);
 }
 .pane__count:empty{ display:none; }
+
+.pane__missing{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 9px;
+  border-radius:999px;
+  background:rgba(239,68,68,0.12);
+  color:var(--bad,#ef4444);
+  font-family:var(--font-mono);
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  vertical-align:middle;
+  border:1px solid rgba(239,68,68,0.3);
+}
+.pane__missing:empty{ display:none; }
 
 /* =================== Drop-to-paste overlay ("Paste any text file") =================== */
 .drop-hint{
