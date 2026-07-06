@@ -723,7 +723,8 @@
       var counts = 'expected ' + expected + ' columns, found ' + distinct.join(', ');
       sub.textContent = forced
         ? mism.length + ' irregular line' + (mism.length === 1 ? '' : 's') +
-          ' (' + counts + ') — forced into the sort pool and sorted with the rest.'
+          ' (' + counts + ') — forced into the sort pool. Each is matched to the ' +
+          'sort column by field type so it sorts correctly despite the missing/extra field.'
         : mism.length + ' line' + (mism.length === 1 ? '' : 's') +
           ' skipped — ' + counts + ' (fields split on “:”). Excluded from the sorted output.';
     }
@@ -732,13 +733,75 @@
   }
 
   /* ======== Sort logic ======== */
+
+  // Does a field look like the given column type? Username is positional (it is
+  // always the first field); every other type is matched via classifyCol.
+  function fieldMatchesType(field, type, pos) {
+    if (type === 'username') return pos === 0;
+    if (!type) return false;
+    var c = classifyCol(field);
+    if (c === type) return true;
+    if (type === 'mail_password' && c === 'password') return true; // classifies as plain password
+    return false;
+  }
+
+  // Virtually align an irregular row against the detected column template,
+  // dropping an empty placeholder wherever a typed field is missing — e.g. a
+  // row with no phone gets an empty phone slot, so Counts/Year shift back to
+  // their real column indices. This is the "dummy in the sorter's mind": the
+  // placeholder exists only while sorting and is NEVER written to the output
+  // line. Well-formed rows are returned untouched.
+  function alignRow(cols, columnTypes) {
+    var totalCols = columnTypes.length;
+    if (cols.length === totalCols) return cols;
+    var aligned = [];
+    var ci = 0;
+    var gaps = totalCols - cols.length; // >0 when the row is short on fields
+    for (var p = 0; p < totalCols; p++) {
+      var t = columnTypes[p];
+      if (ci < cols.length && fieldMatchesType(cols[ci], t, p)) {
+        aligned.push(cols[ci]); ci++;
+      } else if (gaps > 0 && ci < cols.length) {
+        // Field doesn't fit this typed slot → treat the slot as missing and
+        // insert a virtual placeholder (spends one gap, keeps the field for the
+        // next slot).
+        aligned.push(''); gaps--;
+      } else {
+        aligned.push(ci < cols.length ? cols[ci] : ''); ci++;
+      }
+    }
+    while (ci < cols.length) { aligned.push(cols[ci]); ci++; } // trailing extra fields
+    return aligned;
+  }
+
+  // Value a row is sorted on. Well-formed rows read straight from the sort
+  // index; forced-in irregular rows are realigned first (alignRow), with a
+  // whole-row type scan as a safety net for typed columns.
+  function sortValueFor(cols, sortBy, columnTypes) {
+    var totalCols = columnTypes.length;
+    var colType = columnTypes[sortBy] || '';
+    if (cols.length === totalCols) return cols[sortBy] || '';
+    var aligned = alignRow(cols, columnTypes);
+    var v = aligned[sortBy];
+    if (v && (!colType || fieldMatchesType(v, colType, sortBy))) return v;
+    if (colType === 'username') return cols[0] || '';
+    if (colType) {
+      for (var i = 0; i < cols.length; i++) {
+        if (classifyCol(cols[i]) === colType) return cols[i];
+      }
+    }
+    return v || (cols[sortBy] || '');
+  }
+
   function sortLines(lines, format) {
     var totalCols = format.totalColumns;
     var colTypes = format.columnTypes;
     var sortBy = state.sorterColumn;
     var order = state.sorterOrder;
 
-    // Parse (filter out excluded years/values)
+    // Parse (filter out excluded years/values). Each entry carries the row's
+    // columns plus its resolved sort value (sv), so type-recovery runs once per
+    // row instead of on every comparison.
     var hasExclusions = Object.keys(excludedYears).length > 0;
     var colType = colTypes[sortBy] || '';
     var parsed = [];
@@ -746,14 +809,13 @@
       if (!lines[i]) continue;
       var cols = lines[i].split(':');
       // Column-mismatched rows are dropped — unless the user has forced them in,
-      // in which case they join the pool and get sorted by cols[sortBy] like the
-      // rest (missing/extra fields just yield an empty/other value at that index).
+      // in which case they join the pool and are realigned by type below.
       if (cols.length !== totalCols && !state.sorterForce) continue;
+      var sv = sortValueFor(cols, sortBy, colTypes);
       if (hasExclusions && (colType === 'year' || colType === 'counts')) {
-        var val = (cols[sortBy] || '').trim();
-        if (excludedYears[val]) continue;
+        if (excludedYears[(sv || '').trim()]) continue;
       }
-      parsed.push(cols);
+      parsed.push({ cols: cols, sv: sv });
     }
 
     if (order === 'random') {
@@ -765,13 +827,12 @@
     } else if (order === 'reverse') {
       parsed.reverse();
     } else {
-      var colType = colTypes[sortBy] || '';
       var isNumeric = (colType === 'counts' || colType === 'year');
       var reverse = (order === 'desc' || order === 'za');
 
       parsed.sort(function (a, b) {
-        var av = a[sortBy] || '';
-        var bv = b[sortBy] || '';
+        var av = a.sv || '';
+        var bv = b.sv || '';
         if (isNumeric) {
           var an = parseInt(av, 10); if (isNaN(an)) an = reverse ? -Infinity : Infinity;
           var bn = parseInt(bv, 10); if (isNaN(bn)) bn = reverse ? -Infinity : Infinity;
@@ -784,7 +845,7 @@
       });
     }
 
-    return parsed.map(function (r) { return r.join(':'); });
+    return parsed.map(function (r) { return r.cols.join(':'); });
   }
 
   /* ======== Register mode ======== */
