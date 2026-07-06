@@ -18,6 +18,7 @@
   const state = {
     blue: false,
     addMail: false,
+    chunkMode: localStorage.getItem("chunkMode") === "1",
     mailAccess: normalizeMailAccess(localStorage.getItem("mailAccess") || DEFAULT_MAIL),
     mode: "standard",
     reorderFields:  parseJSON("reorderFields"),
