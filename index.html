@@ -6,7 +6,7 @@
   <title>FormatGPT — Workbench</title>
 
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImZnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiICAgc3RvcC1jb2xvcj0iIzIyZDNlZSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjUwJSIgIHN0b3AtY29sb3I9IiMzOGJkZjgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYTc4YmZhIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJsZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiAgIHN0b3AtY29sb3I9IiMzOGJkZjgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjN2RkM2ZjIiBzdG9wLW9wYWNpdHk9IjAuMyIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9ImciIHg9Ii0yNSUiIHk9Ii0yNSUiIHdpZHRoPSIxNTAlIiBoZWlnaHQ9IjE1MCUiPgogICAgICA8ZmVHYXVzc2lhbkJsdXIgaW49IlNvdXJjZUdyYXBoaWMiIHN0ZERldmlhdGlvbj0iMiIgcmVzdWx0PSJiIi8+CiAgICAgIDxmZUNvbG9yTWF0cml4IGluPSJiIiB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwLjEzMyAwIDAgMCAwIDAuODI3IDAgMCAwIDAgMC45MzMgMCAwIDAgMC41IDAiIHJlc3VsdD0iYyIvPgogICAgICA8ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImMiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMwYjBkMTAiLz4KICA8cmVjdCB4PSIxIiB5PSIxIiB3aWR0aD0iNjIiIGhlaWdodD0iNjIiIHJ4PSIxMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2ZnKSIgc3Ryb2tlLXdpZHRoPSIxLjIiIG9wYWNpdHk9IjAuMyIvPgogIDxnIGZpbHRlcj0idXJsKCNnKSI+CiAgICA8cGF0aCBkPSJNMTQsMTQgTDM0LDE0IEwzNCwyMCBMMjAsMjAgTDIwLDI5IEwzMCwyOSBMMzAsMzUgTDIwLDM1IEwyMCw1MCBMMTQsNTAgWiIgZmlsbD0idXJsKCNmZykiLz4KICAgIDxyZWN0IHg9IjM4IiB5PSIxNiIgd2lkdGg9IjE0IiBoZWlnaHQ9IjQiIHJ4PSIyIiBmaWxsPSJ1cmwoI2xnKSIgb3BhY2l0eT0iMC45Ii8+CiAgICA8cmVjdCB4PSIzOCIgeT0iMjYiIHdpZHRoPSIxMCIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0idXJsKCNsZykiIG9wYWNpdHk9IjAuNiIvPgogICAgPHJlY3QgeD0iMzgiIHk9IjM2IiB3aWR0aD0iMTIiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9InVybCgjbGcpIiBvcGFjaXR5PSIwLjgiLz4KICAgIDxyZWN0IHg9IjM4IiB5PSI0NiIgd2lkdGg9IjgiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9InVybCgjbGcpIiBvcGFjaXR5PSIwLjUiLz4KICA8L2c+Cjwvc3ZnPg==">
-  <link rel="stylesheet" href="theme.css?v=202607060800">
+  <link rel="stylesheet" href="theme.css?v=202607060900">
 </head>
 <body>
 
@@ -178,12 +178,14 @@
               </div>
             </div>
           </span>
+          <div class="chunk-toggle-wrap" id="chunkToggleWrap">
+            <label class="chunk-toggle" id="chunkToggle" title="Keep the mail chunk (email|pass|refresh|clientID) intact as one Mail line instead of splitting it — for mail reading">
+              <input type="checkbox" id="chunkChk">
+              <span class="chunk-toggle__label">Chunk Mode</span>
+            </label>
+          </div>
         </div>
       </div>
-      <label class="chunk-toggle" id="chunkToggle" title="Keep the mail chunk (email|pass|refresh|clientID) intact as one Mail line instead of splitting it — for mail reading">
-        <input type="checkbox" id="chunkChk">
-        <span class="chunk-toggle__label">Chunk Mode</span>
-      </label>
       <pre id="out"></pre>
       <!-- Editable List 2 input, revealed only when crosscheck mode is active -->
       <textarea id="ccList2" class="cc-list2" spellcheck="false"
@@ -217,29 +219,29 @@
 <script>window.App = window.App || {};</script>
 
 <!-- Core order: utils -> config -> state -> renderers -> main -> modes -> ui -> boot -->
-<script defer src="utils.js?v=202607060800"></script>
-<script defer src="config.js?v=202607060800"></script>
-<script defer src="state.js?v=202607060800"></script>
-<script defer src="renderers.js?v=202607060800"></script>
-<script defer src="main.js?v=202607060800"></script>
+<script defer src="utils.js?v=202607060900"></script>
+<script defer src="config.js?v=202607060900"></script>
+<script defer src="state.js?v=202607060900"></script>
+<script defer src="renderers.js?v=202607060900"></script>
+<script defer src="main.js?v=202607060900"></script>
 
-<script defer src="standard.js?v=202607060800"></script>
-<script defer src="reverse.js?v=202607060800"></script>
-<script defer src="xfly.js?v=202607060800"></script>
-<script defer src="plinks-with.js?v=202607060800"></script>
-<script defer src="plinks-prices.js?v=202607060800"></script>
-<script defer src="plinks-without.js?v=202607060800"></script>
-<script defer src="plinks-to-users.js?v=202607060800"></script>
-<script defer src="convert.js?v=202607060800"></script>
-<script defer src="reorder.js?v=202607060800"></script>
-<script defer src="filter.js?v=202607060800"></script>
-<script defer src="sorter.js?v=202607060800"></script>
-<script defer src="crosscheck.js?v=202607060800"></script>
-<script defer src="dam.js?v=202607060800"></script>
-<script defer src="deliver.js?v=202607060800"></script>
-<script defer src="themes.js?v=202607060800"></script>
-<script defer src="ui.js?v=202607060800"></script>
-<script defer src="boot.js?v=202607060800"></script>
+<script defer src="standard.js?v=202607060900"></script>
+<script defer src="reverse.js?v=202607060900"></script>
+<script defer src="xfly.js?v=202607060900"></script>
+<script defer src="plinks-with.js?v=202607060900"></script>
+<script defer src="plinks-prices.js?v=202607060900"></script>
+<script defer src="plinks-without.js?v=202607060900"></script>
+<script defer src="plinks-to-users.js?v=202607060900"></script>
+<script defer src="convert.js?v=202607060900"></script>
+<script defer src="reorder.js?v=202607060900"></script>
+<script defer src="filter.js?v=202607060900"></script>
+<script defer src="sorter.js?v=202607060900"></script>
+<script defer src="crosscheck.js?v=202607060900"></script>
+<script defer src="dam.js?v=202607060900"></script>
+<script defer src="deliver.js?v=202607060900"></script>
+<script defer src="themes.js?v=202607060900"></script>
+<script defer src="ui.js?v=202607060900"></script>
+<script defer src="boot.js?v=202607060900"></script>
 
 <!-- Visual polish (no JS files modified). Runs after defer scripts. -->
 <script defer>
