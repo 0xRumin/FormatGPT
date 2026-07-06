@@ -3,6 +3,26 @@
   const { splitFlexible } = App.Utils;
   const { extract2FAFromLink } = App.Renderers;
 
+  // Reverse a standalone Plink line back into `username:count`:
+  //   x.com/SaganjotSingh [3.31k]  ->  SaganjotSingh:3310
+  //   x.com/guii_bordim [1.22k]    ->  guii_bordim:1220
+  //   x.com/foo                    ->  foo   (no count -> username only)
+  // Anchored to the start so credential lines that merely embed a plink are
+  // left to the normal handling.
+  function plinkToUserCount(line) {
+    const s = (line || "").trim();
+    const mu = s.match(/^(?:https?:\/\/)?(?:www\.)?(?:x\.com|twitter\.com)\/@?([A-Za-z0-9_]+)\b/i);
+    if (!mu) return null;
+    const user = mu[1];
+    const mc = s.match(/\[(\d+(?:\.\d+)?)\s*([kKmM])?\]/);
+    if (mc) {
+      const base = parseFloat(mc[1]);
+      const mult = !mc[2] ? 1 : /m/i.test(mc[2]) ? 1_000_000 : 1_000;
+      return user + ":" + String(Math.round(base * mult));
+    }
+    return user;
+  }
+
   App.App = App.App || {};
   App.App.registerMode({
     id: 'reverse',
@@ -15,6 +35,9 @@
         const looksBlock = rws.some(r => /^[a-z_ ]+:/i.test(r));
         if (!looksBlock) {
           for (const line of rws) {
+            // Plink line -> username:count (reverse of "Plinks with counts").
+            const plinkOut = plinkToUserCount(line);
+            if (plinkOut != null) { out.push(plinkOut); continue; }
             const parts = splitFlexible(line);
             for (let i = 0; i < parts.length; i++) {
               if (/(?:2fa\.fb\.rip\/|browserscan\.net\/2fa#)/i.test(parts[i])) parts[i] = extract2FAFromLink(parts[i]);
