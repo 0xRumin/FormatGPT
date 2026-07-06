@@ -28,10 +28,12 @@
   /* ======== State defaults ======== */
   if (state.sorterColumn == null || isNaN(state.sorterColumn)) state.sorterColumn = 0;
   if (!state.sorterOrder) state.sorterOrder = 'desc';
+  if (state.sorterForce == null) state.sorterForce = false;
 
   function saveSorterState() {
     localStorage.setItem('sorterColumn', String(state.sorterColumn));
     localStorage.setItem('sorterOrder', state.sorterOrder);
+    localStorage.setItem('sorterForce', state.sorterForce ? '1' : '0');
   }
 
   /* ======== Column type classification ======== */
@@ -198,8 +200,9 @@
     // are visible and copyable/savable.
     h += '<div class="sp-mismatch" id="spMismatch" style="display:none">';
     h += '<div class="sp-mm-head">';
-    h += '<div class="sp-label">⚠️ SKIPPED LINES</div>';
+    h += '<div class="sp-label" id="spMmLabel">⚠️ SKIPPED LINES</div>';
     h += '<div class="sp-mm-actions">';
+    h += '<button class="sp-mm-force" id="spMmForce" title="Add these lines to the sort pool and sort them with the rest">Force into sort</button>';
     h += '<button class="sp-mm-copy" id="spMmCopy">Copy</button>';
     h += '<button class="sp-mm-save" id="spMmSave">Save .txt</button>';
     h += '</div></div>';
@@ -306,6 +309,14 @@
       var a = document.createElement('a');
       a.href = url; a.download = filename; document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+    });
+
+    // Force toggle: include column-mismatched lines in the sort pool.
+    var mmForce = $('#spMmForce');
+    if (mmForce) mmForce.addEventListener('click', function () {
+      state.sorterForce = !state.sorterForce;
+      saveSorterState();
+      App.App.rerun();
     });
 
     // Skipped-lines box: Copy + Save operate on the raw (unannotated) lines.
@@ -671,9 +682,18 @@
     var wrap = $('#spMismatch');
     var box = $('#spMmBox');
     var sub = $('#spMmSub');
+    var label = $('#spMmLabel');
+    var forceBtn = $('#spMmForce');
     if (!wrap || !box) return;
 
     mismatchLines = mism.map(function (m) { return m.line; });
+    var forced = !!state.sorterForce;
+
+    // Keep the Force toggle in sync even when there are no mismatches.
+    if (forceBtn) {
+      forceBtn.classList.toggle('sp-mm-force-on', forced);
+      forceBtn.textContent = forced ? 'Forced in ✓' : 'Force into sort';
+    }
 
     if (!mism.length) {
       box.value = '';
@@ -681,11 +701,16 @@
       return;
     }
 
-    // Box shows each dropped line prefixed with its actual column count so the
+    // Box shows each irregular line prefixed with its actual column count so the
     // discrepancy is obvious; Copy/Save still emit the raw lines (mismatchLines).
     box.value = mism.map(function (m) {
       return '[' + m.cols + ' cols] ' + m.line;
     }).join('\n');
+
+    // When forced in, recolor the panel and relabel — these lines are now part
+    // of the sorted output, not dropped.
+    wrap.classList.toggle('sp-mismatch-forced', forced);
+    if (label) label.textContent = forced ? '↳ IRREGULAR LINES (in sort)' : '⚠️ SKIPPED LINES';
 
     if (sub) {
       // Distinct offending column counts, ascending.
@@ -695,9 +720,12 @@
         if (!seen[c]) { seen[c] = true; distinct.push(c); }
       }
       distinct.sort(function (a, b) { return a - b; });
-      sub.textContent = mism.length + ' line' + (mism.length === 1 ? '' : 's') +
-        ' skipped — expected ' + expected + ' columns, found ' + distinct.join(', ') +
-        ' (fields split on “:”). Excluded from the sorted output.';
+      var counts = 'expected ' + expected + ' columns, found ' + distinct.join(', ');
+      sub.textContent = forced
+        ? mism.length + ' irregular line' + (mism.length === 1 ? '' : 's') +
+          ' (' + counts + ') — forced into the sort pool and sorted with the rest.'
+        : mism.length + ' line' + (mism.length === 1 ? '' : 's') +
+          ' skipped — ' + counts + ' (fields split on “:”). Excluded from the sorted output.';
     }
 
     wrap.style.display = 'block';
@@ -717,7 +745,10 @@
     for (var i = 0; i < lines.length; i++) {
       if (!lines[i]) continue;
       var cols = lines[i].split(':');
-      if (cols.length !== totalCols) continue;
+      // Column-mismatched rows are dropped — unless the user has forced them in,
+      // in which case they join the pool and get sorted by cols[sortBy] like the
+      // rest (missing/extra fields just yield an empty/other value at that index).
+      if (cols.length !== totalCols && !state.sorterForce) continue;
       if (hasExclusions && (colType === 'year' || colType === 'counts')) {
         var val = (cols[sortBy] || '').trim();
         if (excludedYears[val]) continue;
@@ -802,7 +833,10 @@
       var sub = $('#spSub');
       if (sub) {
         var parts = ['Detected ' + format.totalColumns + ' columns'];
-        if (mism.length) parts.push(mism.length + ' line' + (mism.length === 1 ? '' : 's') + ' skipped');
+        if (mism.length) {
+          parts.push(mism.length + ' line' + (mism.length === 1 ? '' : 's') +
+            (state.sorterForce ? ' forced in' : ' skipped'));
+        }
         if (excluded) parts.push(excluded + ' excluded');
         sub.textContent = parts.join(' · ');
       }
