@@ -9,6 +9,7 @@
   var lastSortCol = -1;
   var excludedYears = {};
   var tabGroups = {}; // { 'key': ['full:line:1', ...], ... }
+  var mismatchLines = []; // raw input lines whose column count != detected total
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -57,18 +58,36 @@
   /* ======== Format detection ======== */
   function detectFormat(lines) {
     if (!lines.length) return null;
-    var sample = lines[0];
-    if (!sample) return null;
 
-    var firstCols = sample.split(':');
-    var totalCols = firstCols.length;
+    // Determine the dominant column count from the WHOLE dataset instead of
+    // trusting line 1. Every line's colon-field count casts a vote; the most
+    // common count wins. This stops an atypical first line (a stray colon, a
+    // missing field) from mislabeling the entire set and silently dropping
+    // every "normal" row. Ties resolve to the earliest-seen count.
+    var freq = {};
+    var seenOrder = [];
+    for (var a = 0; a < lines.length; a++) {
+      if (!lines[a]) continue;
+      var n = lines[a].split(':').length;
+      if (freq[n] == null) { freq[n] = 0; seenOrder.push(n); }
+      freq[n]++;
+    }
+    var totalCols = 0, bestFreq = -1;
+    for (var o = 0; o < seenOrder.length; o++) {
+      var cand = seenOrder[o];
+      if (freq[cand] > bestFreq) { bestFreq = freq[cand]; totalCols = cand; }
+    }
     if (!totalCols) return null;
 
-    // Gather type counts per column across first 5 lines
+    // Gather type counts per column across the first 5 lines that MATCH the
+    // dominant column count, so classification is based on representative rows.
     var posTypes = {};
-    for (var l = 0; l < Math.min(lines.length, 5); l++) {
+    var sampled = 0;
+    for (var l = 0; l < lines.length && sampled < 5; l++) {
       if (!lines[l]) continue;
       var cols = lines[l].split(':');
+      if (cols.length !== totalCols) continue;
+      sampled++;
       for (var i = 0; i < cols.length; i++) {
         var t = classifyCol(cols[i]);
         if (!t) continue;
@@ -174,6 +193,20 @@
     h += '<div class="sp-tabs-content" id="spTabsContent"></div>';
     h += '</div>';
 
+    // Skipped / mismatched lines (hidden unless some rows don't match the
+    // detected column count). Read-only text box so the exact dropped lines
+    // are visible and copyable/savable.
+    h += '<div class="sp-mismatch" id="spMismatch" style="display:none">';
+    h += '<div class="sp-mm-head">';
+    h += '<div class="sp-label">⚠️ SKIPPED LINES</div>';
+    h += '<div class="sp-mm-actions">';
+    h += '<button class="sp-mm-copy" id="spMmCopy">Copy</button>';
+    h += '<button class="sp-mm-save" id="spMmSave">Save .txt</button>';
+    h += '</div></div>';
+    h += '<div class="sp-mm-sub" id="spMmSub"></div>';
+    h += '<textarea class="sp-mm-box" id="spMmBox" readonly spellcheck="false"></textarea>';
+    h += '</div>';
+
     panel.innerHTML = h;
     bindEvents();
   }
@@ -272,6 +305,29 @@
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+    });
+
+    // Skipped-lines box: Copy + Save operate on the raw (unannotated) lines.
+    var mmCopy = $('#spMmCopy');
+    if (mmCopy) mmCopy.addEventListener('click', function () {
+      if (!mismatchLines.length) return;
+      navigator.clipboard.writeText(mismatchLines.join('\n')).then(function () {
+        var orig = mmCopy.textContent;
+        mmCopy.textContent = 'Copied';
+        setTimeout(function () { mmCopy.textContent = orig; }, 900);
+      }).catch(function () { alert('Copy failed.'); });
+    });
+
+    var mmSave = $('#spMmSave');
+    if (mmSave) mmSave.addEventListener('click', function () {
+      if (!mismatchLines.length) return;
+      var token = U.randToken(5);
+      var blob = new Blob(['﻿' + mismatchLines.join('\n')], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'skipped_lines_' + token + '.txt';
+      document.body.appendChild(a); a.click();
       setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
     });
   }
@@ -575,6 +631,78 @@
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  /* ======== Mismatched / skipped lines ======== */
+
+  // Collect the raw lines that will NOT be sorted because their colon-field
+  // count differs from the detected total. These are the lines responsible for
+  // an input/output count gap.
+  function collectMismatches(rows, format) {
+    var totalCols = format.totalColumns;
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      if (!rows[i]) continue;
+      var n = rows[i].split(':').length;
+      if (n !== totalCols) out.push({ line: rows[i], cols: n });
+    }
+    return out;
+  }
+
+  // Count rows dropped by active Year/Counts exclusions (the ✕ buttons). These
+  // are correctly-shaped rows, so they're NOT column mismatches — but they do
+  // widen the input/output gap, so the header must account for them too. Mirrors
+  // the exclusion filter in sortLines exactly.
+  function countExcluded(rows, format) {
+    if (!Object.keys(excludedYears).length) return 0;
+    var colType = format.columnTypes[state.sorterColumn] || '';
+    if (colType !== 'year' && colType !== 'counts') return 0;
+    var totalCols = format.totalColumns;
+    var col = state.sorterColumn;
+    var c = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (!rows[i]) continue;
+      var cols = rows[i].split(':');
+      if (cols.length !== totalCols) continue;
+      if (excludedYears[(cols[col] || '').trim()]) c++;
+    }
+    return c;
+  }
+
+  function renderMismatch(mism, expected) {
+    var wrap = $('#spMismatch');
+    var box = $('#spMmBox');
+    var sub = $('#spMmSub');
+    if (!wrap || !box) return;
+
+    mismatchLines = mism.map(function (m) { return m.line; });
+
+    if (!mism.length) {
+      box.value = '';
+      wrap.style.display = 'none';
+      return;
+    }
+
+    // Box shows each dropped line prefixed with its actual column count so the
+    // discrepancy is obvious; Copy/Save still emit the raw lines (mismatchLines).
+    box.value = mism.map(function (m) {
+      return '[' + m.cols + ' cols] ' + m.line;
+    }).join('\n');
+
+    if (sub) {
+      // Distinct offending column counts, ascending.
+      var seen = {}, distinct = [];
+      for (var i = 0; i < mism.length; i++) {
+        var c = mism[i].cols;
+        if (!seen[c]) { seen[c] = true; distinct.push(c); }
+      }
+      distinct.sort(function (a, b) { return a - b; });
+      sub.textContent = mism.length + ' line' + (mism.length === 1 ? '' : 's') +
+        ' skipped — expected ' + expected + ' columns, found ' + distinct.join(', ') +
+        ' (fields split on “:”). Excluded from the sorted output.';
+    }
+
+    wrap.style.display = 'block';
+  }
+
   /* ======== Sort logic ======== */
   function sortLines(lines, format) {
     var totalCols = format.totalColumns;
@@ -640,11 +768,18 @@
         renderCols(null);
         var bd = $('#spBreakdown'); if (bd) bd.style.display = 'none';
         var tw = $('#spTabsWrap'); if (tw) tw.style.display = 'none';
+        var mm = $('#spMismatch'); if (mm) mm.style.display = 'none';
+        mismatchLines = [];
         return '';
       }
 
       var format = detectFormat(rows);
-      if (!format) { renderCols(null); return ''; }
+      if (!format) {
+        renderCols(null);
+        var mm2 = $('#spMismatch'); if (mm2) mm2.style.display = 'none';
+        mismatchLines = [];
+        return '';
+      }
 
       // Clamp column index
       if (state.sorterColumn >= format.totalColumns) {
@@ -656,6 +791,23 @@
       lastSortCol = state.sorterColumn;
 
       renderCols(format);
+
+      // Surface the two reasons the sorted output can be shorter than the input:
+      //   • rows whose colon-field count != the detected total (structural), and
+      //   • rows removed by active Year/Counts ✕ exclusions (deliberate).
+      // Report both in the sub-header so the count fully explains the gap. Only
+      // the structural mismatches go in the SKIPPED LINES box below.
+      var mism = collectMismatches(rows, format);
+      var excluded = countExcluded(rows, format);
+      var sub = $('#spSub');
+      if (sub) {
+        var parts = ['Detected ' + format.totalColumns + ' columns'];
+        if (mism.length) parts.push(mism.length + ' line' + (mism.length === 1 ? '' : 's') + ' skipped');
+        if (excluded) parts.push(excluded + ' excluded');
+        sub.textContent = parts.join(' · ');
+      }
+      renderMismatch(mism, format.totalColumns);
+
       renderBreakdown(rows, format);
       var sorted = sortLines(rows, format);
       return sorted.join('\n');
