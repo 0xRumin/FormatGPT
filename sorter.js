@@ -835,7 +835,8 @@
     var icon = colType === 'year' ? '📅 ' : '🔢 ';
     var hint = colType === 'year' ? 'Select first and final year' : 'Select low and high count';
     var disabled = min === max ? ' disabled' : '';
-    var knobStyle = 'style="width:36px !important;height:24px !important;border-radius:10px !important;background:linear-gradient(180deg,rgba(var(--accent2-rgb),.34),rgba(4,18,20,.96)) !important;border:1px solid rgba(var(--accent-rgb),.72) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -7px 10px rgba(0,0,0,.38),0 6px 14px rgba(0,0,0,.42),0 0 0 2px rgba(var(--accent-rgb),.10) !important;"';
+    var knobStyle = 'style="width:38px !important;height:38px !important;border-radius:50% !important;background:radial-gradient(circle at 34% 24%,rgba(var(--accent2-rgb),.86),rgba(var(--accent-rgb),.46) 36%,rgba(12,82,84,.97) 70%,rgba(7,49,52,.99) 100%) !important;border:1px solid rgba(var(--accent2-rgb),.74) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -8px 13px rgba(2,30,33,.34),0 0 0 2px rgba(5,35,38,.82),0 8px 16px rgba(0,0,0,.38),0 0 0 4px rgba(var(--accent-rgb),.12) !important;"';
+    var gripStyle = 'style="display:inline-block !important;width:3px !important;height:13px !important;border-radius:999px !important;background:linear-gradient(180deg,rgba(var(--accent2-rgb),.82),rgba(var(--accent-rgb),.38)) !important;box-shadow:inset 1px 1px 2px rgba(3,34,37,.45),inset -1px -1px 1px rgba(255,255,255,.12) !important;"';
     var h = '';
     h += '<div class="sp-range-head">';
     h += '<div><div class="sp-label">' + icon + title + '</div>';
@@ -843,8 +844,8 @@
     h += '<div class="sp-range-pill" id="spRangeSelected"></div>';
     h += '</div>';
     h += '<div class="sp-range-rail' + (min === max ? ' sp-range-disabled' : '') + '" id="spRangeRail">';
-    h += '<span class="sp-range-knob sp-range-knob--lo" ' + knobStyle + ' aria-hidden="true"></span>';
-    h += '<span class="sp-range-knob sp-range-knob--hi" ' + knobStyle + ' aria-hidden="true"></span>';
+    h += '<span class="sp-range-knob sp-range-knob--lo" ' + knobStyle + ' aria-hidden="true"><span ' + gripStyle + '></span><span ' + gripStyle + '></span><span ' + gripStyle + '></span></span>';
+    h += '<span class="sp-range-knob sp-range-knob--hi" ' + knobStyle + ' aria-hidden="true"><span ' + gripStyle + '></span><span ' + gripStyle + '></span><span ' + gripStyle + '></span></span>';
     h += '<input class="sp-range-native sp-range-native--lo" id="spRangeLo" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.lo + '"' + disabled + '>';
     h += '<input class="sp-range-native sp-range-native--hi" id="spRangeHi" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.hi + '"' + disabled + '>';
     h += '</div>';
