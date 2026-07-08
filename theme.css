@@ -1370,12 +1370,12 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 }
 .sp-range-rail{
   --lo-pct:0%;--hi-pct:100%;
-  position:relative;height:44px;margin:2px 14px 14px;
+  position:relative;height:34px;margin:2px 10px 12px;
   cursor:pointer;touch-action:none
 }
 .sp-range-rail::before,
 .sp-range-rail::after{
-  content:"";position:absolute;left:0;right:0;top:50%;height:26px;
+  content:"";position:absolute;left:0;right:0;top:50%;height:18px;
   transform:translateY(-50%);border-radius:999px
 }
 .sp-range-rail::before{
@@ -1385,8 +1385,8 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
   border:1px solid rgba(var(--tint-rgb),.08);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.08),
-    inset 0 -12px 20px rgba(0,0,0,.24),
-    0 8px 18px rgba(0,0,0,.18)
+    inset 0 -8px 14px rgba(0,0,0,.24),
+    0 6px 14px rgba(0,0,0,.16)
 }
 .sp-range-rail::after{
   left:var(--lo-pct);right:calc(100% - var(--hi-pct));
@@ -1398,55 +1398,55 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 }
 .sp-range-knob{
   position:absolute;top:50%;left:var(--lo-pct);z-index:4;
-  width:38px;height:38px;border-radius:50%;
+  width:30px;height:22px;border-radius:9px;
   transform:translate(-50%,-50%);
-  display:flex;align-items:center;justify-content:center;gap:4px;
+  display:flex;align-items:center;justify-content:center;gap:3px;
   pointer-events:none;
   background:
-    radial-gradient(circle at 35% 28%, rgba(255,255,255,.8), rgba(255,255,255,0) 32%),
-    linear-gradient(145deg,rgba(226,241,237,.95),rgba(119,149,146,.82) 58%,rgba(48,77,76,.92));
-  border:1px solid rgba(var(--tint-rgb),.35);
+    linear-gradient(180deg,rgba(var(--accent2-rgb),.36),rgba(var(--accent-rgb),.16) 42%,rgba(5,18,20,.92)),
+    rgba(7,26,28,.96);
+  border:1px solid rgba(var(--accent2-rgb),.52);
   box-shadow:
-    inset 4px 4px 10px rgba(255,255,255,.18),
-    inset -6px -8px 12px rgba(0,0,0,.25),
-    0 8px 16px rgba(0,0,0,.42),
-    0 0 0 4px rgba(var(--accent-rgb),.08);
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -7px 10px rgba(0,0,0,.28),
+    0 6px 12px rgba(0,0,0,.4),
+    0 0 0 3px rgba(var(--accent-rgb),.08);
   transition:left .12s cubic-bezier(.2,.8,.2,1), transform .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s;
   will-change:left,transform
 }
 .sp-range-knob--hi{left:var(--hi-pct);z-index:5}
 .sp-range-knob span{
-  width:4px;height:14px;border-radius:999px;
-  background:linear-gradient(180deg,rgba(20,38,38,.34),rgba(255,255,255,.26));
+  width:3px;height:12px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(var(--accent2-rgb),.42),rgba(3,12,14,.42));
   box-shadow:
-    inset 1px 1px 3px rgba(0,0,0,.42),
-    inset -1px -1px 2px rgba(255,255,255,.28)
+    inset 1px 1px 2px rgba(0,0,0,.5),
+    inset -1px -1px 1px rgba(255,255,255,.08)
 }
 .sp-range-rail:focus-within .sp-range-knob{
   box-shadow:
-    inset 4px 4px 10px rgba(255,255,255,.2),
-    inset -6px -8px 12px rgba(0,0,0,.28),
-    0 10px 20px rgba(0,0,0,.48),
-    0 0 0 5px rgba(var(--accent-rgb),.14)
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 -7px 10px rgba(0,0,0,.3),
+    0 7px 14px rgba(0,0,0,.46),
+    0 0 0 4px rgba(var(--accent-rgb),.16)
 }
 .sp-range-native{
-  position:absolute;left:0;right:0;top:0;width:100%;height:44px;margin:0;
+  position:absolute;left:0;right:0;top:0;width:100%;height:34px;margin:0;
   background:transparent;appearance:none;-webkit-appearance:none;pointer-events:none;
   z-index:1
 }
 .sp-range-native::-webkit-slider-runnable-track{
-  height:44px;background:transparent;border:0
+  height:34px;background:transparent;border:0
 }
 .sp-range-native::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;pointer-events:auto;
-  width:44px;height:44px;margin-top:0;border-radius:999px;
+  width:34px;height:34px;margin-top:0;border-radius:999px;
   border:0;background:transparent;box-shadow:none;cursor:grab
 }
 .sp-range-native::-moz-range-track{
-  height:44px;background:transparent;border:0
+  height:34px;background:transparent;border:0
 }
 .sp-range-native::-moz-range-thumb{
-  pointer-events:auto;width:44px;height:44px;border-radius:999px;
+  pointer-events:auto;width:34px;height:34px;border-radius:999px;
   border:0;background:transparent;box-shadow:none;
   cursor:grab
 }
