@@ -770,6 +770,8 @@
     h += '<div class="sp-range-pill" id="spRangeSelected"></div>';
     h += '</div>';
     h += '<div class="sp-range-rail" id="spRangeRail">';
+    h += '<span class="sp-range-knob sp-range-knob--lo" aria-hidden="true"><span></span><span></span><span></span></span>';
+    h += '<span class="sp-range-knob sp-range-knob--hi" aria-hidden="true"><span></span><span></span><span></span></span>';
     h += '<input class="sp-range-native sp-range-native--lo" id="spRangeLo" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.lo + '"' + disabled + '>';
     h += '<input class="sp-range-native sp-range-native--hi" id="spRangeHi" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.hi + '"' + disabled + '>';
     h += '</div>';
