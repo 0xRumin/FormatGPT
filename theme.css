@@ -1370,7 +1370,7 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 }
 .sp-range-rail{
   --lo-pct:0%;--hi-pct:100%;
-  position:relative;height:34px;margin:2px 10px 12px;
+  position:relative;height:44px;margin:2px 12px 12px;
   cursor:pointer;touch-action:none
 }
 .sp-range-rail::before,
@@ -1430,23 +1430,23 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
     0 0 0 4px rgba(var(--accent-rgb),.16)
 }
 .sp-range-native{
-  position:absolute;left:0;right:0;top:0;width:100%;height:34px;margin:0;
+  position:absolute;left:0;right:0;top:0;width:100%;height:48px;margin:0;
   background:transparent;appearance:none;-webkit-appearance:none;pointer-events:none;
   z-index:1
 }
 .sp-range-native::-webkit-slider-runnable-track{
-  height:34px;background:transparent;border:0
+  height:48px;background:transparent;border:0
 }
 .sp-range-native::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;pointer-events:auto;
-  width:34px;height:34px;margin-top:0;border-radius:999px;
+  width:48px;height:48px;margin-top:0;border-radius:999px;
   border:0;background:transparent;box-shadow:none;cursor:grab
 }
 .sp-range-native::-moz-range-track{
-  height:34px;background:transparent;border:0
+  height:48px;background:transparent;border:0
 }
 .sp-range-native::-moz-range-thumb{
-  pointer-events:auto;width:34px;height:34px;border-radius:999px;
+  pointer-events:auto;width:48px;height:48px;border-radius:999px;
   border:0;background:transparent;box-shadow:none;
   cursor:grab
 }
@@ -1461,24 +1461,24 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 
 /* Final slider-handle override: tiny dark tablet handles, not round knobs. */
 .sp-range-knob{
-  width:22px !important;
-  height:16px !important;
-  border-radius:7px !important;
+  width:36px !important;
+  height:24px !important;
+  border-radius:10px !important;
   gap:0 !important;
   background:
     linear-gradient(180deg,rgba(var(--accent2-rgb),.32),rgba(4,18,20,.96)) !important;
   border:1px solid rgba(var(--accent-rgb),.72) !important;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.10),
-    inset 0 -5px 8px rgba(0,0,0,.38),
-    0 4px 10px rgba(0,0,0,.42),
+    inset 0 -7px 10px rgba(0,0,0,.38),
+    0 6px 14px rgba(0,0,0,.42),
     0 0 0 2px rgba(var(--accent-rgb),.10) !important;
 }
 .sp-range-knob::after{
   content:"";
-  width:10px;height:3px;border-radius:999px;
+  width:16px;height:4px;border-radius:999px;
   background:rgba(var(--accent2-rgb),.48);
-  box-shadow:0 4px 0 rgba(var(--accent2-rgb),.22);
+  box-shadow:0 5px 0 rgba(var(--accent2-rgb),.22);
 }
 .sp-range-knob span{display:none !important}
 .sp-range-rail.sp-range-dragging-lo .sp-range-knob--lo,
