@@ -11,6 +11,8 @@
   var excludedRanges = {}; // counts ranges excluded from output: { 'lo – hi': {lo,hi} }
   var tabGroups = {}; // { 'key': ['full:line:1', ...], ... }
   var mismatchLines = []; // raw input lines whose column count != detected total
+  var lastRows = [];
+  var rangeSelection = { kind: null, lo: null, hi: null };
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -43,6 +45,24 @@
     var a = document.createElement('a');
     a.href = url; a.download = filename; document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+  }
+
+  function clamp(n, min, max) {
+    n = parseInt(n, 10);
+    if (isNaN(n)) return min;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function fmtNum(n) {
+    try { return Number(n).toLocaleString(); } catch (e) { return String(n); }
+  }
+
+  function fmtRangeValue(n, kind) {
+    return kind === 'year' ? String(n) : fmtNum(n);
+  }
+
+  function cleanFilePart(s) {
+    return String(s || '').replace(/[^A-Za-z0-9_\-.]+/g, '-').replace(/^-+|-+$/g, '') || 'range';
   }
 
   /* ======== Column type classification ======== */
@@ -198,6 +218,9 @@
     h += '<div class="sp-bd-body" id="spBdBody"></div>';
     h += '</div>';
 
+    // Range download (hidden until Year or Counts column is selected)
+    h += '<div class="sp-range-panel" id="spRangePanel" style="display:none"></div>';
+
     // Year tabs (hidden until Year column selected)
     h += '<div class="sp-tabs-wrap" id="spTabsWrap" style="display:none">';
     h += '<div class="sp-tabs-bar" id="spTabsBar"></div>';
@@ -231,6 +254,7 @@
       state.sorterColumn = +btn.dataset.col;
       excludedYears = {};
       excludedRanges = {};
+      rangeSelection = { kind: null, lo: null, hi: null };
       saveSorterState();
       syncColBtns();
       App.App.rerun();
@@ -339,6 +363,36 @@
       setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
     });
 
+    var rangePanel = $('#spRangePanel');
+    if (rangePanel) {
+      rangePanel.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t || !t.matches('.sp-range-native, .sp-range-num')) return;
+        updateRangeSelection(t);
+      });
+
+      rangePanel.addEventListener('click', function (e) {
+        var btn = e.target.closest('.sp-range-copy, .sp-range-download');
+        if (!btn || !lastFormat) return;
+        var lo = parseInt(rangePanel.dataset.lo, 10);
+        var hi = parseInt(rangePanel.dataset.hi, 10);
+        if (isNaN(lo) || isNaN(hi)) return;
+        var lines = collectRangeLines(lastRows, lastFormat, lo, hi);
+        if (!lines.length) return;
+
+        if (btn.classList.contains('sp-range-copy')) {
+          navigator.clipboard.writeText(lines.join('\n')).then(function () {
+            var orig = btn.textContent;
+            btn.textContent = 'Copied';
+            setTimeout(function () { btn.textContent = orig; }, 900);
+          }).catch(function () { alert('Copy failed.'); });
+        } else {
+          var kind = lastFormat.columnTypes[state.sorterColumn] === 'year' ? 'years' : 'counts';
+          downloadTxt(lines, kind + '_' + cleanFilePart(lo + '-' + hi) + '_' + U.randToken(5) + '.txt');
+        }
+      });
+    }
+
     // Force toggle: include column-mismatched lines in the sort pool.
     var mmForce = $('#spMmForce');
     if (mmForce) mmForce.addEventListener('click', function () {
@@ -443,6 +497,8 @@
     var colType = format.columnTypes[state.sorterColumn];
     if (colType !== 'year' && colType !== 'counts') {
       wrap.style.display = 'none';
+      var rangePanel = $('#spRangePanel');
+      if (rangePanel) rangePanel.style.display = 'none';
       return;
     }
 
@@ -563,7 +619,174 @@
     wrap.style.display = 'block';
 
     // Build tabs for year or counts
+    renderRangeDownload(rows, format, colType);
     renderValueTabs(rows, format, colType);
+  }
+
+  /* ======== Range download (year + counts) ======== */
+
+  function numericValueForLine(line, format) {
+    if (!line || !format) return null;
+    var cols = line.split(':');
+    if (cols.length !== format.totalColumns && !state.sorterForce) return null;
+    var raw = sortValueFor(cols, state.sorterColumn, format.columnTypes);
+    var n = parseInt((raw || '').trim(), 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function collectRangeValues(rows, format) {
+    var values = [];
+    for (var i = 0; i < rows.length; i++) {
+      var n = numericValueForLine(rows[i], format);
+      if (n != null) values.push(n);
+    }
+    return values;
+  }
+
+  function collectRangeLines(rows, format, lo, hi) {
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var n = numericValueForLine(rows[i], format);
+      if (n != null && n >= lo && n <= hi) out.push(rows[i]);
+    }
+    return out;
+  }
+
+  function updateRangeSelection(source) {
+    var panel = $('#spRangePanel');
+    if (!panel) return;
+    var min = parseInt(panel.dataset.min, 10);
+    var max = parseInt(panel.dataset.max, 10);
+    if (isNaN(min) || isNaN(max)) return;
+
+    var loEl = $('#spRangeLo');
+    var hiEl = $('#spRangeHi');
+    var loNum = $('#spRangeLoNum');
+    var hiNum = $('#spRangeHiNum');
+    var lo = loEl ? loEl.value : min;
+    var hi = hiEl ? hiEl.value : max;
+    if (source && (source.id === 'spRangeLoNum' || source.id === 'spRangeLo')) lo = source.value;
+    if (source && (source.id === 'spRangeHiNum' || source.id === 'spRangeHi')) hi = source.value;
+    if (source && source.id !== 'spRangeLoNum' && loNum) lo = loEl ? loEl.value : loNum.value;
+    if (source && source.id !== 'spRangeHiNum' && hiNum) hi = hiEl ? hiEl.value : hiNum.value;
+
+    lo = clamp(lo, min, max);
+    hi = clamp(hi, min, max);
+    if (lo > hi) {
+      if (source && (source.id === 'spRangeLo' || source.id === 'spRangeLoNum')) hi = lo;
+      else lo = hi;
+    }
+
+    rangeSelection.lo = lo;
+    rangeSelection.hi = hi;
+    syncRangeDownload();
+  }
+
+  function syncRangeDownload() {
+    var panel = $('#spRangePanel');
+    if (!panel || !lastFormat) return;
+    var min = parseInt(panel.dataset.min, 10);
+    var max = parseInt(panel.dataset.max, 10);
+    if (isNaN(min) || isNaN(max)) return;
+
+    var lo = clamp(rangeSelection.lo, min, max);
+    var hi = clamp(rangeSelection.hi, min, max);
+    if (lo > hi) { var tmp = lo; lo = hi; hi = tmp; }
+    rangeSelection.lo = lo;
+    rangeSelection.hi = hi;
+    panel.dataset.lo = String(lo);
+    panel.dataset.hi = String(hi);
+
+    var span = Math.max(1, max - min);
+    var loPct = Math.max(0, Math.min(100, ((lo - min) / span) * 100));
+    var hiPct = Math.max(0, Math.min(100, ((hi - min) / span) * 100));
+    var rail = $('#spRangeRail');
+    if (rail) {
+      rail.style.setProperty('--lo-pct', loPct + '%');
+      rail.style.setProperty('--hi-pct', hiPct + '%');
+    }
+
+    var loEl = $('#spRangeLo');
+    var hiEl = $('#spRangeHi');
+    var loNum = $('#spRangeLoNum');
+    var hiNum = $('#spRangeHiNum');
+    if (loEl) loEl.value = String(lo);
+    if (hiEl) hiEl.value = String(hi);
+    if (loNum && document.activeElement !== loNum) loNum.value = String(lo);
+    if (hiNum && document.activeElement !== hiNum) hiNum.value = String(hi);
+
+    var lines = collectRangeLines(lastRows, lastFormat, lo, hi);
+    var colKind = lastFormat.columnTypes[state.sorterColumn] === 'year' ? 'year' : 'counts';
+    var type = colKind === 'year' ? 'years' : 'counts';
+    var noun = lines.length === 1 ? 'account' : 'accounts';
+    var selected = $('#spRangeSelected');
+    var count = $('#spRangeCount');
+    if (selected) selected.textContent = fmtRangeValue(lo, colKind) + ' -> ' + fmtRangeValue(hi, colKind);
+    if (count) count.textContent = fmtNum(lines.length) + ' ' + noun + ' in selected ' + type + ' range';
+
+    var copy = $('#spRangeCopy');
+    var dl = $('#spRangeDownload');
+    if (copy) copy.disabled = !lines.length;
+    if (dl) dl.disabled = !lines.length;
+  }
+
+  function renderRangeDownload(rows, format, colType) {
+    var panel = $('#spRangePanel');
+    if (!panel) return;
+    if (colType !== 'year' && colType !== 'counts') {
+      panel.style.display = 'none';
+      return;
+    }
+
+    var values = collectRangeValues(rows, format);
+    if (!values.length) {
+      panel.style.display = 'none';
+      return;
+    }
+
+    var min = values[0], max = values[0];
+    for (var i = 1; i < values.length; i++) {
+      if (values[i] < min) min = values[i];
+      if (values[i] > max) max = values[i];
+    }
+
+    if (rangeSelection.kind !== colType) {
+      rangeSelection.kind = colType;
+      rangeSelection.lo = min;
+      rangeSelection.hi = max;
+    }
+    rangeSelection.lo = clamp(rangeSelection.lo, min, max);
+    rangeSelection.hi = clamp(rangeSelection.hi, min, max);
+    if (rangeSelection.lo > rangeSelection.hi) rangeSelection.hi = rangeSelection.lo;
+
+    var title = colType === 'year' ? 'YEAR RANGE DOWNLOAD' : 'COUNTS / FOLLOWERS RANGE DOWNLOAD';
+    var icon = colType === 'year' ? '📅 ' : '🔢 ';
+    var hint = colType === 'year' ? 'Select first and final year' : 'Select low and high count';
+    var disabled = min === max ? ' disabled' : '';
+    var h = '';
+    h += '<div class="sp-range-head">';
+    h += '<div><div class="sp-label">' + icon + title + '</div>';
+    h += '<div class="sp-range-sub">' + hint + ' · source min ' + fmtRangeValue(min, colType) + ' / max ' + fmtRangeValue(max, colType) + '</div></div>';
+    h += '<div class="sp-range-pill" id="spRangeSelected"></div>';
+    h += '</div>';
+    h += '<div class="sp-range-rail" id="spRangeRail">';
+    h += '<input class="sp-range-native sp-range-native--lo" id="spRangeLo" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.lo + '"' + disabled + '>';
+    h += '<input class="sp-range-native sp-range-native--hi" id="spRangeHi" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.hi + '"' + disabled + '>';
+    h += '</div>';
+    h += '<div class="sp-range-fields">';
+    h += '<label><span>From</span><input class="sp-range-num" id="spRangeLoNum" type="number" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.lo + '"></label>';
+    h += '<label><span>To</span><input class="sp-range-num" id="spRangeHiNum" type="number" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.hi + '"></label>';
+    h += '<div class="sp-range-count" id="spRangeCount"></div>';
+    h += '<div class="sp-range-actions">';
+    h += '<button class="sp-range-copy" id="spRangeCopy" type="button">Copy</button>';
+    h += '<button class="sp-range-download" id="spRangeDownload" type="button">Download</button>';
+    h += '</div></div>';
+
+    panel.dataset.min = String(min);
+    panel.dataset.max = String(max);
+    panel.innerHTML = h;
+    panel.style.display = 'block';
+    syncRangeDownload();
   }
 
   /* ======== Value tabs (year + counts) ======== */
@@ -915,9 +1138,11 @@
       if (!panelBuilt) buildPanel();
 
       var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+      lastRows = rows;
       if (!rows.length) {
         renderCols(null);
         var bd = $('#spBreakdown'); if (bd) bd.style.display = 'none';
+        var rd = $('#spRangePanel'); if (rd) rd.style.display = 'none';
         var tw = $('#spTabsWrap'); if (tw) tw.style.display = 'none';
         var mm = $('#spMismatch'); if (mm) mm.style.display = 'none';
         mismatchLines = [];
@@ -927,6 +1152,7 @@
       var format = detectFormat(rows);
       if (!format) {
         renderCols(null);
+        var rd2 = $('#spRangePanel'); if (rd2) rd2.style.display = 'none';
         var mm2 = $('#spMismatch'); if (mm2) mm2.style.display = 'none';
         mismatchLines = [];
         return '';
