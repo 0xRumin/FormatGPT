@@ -398,6 +398,19 @@
         });
       });
 
+      document.addEventListener('pointermove', function (e) {
+        if (!activeRangeHandle) return;
+        updateRangeFromPointer(e, activeRangeHandle);
+      });
+
+      document.addEventListener('pointerup', function () {
+        activeRangeHandle = null;
+        var rail = $('#spRangeRail');
+        if (rail) {
+          rail.classList.remove('sp-range-dragging', 'sp-range-dragging-lo', 'sp-range-dragging-hi');
+        }
+      });
+
       rangePanel.addEventListener('click', function (e) {
         var btn = e.target.closest('.sp-range-copy, .sp-range-download');
         if (!btn || !lastFormat) return;
@@ -822,7 +835,7 @@
     var icon = colType === 'year' ? '📅 ' : '🔢 ';
     var hint = colType === 'year' ? 'Select first and final year' : 'Select low and high count';
     var disabled = min === max ? ' disabled' : '';
-    var knobStyle = 'style="width:22px !important;height:16px !important;border-radius:7px !important;background:linear-gradient(180deg,rgba(var(--accent2-rgb),.34),rgba(4,18,20,.96)) !important;border:1px solid rgba(var(--accent-rgb),.72) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -5px 8px rgba(0,0,0,.38),0 4px 10px rgba(0,0,0,.42),0 0 0 2px rgba(var(--accent-rgb),.10) !important;"';
+    var knobStyle = 'style="width:36px !important;height:24px !important;border-radius:10px !important;background:linear-gradient(180deg,rgba(var(--accent2-rgb),.34),rgba(4,18,20,.96)) !important;border:1px solid rgba(var(--accent-rgb),.72) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -7px 10px rgba(0,0,0,.38),0 6px 14px rgba(0,0,0,.42),0 0 0 2px rgba(var(--accent-rgb),.10) !important;"';
     var h = '';
     h += '<div class="sp-range-head">';
     h += '<div><div class="sp-label">' + icon + title + '</div>';
