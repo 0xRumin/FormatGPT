@@ -13,6 +13,7 @@
   var mismatchLines = []; // raw input lines whose column count != detected total
   var lastRows = [];
   var rangeSelection = { kind: null, lo: null, hi: null };
+  var activeRangeHandle = null;
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -371,6 +372,32 @@
         updateRangeSelection(t);
       });
 
+      rangePanel.addEventListener('pointerdown', function (e) {
+        var rail = e.target.closest('#spRangeRail');
+        if (!rail || rail.classList.contains('sp-range-disabled')) return;
+        e.preventDefault();
+        activeRangeHandle = updateRangeFromPointer(e);
+        rail.classList.add('sp-range-dragging');
+        rail.classList.toggle('sp-range-dragging-lo', activeRangeHandle === 'lo');
+        rail.classList.toggle('sp-range-dragging-hi', activeRangeHandle === 'hi');
+        try { rail.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+
+      rangePanel.addEventListener('pointermove', function (e) {
+        if (!activeRangeHandle) return;
+        updateRangeFromPointer(e, activeRangeHandle);
+      });
+
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (type) {
+        rangePanel.addEventListener(type, function () {
+          activeRangeHandle = null;
+          var rail = $('#spRangeRail');
+          if (rail) {
+            rail.classList.remove('sp-range-dragging', 'sp-range-dragging-lo', 'sp-range-dragging-hi');
+          }
+        });
+      });
+
       rangePanel.addEventListener('click', function (e) {
         var btn = e.target.closest('.sp-range-copy, .sp-range-download');
         if (!btn || !lastFormat) return;
@@ -682,6 +709,38 @@
     syncRangeDownload();
   }
 
+  function updateRangeFromPointer(e, forcedHandle) {
+    var panel = $('#spRangePanel');
+    var rail = $('#spRangeRail');
+    if (!panel || !rail) return null;
+    var min = parseInt(panel.dataset.min, 10);
+    var max = parseInt(panel.dataset.max, 10);
+    if (isNaN(min) || isNaN(max) || min === max) return null;
+
+    var rect = rail.getBoundingClientRect();
+    var pct = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0;
+    pct = Math.max(0, Math.min(1, pct));
+    var val = clamp(Math.round(min + pct * (max - min)), min, max);
+    var lo = clamp(rangeSelection.lo, min, max);
+    var hi = clamp(rangeSelection.hi, min, max);
+    var handle = forcedHandle;
+
+    if (!handle) {
+      var loDist = Math.abs(val - lo);
+      var hiDist = Math.abs(val - hi);
+      handle = hiDist < loDist || (hiDist === loDist && val > (lo + hi) / 2) ? 'hi' : 'lo';
+    }
+
+    if (handle === 'hi') {
+      rangeSelection.hi = Math.max(val, lo);
+    } else {
+      rangeSelection.lo = Math.min(val, hi);
+      handle = 'lo';
+    }
+    syncRangeDownload();
+    return handle;
+  }
+
   function syncRangeDownload() {
     var panel = $('#spRangePanel');
     if (!panel || !lastFormat) return;
@@ -769,7 +828,7 @@
     h += '<div class="sp-range-sub">' + hint + ' · source min ' + fmtRangeValue(min, colType) + ' / max ' + fmtRangeValue(max, colType) + '</div></div>';
     h += '<div class="sp-range-pill" id="spRangeSelected"></div>';
     h += '</div>';
-    h += '<div class="sp-range-rail" id="spRangeRail">';
+    h += '<div class="sp-range-rail' + (min === max ? ' sp-range-disabled' : '') + '" id="spRangeRail">';
     h += '<span class="sp-range-knob sp-range-knob--lo" aria-hidden="true"><span></span><span></span><span></span></span>';
     h += '<span class="sp-range-knob sp-range-knob--hi" aria-hidden="true"><span></span><span></span><span></span></span>';
     h += '<input class="sp-range-native sp-range-native--lo" id="spRangeLo" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.lo + '"' + disabled + '>';
