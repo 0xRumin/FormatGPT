@@ -822,6 +822,7 @@
     var icon = colType === 'year' ? '📅 ' : '🔢 ';
     var hint = colType === 'year' ? 'Select first and final year' : 'Select low and high count';
     var disabled = min === max ? ' disabled' : '';
+    var knobStyle = 'style="width:22px !important;height:16px !important;border-radius:7px !important;background:linear-gradient(180deg,rgba(var(--accent2-rgb),.34),rgba(4,18,20,.96)) !important;border:1px solid rgba(var(--accent-rgb),.72) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -5px 8px rgba(0,0,0,.38),0 4px 10px rgba(0,0,0,.42),0 0 0 2px rgba(var(--accent-rgb),.10) !important;"';
     var h = '';
     h += '<div class="sp-range-head">';
     h += '<div><div class="sp-label">' + icon + title + '</div>';
@@ -829,8 +830,8 @@
     h += '<div class="sp-range-pill" id="spRangeSelected"></div>';
     h += '</div>';
     h += '<div class="sp-range-rail' + (min === max ? ' sp-range-disabled' : '') + '" id="spRangeRail">';
-    h += '<span class="sp-range-knob sp-range-knob--lo" aria-hidden="true"><span></span><span></span><span></span></span>';
-    h += '<span class="sp-range-knob sp-range-knob--hi" aria-hidden="true"><span></span><span></span><span></span></span>';
+    h += '<span class="sp-range-knob sp-range-knob--lo" ' + knobStyle + ' aria-hidden="true"></span>';
+    h += '<span class="sp-range-knob sp-range-knob--hi" ' + knobStyle + ' aria-hidden="true"></span>';
     h += '<input class="sp-range-native sp-range-native--lo" id="spRangeLo" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.lo + '"' + disabled + '>';
     h += '<input class="sp-range-native sp-range-native--hi" id="spRangeHi" type="range" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.hi + '"' + disabled + '>';
     h += '</div>';
