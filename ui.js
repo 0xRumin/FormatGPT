@@ -329,8 +329,9 @@
       }
       modeDd?.setAttribute('data-value', val);
       const modeLabel = $('#modeLabel'); if (modeLabel) modeLabel.textContent = li.textContent.trim();
-      setModeFromDd(val);
       closeDropdown(modeMenu, modeBtn);
+      // Let the closed menu and selected label paint before a large mode rerun.
+      requestAnimationFrame(() => setModeFromDd(val));
     });
 
     // Close when tapping outside

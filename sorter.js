@@ -523,9 +523,8 @@
     var tabs = document.querySelectorAll('#spTabsBar .sp-tab');
     for (var i = 0; i < tabs.length; i++)
       tabs[i].classList.toggle('sp-tab-active', tabs[i].dataset.year === yr);
-    var panes = document.querySelectorAll('#spTabsContent .sp-tab-pane');
-    for (var j = 0; j < panes.length; j++)
-      panes[j].style.display = panes[j].dataset.year === yr ? 'block' : 'none';
+    var tabsWrap = $('#spTabsWrap');
+    renderTabPane(yr, tabsWrap ? tabsWrap.dataset.prefix : 'range', false);
   }
 
   /* ======== UI sync ======== */
@@ -931,6 +930,30 @@
   }
 
   /* ======== Value tabs (year + counts) ======== */
+  function renderTabPane(key, prefix, force) {
+    var content = $('#spTabsContent');
+    var lines = tabGroups[key];
+    if (!content || !lines) return;
+    var current = $('.sp-tab-pane', content);
+    if (!force && current && current.dataset.year === key) return;
+
+    var fileLabel = key.replace(/\s+/g, '').replace(/–/g, '-');
+    var noLines = lines.length ? '' : ' disabled';
+    var h = '';
+    h += '<div class="sp-tab-pane" data-year="' + key + '">';
+    h += '<div class="sp-tab-header">';
+    h += '<span class="sp-tab-info">' + key + ' · ' + lines.length + ' accounts</span>';
+    h += '<div class="sp-tab-actions">';
+    h += '<button class="sp-tab-copy" data-year="' + key + '"' + noLines + '>Copy</button>';
+    h += '<button class="sp-tab-save" data-year="' + key + '" data-prefix="' + prefix + '_' + fileLabel + '"' + noLines + '>Save .txt</button>';
+    h += '</div></div>';
+    h += '<textarea class="sp-tab-pre" readonly spellcheck="false" aria-label="' + key + ' accounts"></textarea>';
+    h += '</div>';
+    content.innerHTML = h;
+    var preview = $('.sp-tab-pre', content);
+    if (preview) preview.value = lines.join('\n');
+  }
+
   function renderValueTabs(rows, format, colType) {
     var tabsWrap = $('#spTabsWrap');
     if (!tabsWrap) return;
@@ -1011,10 +1034,10 @@
     }
 
     var bar = $('#spTabsBar');
-    var content = $('#spTabsContent');
     var prefix = hasSelectedRange
       ? (colType === 'year' ? 'years' : 'counts')
       : (colType === 'year' ? 'year' : 'range');
+    tabsWrap.dataset.prefix = prefix;
 
     // Tabs
     var bh = '';
@@ -1027,31 +1050,8 @@
       bh += '</button>';
     }
     bar.innerHTML = bh;
-
-    // Panes
-    var ch = '';
-    for (var p = 0; p < keys.length; p++) {
-      var pk = keys[p];
-      var lines = tabGroups[pk];
-      var show = p === 0 ? 'block' : 'none';
-      var fileLabel = pk.replace(/\s+/g, '').replace(/–/g, '-');
-      ch += '<div class="sp-tab-pane" data-year="' + pk + '" style="display:' + show + '">';
-      ch += '<div class="sp-tab-header">';
-      ch += '<span class="sp-tab-info">' + pk + ' · ' + lines.length + ' accounts</span>';
-      ch += '<div class="sp-tab-actions">';
-      var noLines = lines.length ? '' : ' disabled';
-      ch += '<button class="sp-tab-copy" data-year="' + pk + '"' + noLines + '>Copy</button>';
-      ch += '<button class="sp-tab-save" data-year="' + pk + '" data-prefix="' + prefix + '_' + fileLabel + '"' + noLines + '>Save .txt</button>';
-      ch += '</div></div>';
-      ch += '<pre class="sp-tab-pre">' + escHtml(lines.join('\n')) + '</pre>';
-      ch += '</div>';
-    }
-    content.innerHTML = ch;
+    renderTabPane(keys[0], prefix, true);
     tabsWrap.style.display = 'block';
-  }
-
-  function escHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   /* ======== Mismatched / skipped lines ======== */

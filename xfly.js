@@ -1,6 +1,6 @@
 // xfly.js (FULL)
 (function () {
-  const { is2FAKey } = App.Utils;
+  const { is2FAKey, credentialParts } = App.Utils;
   const { extract2FAFromLink } = App.Renderers;
 
   App.App = App.App || {};
@@ -12,7 +12,10 @@
       const out = [];
       for (const row of rows) {
         const parts = row.split(/[:;,]/).map(s => s.trim()).filter(Boolean);
-        let [user, pass, ...rest] = parts;
+        const credentials = credentialParts(parts);
+        const user = credentials.username;
+        const pass = credentials.password;
+        const rest = credentials.rest;
         let key = rest.find(x => is2FAKey(x));
         if (!key) {
           // accept old and new 2FA link formats

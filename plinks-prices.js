@@ -79,7 +79,7 @@
         var parts = U.splitFlexible(rows[i]);
         var user = R.pickUsernameForPlinks(parts);
         if (!user) continue;
-        var rest = parts.filter(function (p) { return p !== user; });
+        var rest = U.credentialParts(parts).rest;
         var followersRaw = R.pickFollowersFrom(rest);
         out.push(priceLine(user, followersRaw));
       }
