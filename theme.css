@@ -1431,7 +1431,7 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 }
 .sp-range-native{
   position:absolute;left:0;right:0;top:0;width:100%;height:48px;margin:0;
-  background:transparent;appearance:none;-webkit-appearance:none;pointer-events:none;
+  background:transparent;appearance:none;-webkit-appearance:none;pointer-events:none;outline:0;
   z-index:1
 }
 .sp-range-native::-webkit-slider-runnable-track{
@@ -1516,19 +1516,21 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
   background:rgba(0,0,0,.18)
 }
 .sp-range-actions{display:flex;gap:6px}
-.sp-range-copy,.sp-range-download{
+.sp-range-reset,.sp-range-copy,.sp-range-download{
   padding:7px 14px;border-radius:10px;border:1px solid rgba(var(--accent-rgb),.38);
   background:rgba(var(--accent-rgb),.08);color:var(--accent);cursor:pointer;
   font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:0.12em;
   text-transform:uppercase;transition:all .15s;white-space:nowrap
 }
+.sp-range-reset{background:rgba(var(--tint-rgb),.04);border-color:var(--line);color:var(--muted)}
 .sp-range-download{
   background:linear-gradient(100deg,#2dd4bf,#06b6d4);border-color:transparent;color:#041014
 }
+.sp-range-reset:not(:disabled):hover{background:rgba(var(--tint-rgb),.1);border-color:var(--muted);color:var(--fg)}
 .sp-range-copy:hover{background:rgba(var(--accent-rgb),.14);border-color:var(--accent)}
 .sp-range-download:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.sp-range-copy:active,.sp-range-download:active{transform:translateY(1px)}
-.sp-range-copy:disabled,.sp-range-download:disabled{
+.sp-range-reset:active,.sp-range-copy:active,.sp-range-download:active{transform:translateY(1px)}
+.sp-range-reset:disabled,.sp-range-copy:disabled,.sp-range-download:disabled{
   opacity:.45;cursor:not-allowed;filter:none;transform:none
 }
 @media(max-width:760px){
@@ -1537,7 +1539,7 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
   .sp-range-fields{grid-template-columns:1fr 1fr}
   .sp-range-count{grid-column:1 / -1}
   .sp-range-actions{grid-column:1 / -1}
-  .sp-range-copy,.sp-range-download{flex:1}
+  .sp-range-reset,.sp-range-copy,.sp-range-download{flex:1}
 }
 
 /* Year tabs */
@@ -1563,6 +1565,7 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
   background:rgba(255,255,255,.06);font-size:10px;margin-left:4px;text-align:center
 }
 .sp-tab.sp-tab-active .sp-tab-count{background:rgba(var(--accent-rgb),.15)}
+.sp-tab.sp-tab-selected-range{border-style:solid}
 
 .sp-tab-pane{
   border:1px solid var(--line);border-radius:0 8px 8px 8px;
@@ -1584,6 +1587,7 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 .sp-tab-save{border-color:var(--line);color:var(--muted)}
 .sp-tab-save:hover{border-color:var(--fg);color:var(--fg)}
 .sp-tab-copy:active,.sp-tab-save:active{transform:translateY(1px)}
+.sp-tab-copy:disabled,.sp-tab-save:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
 .sp-tab-pre{
   margin:0;padding:12px;max-height:320px;overflow-y:auto;

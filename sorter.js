@@ -14,6 +14,7 @@
   var lastRows = [];
   var rangeSelection = { kind: null, lo: null, hi: null };
   var activeRangeHandle = null;
+  var rangeTabsTimer = null;
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -412,8 +413,17 @@
       });
 
       rangePanel.addEventListener('click', function (e) {
-        var btn = e.target.closest('.sp-range-copy, .sp-range-download');
+        var btn = e.target.closest('.sp-range-reset, .sp-range-copy, .sp-range-download');
         if (!btn || !lastFormat) return;
+        if (btn.classList.contains('sp-range-reset')) {
+          var min = parseInt(rangePanel.dataset.min, 10);
+          var max = parseInt(rangePanel.dataset.max, 10);
+          if (isNaN(min) || isNaN(max)) return;
+          rangeSelection.lo = min;
+          rangeSelection.hi = max;
+          syncRangeDownload();
+          return;
+        }
         var lo = parseInt(rangePanel.dataset.lo, 10);
         var hi = parseInt(rangePanel.dataset.hi, 10);
         if (isNaN(lo) || isNaN(hi)) return;
@@ -754,7 +764,16 @@
     return handle;
   }
 
-  function syncRangeDownload() {
+  function queueRangeTabsRender(colKind) {
+    if (rangeTabsTimer) clearTimeout(rangeTabsTimer);
+    rangeTabsTimer = setTimeout(function () {
+      rangeTabsTimer = null;
+      if (!lastFormat || lastFormat.columnTypes[state.sorterColumn] !== colKind) return;
+      renderValueTabs(lastRows, lastFormat, colKind);
+    }, 45);
+  }
+
+  function syncRangeDownload(skipTabsRender) {
     var panel = $('#spRangePanel');
     if (!panel || !lastFormat) return;
     var min = parseInt(panel.dataset.min, 10);
@@ -798,8 +817,11 @@
 
     var copy = $('#spRangeCopy');
     var dl = $('#spRangeDownload');
+    var reset = $('#spRangeReset');
     if (copy) copy.disabled = !lines.length;
     if (dl) dl.disabled = !lines.length;
+    if (reset) reset.disabled = lo === min && hi === max;
+    if (!skipTabsRender) queueRangeTabsRender(colKind);
   }
 
   function renderRangeDownload(rows, format, colType) {
@@ -854,6 +876,7 @@
     h += '<label><span>To</span><input class="sp-range-num" id="spRangeHiNum" type="number" min="' + min + '" max="' + max + '" step="1" value="' + rangeSelection.hi + '"></label>';
     h += '<div class="sp-range-count" id="spRangeCount"></div>';
     h += '<div class="sp-range-actions">';
+    h += '<button class="sp-range-reset" id="spRangeReset" type="button" title="Restore the full range">Reset</button>';
     h += '<button class="sp-range-copy" id="spRangeCopy" type="button">Copy</button>';
     h += '<button class="sp-range-download" id="spRangeDownload" type="button">Download</button>';
     h += '</div></div>';
@@ -862,7 +885,7 @@
     panel.dataset.max = String(max);
     panel.innerHTML = h;
     panel.style.display = 'block';
-    syncRangeDownload();
+    syncRangeDownload(true);
   }
 
   /* ======== Value tabs (year + counts) ======== */
@@ -880,7 +903,19 @@
     var col = state.sorterColumn;
     tabGroups = {};
 
-    if (colType === 'year') {
+    var panel = $('#spRangePanel');
+    var sourceMin = panel ? parseInt(panel.dataset.min, 10) : NaN;
+    var sourceMax = panel ? parseInt(panel.dataset.max, 10) : NaN;
+    var selectedLo = clamp(rangeSelection.lo, sourceMin, sourceMax);
+    var selectedHi = clamp(rangeSelection.hi, sourceMin, sourceMax);
+    var hasSelectedRange = rangeSelection.kind === colType &&
+      !isNaN(sourceMin) && !isNaN(sourceMax) &&
+      (selectedLo !== sourceMin || selectedHi !== sourceMax);
+
+    if (hasSelectedRange) {
+      var selectedLabel = fmtRangeValue(selectedLo, colType) + ' – ' + fmtRangeValue(selectedHi, colType);
+      tabGroups[selectedLabel] = collectRangeLines(rows, format, selectedLo, selectedHi);
+    } else if (colType === 'year') {
       // Group by individual year
       for (var i = 0; i < rows.length; i++) {
         var parts = rows[i].split(':');
@@ -935,7 +970,9 @@
 
     var bar = $('#spTabsBar');
     var content = $('#spTabsContent');
-    var prefix = colType === 'year' ? 'year' : 'range';
+    var prefix = hasSelectedRange
+      ? (colType === 'year' ? 'years' : 'counts')
+      : (colType === 'year' ? 'year' : 'range');
 
     // Tabs
     var bh = '';
@@ -943,7 +980,7 @@
       var k = keys[t];
       var cnt = tabGroups[k].length;
       var active = t === 0 ? ' sp-tab-active' : '';
-      bh += '<button class="sp-tab' + active + '" data-year="' + k + '">';
+      bh += '<button class="sp-tab' + active + (hasSelectedRange ? ' sp-tab-selected-range' : '') + '" data-year="' + k + '">';
       bh += k + ' <span class="sp-tab-count">' + cnt + '</span>';
       bh += '</button>';
     }
@@ -960,8 +997,9 @@
       ch += '<div class="sp-tab-header">';
       ch += '<span class="sp-tab-info">' + pk + ' · ' + lines.length + ' accounts</span>';
       ch += '<div class="sp-tab-actions">';
-      ch += '<button class="sp-tab-copy" data-year="' + pk + '">Copy</button>';
-      ch += '<button class="sp-tab-save" data-year="' + pk + '" data-prefix="' + prefix + '_' + fileLabel + '">Save .txt</button>';
+      var noLines = lines.length ? '' : ' disabled';
+      ch += '<button class="sp-tab-copy" data-year="' + pk + '"' + noLines + '>Copy</button>';
+      ch += '<button class="sp-tab-save" data-year="' + pk + '" data-prefix="' + prefix + '_' + fileLabel + '"' + noLines + '>Save .txt</button>';
       ch += '</div></div>';
       ch += '<pre class="sp-tab-pre">' + escHtml(lines.join('\n')) + '</pre>';
       ch += '</div>';
