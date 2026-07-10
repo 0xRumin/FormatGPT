@@ -43,7 +43,10 @@
     }
 
     const out = $('#out');
-    if (out) out.textContent = body;
+    if (out) {
+      out.classList.toggle('out-large', body.length > 120000);
+      out.textContent = body;
+    }
   }
 
   function saveTxt() {

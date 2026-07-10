@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202607100003">
+  <link rel="stylesheet" href="theme.css?v=202607100005">
 </head>
 <body>
 
@@ -222,28 +222,28 @@
 <script>window.App = window.App || {};</script>
 
 <!-- Core order: utils -> config -> state -> renderers -> main -> modes -> ui -> boot -->
-<script defer src="utils.js?v=202607061000"></script>
+<script defer src="utils.js?v=202607100005"></script>
 <script defer src="config.js?v=202607061000"></script>
 <script defer src="state.js?v=202607061000"></script>
-<script defer src="renderers.js?v=202607061000"></script>
-<script defer src="main.js?v=202607061000"></script>
+<script defer src="renderers.js?v=202607100005"></script>
+<script defer src="main.js?v=202607100005"></script>
 
-<script defer src="standard.js?v=202607061000"></script>
+<script defer src="standard.js?v=202607100005"></script>
 <script defer src="reverse.js?v=202607061000"></script>
-<script defer src="xfly.js?v=202607061000"></script>
-<script defer src="plinks-with.js?v=202607061000"></script>
-<script defer src="plinks-prices.js?v=202607061000"></script>
+<script defer src="xfly.js?v=202607100005"></script>
+<script defer src="plinks-with.js?v=202607100005"></script>
+<script defer src="plinks-prices.js?v=202607100005"></script>
 <script defer src="plinks-without.js?v=202607061000"></script>
 <script defer src="plinks-to-users.js?v=202607061000"></script>
 <script defer src="convert.js?v=202607061000"></script>
-<script defer src="reorder.js?v=202607061000"></script>
+<script defer src="reorder.js?v=202607100005"></script>
 <script defer src="filter.js?v=202607061000"></script>
-<script defer src="sorter.js?v=202607100004"></script>
+<script defer src="sorter.js?v=202607100005"></script>
 <script defer src="crosscheck.js?v=202607061000"></script>
 <script defer src="dam.js?v=202607061000"></script>
 <script defer src="deliver.js?v=202607061000"></script>
 <script defer src="themes.js?v=202607061000"></script>
-<script defer src="ui.js?v=202607061000"></script>
+<script defer src="ui.js?v=202607100005"></script>
 <script defer src="boot.js?v=202607061000"></script>
 
 <!-- Visual polish (no JS files modified). Runs after defer scripts. -->
@@ -288,6 +288,7 @@
   //     entirely — render plain text. This is the #1 perf win on big pastes.
   const ROW_WRAP_MAX_BLOCKS = 400;
   const ROW_WRAP_MAX_LINES  = 1500;
+  const ROW_WRAP_MAX_CHARS  = 120000;
   (function wrapOutputRows(){
     const out = document.getElementById('out');
     if (!out) return;
@@ -300,6 +301,13 @@
       const raw = looksRendered
         ? Array.from(out.children).map(d => d.dataset.raw || '').join('\n\n').replace(/\n+$/, '')
         : (out.textContent || '');
+
+      // Large plain outputs are already in their cheapest DOM form. Keep the
+      // full text, but avoid splitting and writing it back a second time.
+      if (!looksRendered && raw.length > ROW_WRAP_MAX_CHARS) {
+        lastSig = '\u0003' + raw.length;
+        return;
+      }
       const lines = raw.split(/\r?\n/);
 
       // FAST PATH — plain text for big outputs. No DOM wrapping, no per-row
@@ -309,6 +317,7 @@
         const sig = '\u0003' + raw;
         if (sig === lastSig) return;
         lastSig = sig;
+        if (!looksRendered) return;
         mo.disconnect();
         out.textContent = raw;
         mo.observe(out, { childList: true });
@@ -459,7 +468,7 @@
         return n;
       }
       const outMissingEl = document.getElementById('outMissing');
-      let lastIn = -1, lastOut = -1;
+      let lastIn = -1, lastOut = -1, lastOutRaw = null;
       function updTotal(){
         const t = document.getElementById('dpTotalCount');
         if (t) t.textContent = (Math.max(0,lastIn) + Math.max(0,lastOut)).toLocaleString();
@@ -482,7 +491,16 @@
       function updOut(){
         if (!out) return;
         const wrapped = out.querySelectorAll('.out-row__line');
-        const n = (wrapped && wrapped.length) ? wrapped.length : count(out.textContent);
+        let n;
+        if (wrapped && wrapped.length) {
+          lastOutRaw = null;
+          n = wrapped.length;
+        } else {
+          const raw = out.textContent || '';
+          if (raw === lastOutRaw) return;
+          lastOutRaw = raw;
+          n = count(raw);
+        }
         if (n === lastOut) return;
         lastOut = n;
         if (outCountEl) outCountEl.textContent = n.toLocaleString() + ' lines';

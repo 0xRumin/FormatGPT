@@ -1,6 +1,6 @@
 // plinks-with.js (FULL)
 (function () {
-  const { splitFlexible, sortLinesByCount, formatK } = App.Utils;
+  const { splitFlexible, credentialParts, sortLinesByCount, formatK } = App.Utils;
   const { pickUsernameForPlinks, pickFollowersFrom } = App.Renderers;
 
   App.App = App.App || {};
@@ -14,7 +14,7 @@
         const parts = splitFlexible(row);
         const user = pickUsernameForPlinks(parts);
         if (!user) return "Sorry, invalid format for plinks.\nExpected: user:pass:... (username required)";
-        const rest = parts.filter(p => p !== user);
+        const rest = credentialParts(parts).rest;
         const followersRaw = pickFollowersFrom(rest);
         // pickFollowersFrom already enforces the 30..<500k sanity range, so
         // any truthy value here is a valid follower count.

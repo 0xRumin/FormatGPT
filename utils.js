@@ -55,6 +55,17 @@
                         : line.split(d).map(s => s.trim());
   };
 
+  // Credential rows always reserve field 1 for username and field 2 for
+  // password. Value-based recognizers may inspect only the remaining fields.
+  U.credentialParts = (parts) => {
+    const list = Array.isArray(parts) ? parts : [];
+    return {
+      username: list[0] || "",
+      password: list[1] || "",
+      rest: list.slice(2)
+    };
+  };
+
   // -------- Misc shared helpers --------
   U.randToken = (len = 5) => {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";

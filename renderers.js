@@ -36,9 +36,10 @@
   }
 
   function renderStandardBlock(parts, forceBlue) {
-    let [user, pass, ...rest] = parts;
-  user = (user || "");
-    pass = pass || "";
+    const credentials = U.credentialParts(parts);
+    let user = credentials.username;
+    let pass = credentials.password;
+    const rest = credentials.rest;
 
     let mail = "", mailPass = "", token = "", raw2fa = "", followersRaw = "", year = "", phone = "";
     let refreshToken = "", clientId = "";

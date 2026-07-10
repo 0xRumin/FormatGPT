@@ -137,10 +137,10 @@
   /* ======== Field Classification ======== */
   function classifyParts(parts) {
     // Detect a pipe-mail-bundle: mail|mailpass|refresh_token|clientID.
-    // First sub-part must be an email. When found, that index is excluded from
-    // positional user/pass detection and its 4 sub-fields are pulled directly.
+    // First sub-part must be an email. Credential positions 1 and 2 are never
+    // eligible because they are always username and password respectively.
     var bundle = null, bundleIdx = -1;
-    for (var bi = 0; bi < parts.length; bi++) {
+    for (var bi = 2; bi < parts.length; bi++) {
       var bp = (parts[bi] || '').trim();
       if (bp.indexOf('|') < 0) continue;
       var subs = bp.split('|');
@@ -150,8 +150,10 @@
     }
 
     var tagged = parts.map(function (raw, i) {
-      if (i === bundleIdx) return { value: '', type: null, idx: i }; // consumed by bundle
       var p = (raw || '').trim();
+      if (i === 0) return { value: p, type: 'user', idx: i };
+      if (i === 1) return { value: p, type: 'pass', idx: i };
+      if (i === bundleIdx) return { value: '', type: null, idx: i }; // consumed by bundle
       if (!p) return { value: p, type: null, idx: i };
       if (U.isCt0(p))   return { value: p, type: 'ct0',    idx: i };
       if (U.isHex40(p))  return { value: p, type: 'auth',   idx: i };
@@ -170,12 +172,10 @@
     var emailIdx = emailEntry ? emailEntry.idx : -1;
     var unknowns = tagged.filter(function (t) { return t.type === null && t.value; });
 
-    if (unknowns.length >= 1) unknowns[0].type = 'user';
-    if (unknowns.length >= 2) unknowns[1].type = 'pass';
     // Positional mail-pass only applies when the email is a standalone column
     // (not a bundle — the bundle already carries its own mailpass sub-field).
     if (emailIdx >= 0 && !bundle) {
-      for (var i = 2; i < unknowns.length; i++) {
+      for (var i = 0; i < unknowns.length; i++) {
         if (unknowns[i].idx > emailIdx) { unknowns[i].type = 'mailpass'; break; }
       }
     }
