@@ -15,6 +15,7 @@
   var rangeSelection = { kind: null, lo: null, hi: null };
   var activeRangeHandle = null;
   var rangeTabsTimer = null;
+  var lastInputText = null;
 
   var TYPE_META = {
     username:      { emoji: '\uD83D\uDC64', name: 'Username' },      // 👤
@@ -65,6 +66,42 @@
 
   function cleanFilePart(s) {
     return String(s || '').replace(/[^A-Za-z0-9_\-.]+/g, '-').replace(/^-+|-+$/g, '') || 'range';
+  }
+
+  function clearRangeSurfaces() {
+    if (rangeTabsTimer) clearTimeout(rangeTabsTimer);
+    rangeTabsTimer = null;
+    activeRangeHandle = null;
+    tabGroups = {};
+
+    var breakdown = $('#spBreakdown');
+    var breakdownBody = $('#spBdBody');
+    var rangePanel = $('#spRangePanel');
+    var tabsWrap = $('#spTabsWrap');
+    var tabsBar = $('#spTabsBar');
+    var tabsContent = $('#spTabsContent');
+    if (breakdown) breakdown.style.display = 'none';
+    if (breakdownBody) breakdownBody.innerHTML = '';
+    if (rangePanel) { rangePanel.style.display = 'none'; rangePanel.innerHTML = ''; }
+    if (tabsWrap) tabsWrap.style.display = 'none';
+    if (tabsBar) tabsBar.innerHTML = '';
+    if (tabsContent) tabsContent.innerHTML = '';
+  }
+
+  function resetBatchState() {
+    clearRangeSurfaces();
+    excludedYears = {};
+    excludedRanges = {};
+    rangeSelection = { kind: null, lo: null, hi: null };
+    mismatchLines = [];
+    lastRows = [];
+    lastFormat = null;
+    lastSortCol = -1;
+
+    var mismatch = $('#spMismatch');
+    var mismatchBox = $('#spMmBox');
+    if (mismatch) mismatch.style.display = 'none';
+    if (mismatchBox) mismatchBox.value = '';
   }
 
   /* ======== Column type classification ======== */
@@ -250,6 +287,12 @@
 
   /* ======== Events ======== */
   function bindEvents() {
+    var input = $('#inp');
+    if (input) input.addEventListener('input', function () {
+      resetBatchState();
+      lastInputText = null;
+    });
+
     $('#spCols').addEventListener('click', function (e) {
       var btn = e.target.closest('.sp-col');
       if (!btn) return;
@@ -546,9 +589,7 @@
 
     var colType = format.columnTypes[state.sorterColumn];
     if (colType !== 'year' && colType !== 'counts') {
-      wrap.style.display = 'none';
-      var rangePanel = $('#spRangePanel');
-      if (rangePanel) rangePanel.style.display = 'none';
+      clearRangeSurfaces();
       return;
     }
 
@@ -1251,24 +1292,25 @@
     run: function (text) {
       if (!panelBuilt) buildPanel();
 
+      if (text !== lastInputText) {
+        resetBatchState();
+        lastInputText = text;
+      }
+
       var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
       lastRows = rows;
       if (!rows.length) {
         renderCols(null);
-        var bd = $('#spBreakdown'); if (bd) bd.style.display = 'none';
-        var rd = $('#spRangePanel'); if (rd) rd.style.display = 'none';
-        var tw = $('#spTabsWrap'); if (tw) tw.style.display = 'none';
-        var mm = $('#spMismatch'); if (mm) mm.style.display = 'none';
-        mismatchLines = [];
+        resetBatchState();
+        lastInputText = text;
         return '';
       }
 
       var format = detectFormat(rows);
       if (!format) {
         renderCols(null);
-        var rd2 = $('#spRangePanel'); if (rd2) rd2.style.display = 'none';
-        var mm2 = $('#spMismatch'); if (mm2) mm2.style.display = 'none';
-        mismatchLines = [];
+        resetBatchState();
+        lastInputText = text;
         return '';
       }
 
