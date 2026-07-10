@@ -171,6 +171,7 @@
     var emailPos = -1;
     for (var j = 0; j < totalCols; j++) {
       if (j === 0) { columnTypes.push('username'); continue; }
+      if (j === 1) { columnTypes.push('password'); continue; }
       var types = posTypes[j] || {};
       var best = null, bestCount = 0;
       for (var tt in types) {
@@ -1166,10 +1167,11 @@
 
   /* ======== Sort logic ======== */
 
-  // Does a field look like the given column type? Username is positional (it is
-  // always the first field); every other type is matched via classifyCol.
+  // Username and password are positional contracts: fields 1 and 2 respectively.
+  // Every later type is inferred from the field value.
   function fieldMatchesType(field, type, pos) {
     if (type === 'username') return pos === 0;
+    if (type === 'password') return pos === 1 && String(field || '').trim() !== '';
     if (!type) return false;
     var c = classifyCol(field);
     if (c === type) return true;
