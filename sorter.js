@@ -853,12 +853,18 @@
 
     var lines = collectRangeLines(lastRows, lastFormat, lo, hi);
     var colKind = lastFormat.columnTypes[state.sorterColumn] === 'year' ? 'year' : 'counts';
-    var type = colKind === 'year' ? 'years' : 'counts';
-    var noun = lines.length === 1 ? 'account' : 'accounts';
     var selected = $('#spRangeSelected');
     var count = $('#spRangeCount');
     if (selected) selected.textContent = fmtRangeValue(lo, colKind) + ' -> ' + fmtRangeValue(hi, colKind);
-    if (count) count.textContent = fmtNum(lines.length) + ' ' + noun + ' in selected ' + type + ' range';
+    if (count) {
+      var rangeLabel = fmtRangeValue(lo, colKind) + '-' + fmtRangeValue(hi, colKind);
+      var unit = colKind === 'year' ? '' : ' followers';
+      count.textContent = rangeLabel + unit + ' = ';
+      var result = document.createElement('strong');
+      result.className = 'sp-range-result';
+      result.textContent = fmtNum(lines.length) + ' pcs';
+      count.appendChild(result);
+    }
 
     var copy = $('#spRangeCopy');
     var dl = $('#spRangeDownload');
