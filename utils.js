@@ -55,14 +55,19 @@
                         : line.split(d).map(s => s.trim());
   };
 
-  // Credential rows always reserve field 1 for username and field 2 for
-  // password. Value-based recognizers may inspect only the remaining fields.
+  U.isShortNumericField = (value) => /^\d{1,5}$/.test(String(value || "").trim());
+
+  // Field 2 is a password unless it is a short numeric data value. In that
+  // case it returns to the recognizer pool as Counts or Year.
   U.credentialParts = (parts) => {
     const list = Array.isArray(parts) ? parts : [];
+    const second = list[1] || "";
+    const secondIsShortNumeric = U.isShortNumericField(second);
     return {
       username: list[0] || "",
-      password: list[1] || "",
-      rest: list.slice(2)
+      password: secondIsShortNumeric ? "" : second,
+      rest: secondIsShortNumeric ? list.slice(1) : list.slice(2),
+      secondIsShortNumeric
     };
   };
 

@@ -14,8 +14,8 @@
         const parts = splitFlexible(row);
         const user = pickUsernameForPlinks(parts);
         if (!user) return "Sorry, invalid format for plinks.\nExpected: user:pass:... (username required)";
-        const rest = credentialParts(parts).rest;
-        const followersRaw = pickFollowersFrom(rest);
+        const credentials = credentialParts(parts);
+        const followersRaw = pickFollowersFrom(credentials.rest, credentials.secondIsShortNumeric);
         // pickFollowersFrom already enforces the 30..<500k sanity range, so
         // any truthy value here is a valid follower count.
         const show = followersRaw !== "";

@@ -17,12 +17,14 @@
   // followers — it falls through to the mailPass slot instead.
   const FOLLOWERS_MAX = 500000;
 
-  function pickFollowersFrom(tokens) {
-    for (const t of tokens) {
+  function pickFollowersFrom(tokens, allowShortFirst) {
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
       const v = (t || "").trim();
       if (!/^\d+$/.test(v)) continue;
       if (U.isYear(v)) continue;
       const n = Number(v);
+      if (allowShortFirst && i === 0 && U.isShortNumericField(v) && n < FOLLOWERS_MAX) return v;
       if (n >= 30 && n < FOLLOWERS_MAX) return v;
     }
     return "";
@@ -90,7 +92,8 @@
       // numbers like 29377332) is treated as a mail password candidate.
       if (/^\d+$/.test(p) && !U.isYear(p)) {
         const n = Number(p);
-        if (followersRaw === "" && n >= 30 && n < FOLLOWERS_MAX) {
+        const positionalShortCount = credentials.secondIsShortNumeric && p === rest[0];
+        if (followersRaw === "" && n < FOLLOWERS_MAX && (n >= 30 || positionalShortCount)) {
           followersRaw = p;
           continue;
         }
