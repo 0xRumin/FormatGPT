@@ -1516,6 +1516,9 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
   color:var(--muted);font-family:var(--font-mono);font-size:11px;letter-spacing:0.07em;
   background:rgba(0,0,0,.18)
 }
+.sp-range-result{
+  margin-left:4px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:0
+}
 .sp-range-actions{display:flex;gap:6px}
 .sp-range-reset,.sp-range-copy,.sp-range-download{
   padding:7px 14px;border-radius:10px;border:1px solid rgba(var(--accent-rgb),.38);
