@@ -137,8 +137,8 @@
   /* ======== Field Classification ======== */
   function classifyParts(parts) {
     // Detect a pipe-mail-bundle: mail|mailpass|refresh_token|clientID.
-    // First sub-part must be an email. Credential positions 1 and 2 are never
-    // eligible because they are always username and password respectively.
+    // First sub-part must be an email. Credential positions 1 and 2 cannot be
+    // mail bundles; short numeric field 2 values are classified below.
     var bundle = null, bundleIdx = -1;
     for (var bi = 2; bi < parts.length; bi++) {
       var bp = (parts[bi] || '').trim();
@@ -152,7 +152,7 @@
     var tagged = parts.map(function (raw, i) {
       var p = (raw || '').trim();
       if (i === 0) return { value: p, type: 'user', idx: i };
-      if (i === 1) return { value: p, type: 'pass', idx: i };
+      if (i === 1 && !U.isShortNumericField(p)) return { value: p, type: 'pass', idx: i };
       if (i === bundleIdx) return { value: '', type: null, idx: i }; // consumed by bundle
       if (!p) return { value: p, type: null, idx: i };
       if (U.isCt0(p))   return { value: p, type: 'ct0',    idx: i };

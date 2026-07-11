@@ -152,6 +152,7 @@
     // Gather type counts per column across the first 5 lines that MATCH the
     // dominant column count, so classification is based on representative rows.
     var posTypes = {};
+    var shortNumericByPos = {};
     var sampled = 0;
     for (var l = 0; l < lines.length && sampled < 5; l++) {
       if (!lines[l]) continue;
@@ -159,6 +160,9 @@
       if (cols.length !== totalCols) continue;
       sampled++;
       for (var i = 0; i < cols.length; i++) {
+        if (U.isShortNumericField(cols[i])) {
+          shortNumericByPos[i] = (shortNumericByPos[i] || 0) + 1;
+        }
         var t = classifyCol(cols[i]);
         if (!t) continue;
         if (!posTypes[i]) posTypes[i] = {};
@@ -171,7 +175,7 @@
     var emailPos = -1;
     for (var j = 0; j < totalCols; j++) {
       if (j === 0) { columnTypes.push('username'); continue; }
-      if (j === 1) { columnTypes.push('password'); continue; }
+      if (j === 1 && !shortNumericByPos[j]) { columnTypes.push('password'); continue; }
       var types = posTypes[j] || {};
       var best = null, bestCount = 0;
       for (var tt in types) {
@@ -1167,11 +1171,11 @@
 
   /* ======== Sort logic ======== */
 
-  // Username and password are positional contracts: fields 1 and 2 respectively.
-  // Every later type is inferred from the field value.
+  // Username is positional. Field 2 is Password except for short numeric data,
+  // which remains eligible for Counts or Year matching.
   function fieldMatchesType(field, type, pos) {
     if (type === 'username') return pos === 0;
-    if (type === 'password') return pos === 1 && String(field || '').trim() !== '';
+    if (type === 'password') return pos === 1 && String(field || '').trim() !== '' && !U.isShortNumericField(field);
     if (!type) return false;
     var c = classifyCol(field);
     if (c === type) return true;

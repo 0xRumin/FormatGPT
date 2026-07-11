@@ -79,8 +79,8 @@
         var parts = U.splitFlexible(rows[i]);
         var user = R.pickUsernameForPlinks(parts);
         if (!user) continue;
-        var rest = U.credentialParts(parts).rest;
-        var followersRaw = R.pickFollowersFrom(rest);
+        var credentials = U.credentialParts(parts);
+        var followersRaw = R.pickFollowersFrom(credentials.rest, credentials.secondIsShortNumeric);
         out.push(priceLine(user, followersRaw));
       }
       // Highest follower count first (same ordering as Plinks with counts).
