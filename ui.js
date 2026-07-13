@@ -367,6 +367,7 @@
       const S = window.App?.State?.state;
       if (S) {
         S.deliverExtract   = '';
+        S.deliverExtractDone = false;
         S.deliverFilename  = '';
         S.deliverCount     = 0;
         S.deliverDirection = 'bottom'; // back to default
@@ -375,10 +376,16 @@
       const dpName  = document.getElementById('dpName');
       const dpHint  = document.getElementById('dpHint');
       const dpTotal = document.getElementById('dpTotalCount');
+      const dpExtract = document.getElementById('dpExtract');
       if (dpCount) dpCount.value = '';
       if (dpName)  dpName.value  = '';
       if (dpHint)  { dpHint.textContent = ''; dpHint.classList.remove('dp-hint--err'); }
       if (dpTotal) dpTotal.textContent = '0';
+      if (dpExtract) {
+        dpExtract.classList.remove('is-spent');
+        dpExtract.disabled = false;
+        dpExtract.removeAttribute('title');
+      }
       // Reset direction toggle visual state
       const dpDirBtns = document.querySelectorAll('#dpDir .dp-dir-btn');
       dpDirBtns.forEach((b) => b.classList.toggle('is-active', b.dataset.dir === 'bottom'));
