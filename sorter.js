@@ -1034,12 +1034,15 @@
     var keys = Object.keys(tabGroups);
     if (!keys.length) { tabsWrap.style.display = 'none'; return; }
 
-    // Sort: years newest-first, count ranges by their numeric start
+    // Keep tab order in step with the active sorter direction. This makes the
+    // first tab the first value the user sees in the sorted output.
+    var ascendingTabs = state.sorterOrder === 'asc' || state.sorterOrder === 'az';
     if (colType === 'year') {
-      keys.sort(function (a, b) { return +b - +a; });
+      keys.sort(function (a, b) { return ascendingTabs ? (+a - +b) : (+b - +a); });
     } else {
       keys.sort(function (a, b) {
-        return parseInt(a, 10) - parseInt(b, 10);
+        var delta = parseInt(a, 10) - parseInt(b, 10);
+        return ascendingTabs ? delta : -delta;
       });
     }
 
