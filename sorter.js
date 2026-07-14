@@ -747,6 +747,15 @@
     return out;
   }
 
+  function collectRemainingRangeLines(rows, format, lo, hi) {
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var n = numericValueForLine(rows[i], format);
+      if (n != null && (n < lo || n > hi)) out.push(rows[i]);
+    }
+    return out;
+  }
+
   function updateRangeSelection(source) {
     var panel = $('#spRangePanel');
     if (!panel) return;
@@ -987,9 +996,24 @@
       !isNaN(sourceMin) && !isNaN(sourceMax) &&
       (selectedLo !== sourceMin || selectedHi !== sourceMax);
 
+    var selectedTabKey = '';
     if (hasSelectedRange) {
-      var selectedLabel = fmtRangeValue(selectedLo, colType) + ' – ' + fmtRangeValue(selectedHi, colType);
-      tabGroups[selectedLabel] = collectRangeLines(rows, format, selectedLo, selectedHi);
+      selectedTabKey = fmtRangeValue(selectedLo, colType) + ' – ' + fmtRangeValue(selectedHi, colType);
+      tabGroups[selectedTabKey] = collectRangeLines(rows, format, selectedLo, selectedHi);
+
+      // Keep all accounts outside the active download range available in a
+      // companion tab. When that remainder is one continuous side, name it by
+      // its exact range; otherwise, keep both sides together as Remaining.
+      var remainingLines = collectRemainingRangeLines(rows, format, selectedLo, selectedHi);
+      if (remainingLines.length) {
+        var remainingLabel = 'Remaining';
+        if (selectedLo === sourceMin) {
+          remainingLabel = fmtRangeValue(selectedHi + 1, colType) + ' – ' + fmtRangeValue(sourceMax, colType);
+        } else if (selectedHi === sourceMax) {
+          remainingLabel = fmtRangeValue(sourceMin, colType) + ' – ' + fmtRangeValue(selectedLo - 1, colType);
+        }
+        tabGroups[remainingLabel] = remainingLines;
+      }
     } else if (colType === 'year') {
       // Group by individual year
       for (var i = 0; i < rows.length; i++) {
@@ -1034,16 +1058,25 @@
     var keys = Object.keys(tabGroups);
     if (!keys.length) { tabsWrap.style.display = 'none'; return; }
 
-    // Keep tab order in step with the active sorter direction. This makes the
-    // first tab the first value the user sees in the sorted output.
-    var ascendingTabs = state.sorterOrder === 'asc' || state.sorterOrder === 'az';
-    if (colType === 'year') {
-      keys.sort(function (a, b) { return ascendingTabs ? (+a - +b) : (+b - +a); });
-    } else {
+    if (hasSelectedRange) {
+      // The chosen range is always first, followed by its companion rest tab.
       keys.sort(function (a, b) {
-        var delta = parseInt(a, 10) - parseInt(b, 10);
-        return ascendingTabs ? delta : -delta;
+        if (a === selectedTabKey) return -1;
+        if (b === selectedTabKey) return 1;
+        return 0;
       });
+    } else {
+      // Keep unfiltered tabs in step with the active sorter direction. This
+      // makes the first tab the first value the user sees in the sorted output.
+      var ascendingTabs = state.sorterOrder === 'asc' || state.sorterOrder === 'az';
+      if (colType === 'year') {
+        keys.sort(function (a, b) { return ascendingTabs ? (+a - +b) : (+b - +a); });
+      } else {
+        keys.sort(function (a, b) {
+          var delta = parseInt(a, 10) - parseInt(b, 10);
+          return ascendingTabs ? delta : -delta;
+        });
+      }
     }
 
     var bar = $('#spTabsBar');
@@ -1058,7 +1091,7 @@
       var k = keys[t];
       var cnt = tabGroups[k].length;
       var active = t === 0 ? ' sp-tab-active' : '';
-      bh += '<button class="sp-tab' + active + (hasSelectedRange ? ' sp-tab-selected-range' : '') + '" data-year="' + k + '">';
+      bh += '<button class="sp-tab' + active + (k === selectedTabKey ? ' sp-tab-selected-range' : '') + '" data-year="' + k + '">';
       bh += k + ' <span class="sp-tab-count">' + cnt + '</span>';
       bh += '</button>';
     }
