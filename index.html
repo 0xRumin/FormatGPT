@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202607110002">
+  <link rel="stylesheet" href="theme.css?v=202607180001">
 </head>
 <body>
 
@@ -187,6 +187,13 @@
               <span class="chunk-toggle__label">Chunk Mode</span>
             </label>
           </div>
+          <!-- Persistent Mode (V2 Reorder only — CSS-gated via body[data-mode]) -->
+          <div class="persist-toggle-wrap" id="persistToggleWrap">
+            <label class="chunk-toggle" id="persistToggle" title="Keep your custom V2 layout when new lines are pasted, instead of snapping back to Original">
+              <input type="checkbox" id="reorderPersistChk">
+              <span class="chunk-toggle__label">Persistent Mode</span>
+            </label>
+          </div>
         </div>
       </div>
       <pre id="out"></pre>
@@ -224,7 +231,7 @@
 <!-- Core order: utils -> config -> state -> renderers -> main -> modes -> ui -> boot -->
 <script defer src="utils.js?v=202607110001"></script>
 <script defer src="config.js?v=202607061000"></script>
-<script defer src="state.js?v=202607061000"></script>
+<script defer src="state.js?v=202607180001"></script>
 <script defer src="renderers.js?v=202607110001"></script>
 <script defer src="main.js?v=202607110001"></script>
 
@@ -236,7 +243,7 @@
 <script defer src="plinks-without.js?v=202607061000"></script>
 <script defer src="plinks-to-users.js?v=202607061000"></script>
 <script defer src="convert.js?v=202607061000"></script>
-<script defer src="reorder.js?v=202607110001"></script>
+<script defer src="reorder.js?v=202607180001"></script>
 <script defer src="filter.js?v=202607061000"></script>
 <script defer src="sorter.js?v=202607150002"></script>
 <script defer src="crosscheck.js?v=202607061000"></script>

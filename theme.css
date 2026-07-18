@@ -877,6 +877,16 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 .chunk-toggle input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
 .chunk-toggle input[type=checkbox]:checked::after{transform:translateX(16px);background:#fff}
 
+/* ===== Persistent Mode toggle (V2 Reorder only) =====
+   Same pill styling as Chunk Mode (reuses .chunk-toggle), but gated to the
+   V2 Reorder mode. Drops to its own right-aligned full-width row in the
+   output header. When on, a new paste keeps the current custom layout instead
+   of snapping back to Original (see reorder.js). */
+.persist-toggle-wrap{ display:none; }
+body[data-mode="reorder"] .persist-toggle-wrap{
+  display:flex;flex-basis:100%;justify-content:flex-end;margin-top:8px;
+}
+
 #clearBtn{
   display:inline-flex;align-items:center;padding:9px 16px;
   border-radius:999px;

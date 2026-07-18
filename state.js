@@ -25,6 +25,7 @@
     reorderEnabled: parseJSON("reorderEnabled"),
     reorderSep:     localStorage.getItem("reorderSep") || ":",
     reorderPreset:  localStorage.getItem("reorderPreset") || "original",
+    reorderPersist: localStorage.getItem("reorderPersist") === "1",
     filterUsernames: localStorage.getItem("filterUsernames") || "",
     filterView:      localStorage.getItem("filterView") || "both",
     sorterColumn:    parseInt(localStorage.getItem("sorterColumn") || "0", 10) || 0,
