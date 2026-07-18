@@ -59,11 +59,26 @@
   var SEP_LABELS = { ':': ':', '|': '|', ',': ',', '\t': 'TAB', ' ': 'SPACE', ';': ';' };
 
   /* ======== State defaults ========
-     V2 Reorder ALWAYS boots on "Original" — fields auto-detect from whatever
-     the user pastes in. Previous "custom" selection from localStorage is
-     intentionally overridden here each page load. */
-  state.reorderPreset = 'original';
-  state.reorderFields = ALL_FIELDS.slice();
+     V2 Reorder normally boots on "Original" — fields auto-detect from whatever
+     the user pastes in, and any previous "custom" selection from localStorage
+     is intentionally overridden here each page load.
+
+     EXCEPTION — Persistent Mode: when the user has ticked the Persistent Mode
+     toggle (above the output box), the saved custom layout is kept instead of
+     being reset, so a fresh paste no longer snaps back to Original. */
+  if (typeof state.reorderPersist !== 'boolean') {
+    state.reorderPersist = localStorage.getItem('reorderPersist') === '1';
+  }
+  if (state.reorderPersist) {
+    // Restore the saved layout as-is (fall back to sensible defaults if empty).
+    if (!Array.isArray(state.reorderFields) || !state.reorderFields.length) {
+      state.reorderFields = ALL_FIELDS.slice();
+    }
+    if (!state.reorderPreset) state.reorderPreset = 'custom';
+  } else {
+    state.reorderPreset = 'original';
+    state.reorderFields = ALL_FIELDS.slice();
+  }
   if (!state.reorderEnabled || typeof state.reorderEnabled !== 'object') {
     state.reorderEnabled = {};
     ALL_FIELDS.forEach(function (f) { state.reorderEnabled[f] = true; });
@@ -94,6 +109,7 @@
     localStorage.setItem('reorderPreset', state.reorderPreset);
     localStorage.setItem('reorderFindStr', state.reorderFindStr || '');
     localStorage.setItem('reorderReplStr', state.reorderReplStr || '');
+    localStorage.setItem('reorderPersist', state.reorderPersist ? '1' : '0');
     // reorderFieldOps is intentionally session-only — never written.
   }
 
@@ -761,6 +777,21 @@
     App.App.rerun();
   }
 
+  /* ======== Persistent Mode toggle ========
+     Lives in the output pane header (index.html), not inside the reorder
+     panel, so it stays visible right above the output box. When ticked, a new
+     paste keeps the current custom layout instead of reverting to Original. */
+  function initPersistToggle() {
+    var chk = document.getElementById('reorderPersistChk');
+    if (!chk) return;
+    chk.checked = !!state.reorderPersist;
+    chk.addEventListener('change', function () {
+      state.reorderPersist = !!chk.checked;
+      saveState();
+      refresh();
+    });
+  }
+
   /* ======== Preset application ======== */
   function applyPreset(name) {
     if (name === 'custom') {
@@ -819,9 +850,10 @@
       // Auto-return to "Original" whenever fresh input arrives (a new paste or
       // an edit). This snaps the preset back so newly pasted data is always
       // auto-detected, even if the user had switched to a Custom layout.
+      // Persistent Mode disables this snap-back so the custom layout sticks.
       var changed = (text !== lastRunText);
       lastRunText = text;
-      if (changed && text.trim() && state.reorderPreset !== 'original') {
+      if (!state.reorderPersist && changed && text.trim() && state.reorderPreset !== 'original') {
         state.reorderPreset = 'original';
         state.reorderFields = ALL_FIELDS.slice();
         saveState();
@@ -847,4 +879,7 @@
       return out.join('\n');
     }
   });
+
+  // Wire the output-header Persistent Mode checkbox (static in index.html).
+  initPersistToggle();
 })();
