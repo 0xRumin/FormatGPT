@@ -242,7 +242,7 @@ body[data-mode="dam"] .add-mail{display:none !important}
 
 .pane{position:relative;padding:26px 28px;display:flex;flex-direction:column;background:transparent;border:none;border-radius:0;box-shadow:none;margin:0}
 .pane--out{background:linear-gradient(180deg, rgba(var(--accent-rgb),0.04), transparent 40%)}
-.pane__head{position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line);gap:12px}
+.pane__head{position:relative;display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line);gap:12px}
 .pane__kick{font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
 .pane__kick b{color:var(--fg);font-weight:700}
 .pane__title{font-family:var(--font-serif);font-size:30px;line-height:1;letter-spacing:-0.02em;margin-top:4px;font-weight:400;display:flex;align-items:center;gap:10px}
@@ -879,12 +879,13 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
 
 /* ===== Persistent Mode toggle (V2 Reorder only) =====
    Same pill styling as Chunk Mode (reuses .chunk-toggle), but gated to the
-   V2 Reorder mode. Drops to its own right-aligned full-width row in the
-   output header. When on, a new paste keeps the current custom layout instead
-   of snapping back to Original (see reorder.js). */
+   V2 Reorder mode. It's a direct child of .pane__head and spans a full-width
+   row of its own, so its pill width never squeezes the header's line count
+   onto a second line. When on, a new paste keeps the current custom layout
+   instead of snapping back to Original (see reorder.js). */
 .persist-toggle-wrap{ display:none; }
 body[data-mode="reorder"] .persist-toggle-wrap{
-  display:flex;flex-basis:100%;justify-content:flex-end;margin-top:8px;
+  display:flex;width:100%;flex-basis:100%;justify-content:flex-end;
 }
 
 #clearBtn{
