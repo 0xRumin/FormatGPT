@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202607180001">
+  <link rel="stylesheet" href="theme.css?v=202607180002">
 </head>
 <body>
 
@@ -187,13 +187,15 @@
               <span class="chunk-toggle__label">Chunk Mode</span>
             </label>
           </div>
-          <!-- Persistent Mode (V2 Reorder only — CSS-gated via body[data-mode]) -->
-          <div class="persist-toggle-wrap" id="persistToggleWrap">
-            <label class="chunk-toggle" id="persistToggle" title="Keep your custom V2 layout when new lines are pasted, instead of snapping back to Original">
-              <input type="checkbox" id="reorderPersistChk">
-              <span class="chunk-toggle__label">Persistent Mode</span>
-            </label>
-          </div>
+        </div>
+        <!-- Persistent Mode (V2 Reorder only — CSS-gated via body[data-mode]).
+             Sits on its own full-width header row so its pill width doesn't
+             squeeze the line count onto a second line. -->
+        <div class="persist-toggle-wrap" id="persistToggleWrap">
+          <label class="chunk-toggle" id="persistToggle" title="Keep your custom V2 layout when new lines are pasted, instead of snapping back to Original">
+            <input type="checkbox" id="reorderPersistChk">
+            <span class="chunk-toggle__label">Persistent Mode</span>
+          </label>
         </div>
       </div>
       <pre id="out"></pre>
