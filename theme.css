@@ -1108,6 +1108,26 @@ body[data-mode="reorder"] .persist-toggle-wrap{
 }
 .rp-fs-add-btn:hover{background:rgba(var(--accent-rgb),0.22)}
 .rp-fs-add-btn:active{transform:translateY(1px)}
+/* Append sub-controls: free-text sign + Front/End placement toggle */
+.rp-fs-sign{
+  flex:1;min-width:0;width:110px;
+  padding:8px 12px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(var(--tint-rgb),0.04);color:var(--fg);
+  font-family:var(--font-mono);font-size:13px;font-weight:600;
+  text-align:center;outline:none;
+  transition:border-color .18s, background .18s
+}
+.rp-fs-sign::placeholder{color:var(--muted);opacity:.6}
+.rp-fs-sign:hover{background:rgba(var(--tint-rgb),0.06)}
+.rp-fs-sign:focus{border-color:var(--accent);background:rgba(var(--accent-rgb),0.06)}
+.rp-fs-where{
+  flex-shrink:0;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--line);background:rgba(var(--tint-rgb),0.04);color:var(--muted);
+  font-family:var(--font-mono);font-size:10.5px;font-weight:700;
+  letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap;
+  min-width:58px;transition:all .18s
+}
+.rp-fs-where:hover{border-color:var(--accent);color:var(--fg)}
 
 .rp-fs-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .rp-fs-empty{
