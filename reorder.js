@@ -138,8 +138,50 @@
       } else if (o.op === 'delete') {
         if (a >= 0 && a < arr.length) arr.splice(a, 1);
       }
+      // 'append' ops are handled by applyAppendOps (before classification),
+      // so they are intentionally skipped here.
     }
     return arr;
+  }
+
+  // Only swap/move/delete rebuild the line positionally (classification off).
+  // 'append' does NOT — it just tweaks a value and lets classification run.
+  function hasPositionalOps(ops) {
+    ops = ops || state.reorderFieldOps || [];
+    for (var i = 0; i < ops.length; i++) {
+      var op = ops[i].op;
+      if (op === 'swap' || op === 'move' || op === 'delete') return true;
+    }
+    return false;
+  }
+
+  // "Append" ops add a sign to a part's value in place — at the front
+  // (prepend) or the end. Runs BEFORE classification so, e.g., a leading "+"
+  // turns a bare number into a value the classifier recognizes as a phone.
+  function applyAppendOps(parts, ops) {
+    ops = ops || state.reorderFieldOps || [];
+    var arr = parts.slice();
+    for (var i = 0; i < ops.length; i++) {
+      var o = ops[i];
+      if (o.op !== 'append' || !o.sign) continue;
+      var a = o.a;
+      if (a < 0 || a >= arr.length) continue; // line has no such position — skip
+      arr[a] = (o.where === 'end') ? (arr[a] + o.sign) : (o.sign + arr[a]);
+    }
+    return arr;
+  }
+
+  // Split + find/replace + append ops → the parts every consumer classifies on.
+  function preprocessParts(row) {
+    return applyAppendOps(U.splitFlexible(applyFindReplace(row)));
+  }
+
+  // Sub-label under the FIELD SWAP heading, reflecting the queued op mix.
+  function fieldOpsModeText() {
+    var ops = state.reorderFieldOps || [];
+    if (hasPositionalOps(ops)) return 'positional override active';
+    if (ops.length) return 'append active';
+    return 'optional / 1-indexed';
   }
 
   function describeOp(o) {
@@ -147,6 +189,10 @@
     if (o.op === 'swap')   return 'Swap ' + a1 + ' ↔ ' + b1;
     if (o.op === 'move')   return 'Move ' + a1 + ' → ' + b1;
     if (o.op === 'delete') return 'Delete ' + a1;
+    if (o.op === 'append') {
+      var verb = (o.where === 'end') ? 'Append' : 'Prepend';
+      return verb + ' "' + escapeHtml(o.sign || '') + '" @ pos ' + a1;
+    }
     return '?';
   }
 
@@ -223,7 +269,7 @@
     }
     var foundTypes = {};
     for (var r = 0; r < rows.length; r++) {
-      var parts = U.splitFlexible(applyFindReplace(rows[r]));
+      var parts = preprocessParts(rows[r]);
       var classified = classifyParts(parts);
       for (var type in classified) foundTypes[type] = true;
     }
@@ -235,11 +281,14 @@
   /* ======== Process one line ======== */
   function processLine(row) {
     var sep = state.reorderSep || ':';
-    var parts = U.splitFlexible(applyFindReplace(row));
+    // preprocessParts applies find/replace + any "append" ops to the values.
+    var parts = preprocessParts(row);
 
-    // Field Swap mode — purely positional, bypasses classification.
+    // Field Swap mode — swap/move/delete rebuild positionally and bypass
+    // classification. "Append" ops were already folded into `parts` above and
+    // do NOT bypass, so classification still runs below.
     var ops = state.reorderFieldOps || [];
-    if (ops.length > 0) {
+    if (hasPositionalOps(ops)) {
       return applyFieldOps(parts).join(sep);
     }
 
@@ -364,9 +413,9 @@
     h += buildFieldRows();
     h += '</div></div>';
 
-    // Field Swap (positional ops sub-module)
+    // Field Swap (positional ops + Append sub-module)
     h += '<div class="rp-section"><div class="rp-label">FIELD SWAP <span class="rp-fs-mode" id="rpFsMode">' +
-         (state.reorderFieldOps && state.reorderFieldOps.length ? 'positional override active' : 'optional / 1-indexed') +
+         fieldOpsModeText() +
          '</span></div>';
     h += '<div class="rp-fs-add">';
     h += '<div class="rp-fs-dd" id="rpFsDd" data-value="swap">';
@@ -378,14 +427,17 @@
     h += '    <li class="rp-fs-dd-item active" data-value="swap"   role="option" aria-selected="true">Swap</li>';
     h += '    <li class="rp-fs-dd-item"        data-value="move"   role="option">Move</li>';
     h += '    <li class="rp-fs-dd-item"        data-value="delete" role="option">Delete</li>';
+    h += '    <li class="rp-fs-dd-item"        data-value="append" role="option">Append</li>';
     h += '  </ul>';
     h += '</div>';
     h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP1" placeholder="Pos">';
     h += '<input type="number" min="1" class="rp-fs-num" id="rpFsP2" placeholder="Pos">';
+    h += '<input type="text" class="rp-fs-sign" id="rpFsSign" placeholder="Sign (e.g. +)" spellcheck="false" autocomplete="off" style="display:none">';
+    h += '<button type="button" class="rp-fs-where" id="rpFsWhere" data-where="front" title="Where the sign is added — click to switch Front / End" style="display:none">Front</button>';
     h += '<button type="button" class="rp-fs-add-btn" id="rpFsAdd">Apply</button>';
     h += '</div>';
     h += '<div class="rp-fs-list" id="rpFsList">' + buildFieldOpRows() + '</div>';
-    h += '<div class="rp-fs-hint">When at least one op is queued, output is built positionally — smart classification is bypassed.</div>';
+    h += '<div class="rp-fs-hint">Swap / Move / Delete rebuild the line positionally (classification off). <b>Append</b> just adds a sign to one field — e.g. a leading <b>+</b> at the phone position so bare numbers are detected — and keeps smart classification on.</div>';
     h += '</div>';
 
     // Preview
@@ -423,7 +475,7 @@
     var rows = String(text || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
     var samples = {};
     if (!rows.length) return samples;
-    var parts = U.splitFlexible(applyFindReplace(rows[0]));
+    var parts = preprocessParts(rows[0]);
     var classified = classifyParts(parts);
     ALL_FIELDS.forEach(function (f) {
       var v = classified[FIELD_TO_TYPE[f]];
@@ -456,7 +508,7 @@
 
   function buildFieldOpRows() {
     var ops = state.reorderFieldOps || [];
-    if (!ops.length) return '<div class="rp-fs-empty">No operations \u2014 pick Swap / Move / Delete and hit Apply.</div>';
+    if (!ops.length) return '<div class="rp-fs-empty">No operations \u2014 pick Swap / Move / Delete / Append and hit Apply.</div>';
     var h = '';
     for (var i = 0; i < ops.length; i++) {
       h += '<div class="rp-fs-item" data-idx="' + i + '">';
@@ -472,9 +524,7 @@
     var c = $('#rpFsList');
     if (c) c.innerHTML = buildFieldOpRows();
     var modeTag = $('#rpFsMode');
-    if (modeTag) modeTag.textContent = (state.reorderFieldOps && state.reorderFieldOps.length)
-      ? 'positional override active'
-      : 'optional / 1-indexed';
+    if (modeTag) modeTag.textContent = fieldOpsModeText();
   }
 
   /* ======== Panel event bindings ======== */
@@ -538,6 +588,8 @@
     var fsOpMenu   = $('#rpFsOpMenu');
     var fsP1       = $('#rpFsP1');
     var fsP2       = $('#rpFsP2');
+    var fsSign     = $('#rpFsSign');
+    var fsWhere    = $('#rpFsWhere');
     var fsAdd      = $('#rpFsAdd');
     var fsList     = $('#rpFsList');
 
@@ -556,7 +608,7 @@
           items[i].setAttribute('aria-selected', on ? 'true' : 'false');
         }
       }
-      syncFsP2Visibility();
+      syncFsInputs();
     }
 
     function openFsMenu(open) {
@@ -565,13 +617,31 @@
       fsOpBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
-    function syncFsP2Visibility() {
-      if (!fsP2) return;
-      var hide = getFsOp() === 'delete';
-      fsP2.style.visibility = hide ? 'hidden' : 'visible';
-      if (hide) fsP2.value = '';
+    // Show the right inputs for the selected op:
+    //   swap / move → Pos, Pos      delete → Pos      append → Pos, Sign, Front/End
+    function syncFsInputs() {
+      var op = getFsOp();
+      var isDelete = op === 'delete';
+      var isAppend = op === 'append';
+      if (fsP2) {
+        var showP2 = !isDelete && !isAppend;
+        fsP2.style.display = showP2 ? '' : 'none';
+        if (!showP2) fsP2.value = '';
+      }
+      if (fsSign) {
+        fsSign.style.display = isAppend ? '' : 'none';
+        if (!isAppend) fsSign.value = '';
+      }
+      if (fsWhere) fsWhere.style.display = isAppend ? '' : 'none';
     }
-    syncFsP2Visibility();
+    syncFsInputs();
+
+    // Front / End placement toggle for Append.
+    if (fsWhere) fsWhere.addEventListener('click', function () {
+      var next = fsWhere.dataset.where === 'end' ? 'front' : 'end';
+      fsWhere.dataset.where = next;
+      fsWhere.textContent = next === 'end' ? 'End' : 'Front';
+    });
 
     if (fsOpBtn) fsOpBtn.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -591,23 +661,37 @@
       if (e.key === 'Escape') openFsMenu(false);
     });
 
+    function flashInput(el) {
+      if (!el) return;
+      el.focus();
+      el.style.borderColor = '#e84855';
+      setTimeout(function () { el.style.borderColor = ''; }, 800);
+    }
+
     if (fsAdd) fsAdd.addEventListener('click', function () {
       var op = getFsOp();
       var p1 = parseInt(fsP1 ? fsP1.value : '', 10);
-      var p2 = parseInt(fsP2 ? fsP2.value : '', 10);
-      if (!isFinite(p1) || p1 < 1) {
-        if (fsP1) { fsP1.focus(); fsP1.style.borderColor = '#e84855'; setTimeout(function(){fsP1.style.borderColor='';}, 800); }
+      if (!isFinite(p1) || p1 < 1) { flashInput(fsP1); return; }
+
+      // Append — add a sign to the front/end of the target position's value.
+      if (op === 'append') {
+        var sign = fsSign ? fsSign.value : '';
+        if (!sign) { flashInput(fsSign); return; }
+        var where = (fsWhere && fsWhere.dataset.where === 'end') ? 'end' : 'front';
+        state.reorderFieldOps = (state.reorderFieldOps || []).concat(
+          [{ op: 'append', a: p1 - 1, b: null, sign: sign, where: where }]);
+        saveState();
+        if (fsP1) fsP1.value = '';
+        if (fsSign) fsSign.value = '';
+        rebuildFieldOpRows();
+        refresh();
         return;
       }
+
+      var p2 = parseInt(fsP2 ? fsP2.value : '', 10);
       if (op !== 'delete') {
-        if (!isFinite(p2) || p2 < 1) {
-          if (fsP2) { fsP2.focus(); fsP2.style.borderColor = '#e84855'; setTimeout(function(){fsP2.style.borderColor='';}, 800); }
-          return;
-        }
-        if (p1 === p2) {
-          if (fsP2) { fsP2.focus(); fsP2.style.borderColor = '#e84855'; setTimeout(function(){fsP2.style.borderColor='';}, 800); }
-          return;
-        }
+        if (!isFinite(p2) || p2 < 1) { flashInput(fsP2); return; }
+        if (p1 === p2) { flashInput(fsP2); return; }
       }
       var entry = { op: op, a: p1 - 1, b: (op === 'delete' ? null : p2 - 1) };
       state.reorderFieldOps = (state.reorderFieldOps || []).concat([entry]);
