@@ -931,17 +931,26 @@
       // Refresh the per-row sample previews from the current input.
       lastSamples = computeSamples(text);
 
-      // Auto-return to "Original" whenever fresh input arrives (a new paste or
-      // an edit). This snaps the preset back so newly pasted data is always
-      // auto-detected, even if the user had switched to a Custom layout.
-      // Persistent Mode disables this snap-back so the custom layout sticks.
+      // A genuinely new/edited paste starts from a clean slate: drop any ad-hoc
+      // Field Swap ops (Swap / Move / Delete / Append) so they don't silently
+      // mangle differently-shaped data, and snap the preset back to "Original"
+      // so fresh input is auto-detected — even if the user had a Custom layout.
+      // Persistent Mode disables both resets so the whole setup sticks.
+      // (Ops are cleared BEFORE the auto-detect below, so a stale Append "+"
+      // never leaks into field detection for the new input.)
       var changed = (text !== lastRunText);
       lastRunText = text;
-      if (!state.reorderPersist && changed && text.trim() && state.reorderPreset !== 'original') {
-        state.reorderPreset = 'original';
-        state.reorderFields = ALL_FIELDS.slice();
-        saveState();
-        if (panelBuilt) { syncPresetBtns(); rebuildFieldRows(); }
+      if (!state.reorderPersist && changed && text.trim()) {
+        if (state.reorderFieldOps && state.reorderFieldOps.length) {
+          state.reorderFieldOps = [];
+          if (panelBuilt) rebuildFieldOpRows();
+        }
+        if (state.reorderPreset !== 'original') {
+          state.reorderPreset = 'original';
+          state.reorderFields = ALL_FIELDS.slice();
+          saveState();
+          if (panelBuilt) { syncPresetBtns(); rebuildFieldRows(); }
+        }
       }
 
       // "Original" preset: auto-detect fields present in the input
