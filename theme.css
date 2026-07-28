@@ -1709,6 +1709,25 @@ body[data-mode="reorder"] .persist-toggle-wrap{
 }
 .sp-swatch.sp-swatch-on .sp-swatch-name{color:#fff}
 
+/* ---- Mail Access URL dropdown (Settings) ---- */
+.sp-mail-dd{position:relative}
+.sp-mail-dd-btn{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:11px 12px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--line,#2a3340);background:var(--input-bg,#0b0f14);color:#d9e7ff;
+  font-family:var(--font-mono,monospace);font-size:12.5px;text-align:left;transition:border-color .16s
+}
+.sp-mail-dd-btn:hover{border-color:rgba(255,255,255,.2)}
+.sp-mail-dd.sp-mail-open .sp-mail-dd-btn{border-color:var(--accent)}
+.sp-mail-current{
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff
+}
+.sp-mail-current.sp-mail-current-empty{color:#6f8098}
+.sp-mail-dd-chevron{width:16px;height:16px;flex-shrink:0;color:#9fb0c6;transition:transform .2s}
+.sp-mail-dd.sp-mail-open .sp-mail-dd-chevron{transform:rotate(180deg);color:var(--accent)}
+.sp-mail-panel{display:none;margin-top:8px}
+.sp-mail-dd.sp-mail-open .sp-mail-panel{display:block;animation:popIn .2s cubic-bezier(.34,1.56,.64,1)}
+
 /* ---- Mail Access URL list (Settings) ---- */
 .sp-mail-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .sp-mail-empty{
