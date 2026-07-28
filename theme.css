@@ -1709,6 +1709,60 @@ body[data-mode="reorder"] .persist-toggle-wrap{
 }
 .sp-swatch.sp-swatch-on .sp-swatch-name{color:#fff}
 
+/* ---- Mail Access URL list (Settings) ---- */
+.sp-mail-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.sp-mail-empty{
+  font-size:12px;color:#7d8ea6;padding:10px 12px;border-radius:10px;
+  border:1px dashed rgba(255,255,255,.1);font-family:var(--font-mono,monospace)
+}
+.sp-mail-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 11px;border-radius:10px;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);
+  transition:all .16s
+}
+.sp-mail-row:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}
+.sp-mail-row.sp-mail-on{
+  border-color:var(--accent);background:rgba(255,255,255,.06);
+  box-shadow:0 0 12px var(--glow,rgba(var(--accent-rgb),.2))
+}
+.sp-mail-radio{
+  width:14px;height:14px;border-radius:50%;flex-shrink:0;
+  border:2px solid rgba(255,255,255,.28);box-sizing:border-box;transition:all .16s
+}
+.sp-mail-row.sp-mail-on .sp-mail-radio{
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 3px var(--accent)
+}
+.sp-mail-url{
+  flex:1;min-width:0;font-size:12.5px;color:#d9e7ff;
+  font-family:var(--font-mono,monospace);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.sp-mail-row.sp-mail-on .sp-mail-url{color:#fff}
+.sp-mail-del{
+  flex-shrink:0;border:0;background:rgba(255,255,255,.05);color:#9fb0c6;
+  width:24px;height:24px;border-radius:7px;cursor:pointer;line-height:1;
+  font-size:12px;transition:all .16s
+}
+.sp-mail-del:hover{background:rgba(232,72,85,.18);color:#ff8a97}
+.sp-mail-add{display:flex;gap:8px}
+.sp-mail-add-input{
+  flex:1;min-width:0;padding:10px;border-radius:10px;
+  border:1px solid var(--line,#2a3340);background:var(--input-bg,#0b0f14);color:#d9e7ff;
+  font-family:var(--font-mono,monospace);font-size:12.5px;outline:none;transition:border-color .16s
+}
+.sp-mail-add-input::placeholder{color:#6f8098}
+.sp-mail-add-input:focus{border-color:var(--accent)}
+.sp-mail-add-input.sp-mail-add-err{border-color:#e84855}
+.sp-mail-add-btn{
+  flex-shrink:0;border:1px solid var(--accent);background:rgba(var(--accent-rgb),.14);
+  color:var(--accent);border-radius:10px;padding:8px 16px;cursor:pointer;
+  font-family:var(--font-mono,monospace);font-weight:700;font-size:12px;
+  letter-spacing:.04em;transition:all .16s
+}
+.sp-mail-add-btn:hover{background:rgba(var(--accent-rgb),.24)}
+
 /* =================== Settings popover =================== */
 .gear-pop{
   position:absolute;

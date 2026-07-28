@@ -99,12 +99,15 @@
 
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:16px 0"></div>
 
-        <!-- Mail Access URL -->
+        <!-- Mail Access URLs -->
         <div>
           <label class="sp-settings-label">Mail Access URL</label>
-          <input id="sp-mail" type="text" spellcheck="false" style="
-            width:100%;padding:10px;border:1px solid var(--line,#2a3340);border-radius:10px;
-            background:var(--input-bg,#0b0f14);color:#d9e7ff" />
+          <div id="sp-mail-list" class="sp-mail-list"></div>
+          <div class="sp-mail-add">
+            <input id="sp-mail-add" class="sp-mail-add-input" type="text" spellcheck="false"
+              placeholder="Add another mail URL…" autocomplete="off" />
+            <button id="sp-mail-add-btn" type="button" class="sp-mail-add-btn">Add</button>
+          </div>
         </div>
 
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
@@ -117,16 +120,25 @@
     return panel;
   }
 
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
   function showSettings() {
     const panel = createSettingsPanel();
-    const input = $('#sp-mail');
+    const mailListEl = $('#sp-mail-list');
+    const mailAddInput = $('#sp-mail-add');
+    const mailAddBtn = $('#sp-mail-add-btn');
     const resetBtn = $('#sp-reset');
     const applyBtn = $('#sp-apply');
     const closeBtn = $('#sp-close');
     const back = $('#sp-backdrop');
     const swatches = $('#sp-swatches');
 
-    input.value = (State?.state?.mailAccess) || '';
+    // Working copies — persisted only on Save, discarded on close/cancel.
+    let mailList = (State?.state?.mailAccessList || []).slice();
+    let activeUrl = State?.state?.mailAccess || mailList[0] || '';
 
     let pendingTheme = null;
     const savedRaw = localStorage.getItem('fgptTheme');
@@ -160,22 +172,75 @@
 
     function normalize(url) {
       const v = (url || '').trim();
-      if (!v) return State.normalizeMailAccess('');
+      if (!v) return '';
       if (/^https?:\/\//i.test(v)) return v;
       if (/^\/\//.test(v)) return 'https:' + v;
       return 'https://' + v;
     }
 
+    // ----- Mail URL list: select the active one, remove, add -----
+    function renderMailList() {
+      if (!mailListEl) return;
+      if (!mailList.length) {
+        mailListEl.innerHTML = '<div class="sp-mail-empty">No mail URLs yet — add one below.</div>';
+        return;
+      }
+      mailListEl.innerHTML = mailList.map((url) => {
+        const on = url === activeUrl;
+        return '<div class="sp-mail-row' + (on ? ' sp-mail-on' : '') + '" data-url="' + escHtml(url) + '">' +
+                 '<span class="sp-mail-radio" aria-hidden="true"></span>' +
+                 '<span class="sp-mail-url" title="' + escHtml(url) + '">' + escHtml(url) + '</span>' +
+                 '<button type="button" class="sp-mail-del" title="Remove this URL" aria-label="Remove">✕</button>' +
+               '</div>';
+      }).join('');
+    }
+    renderMailList();
+
+    // Click a row → make it active; click its ✕ → remove it.
+    mailListEl.onclick = (e) => {
+      const del = e.target.closest('.sp-mail-del');
+      if (del) {
+        e.stopPropagation();
+        const row = del.closest('.sp-mail-row');
+        const url = row && row.dataset.url;
+        mailList = mailList.filter((u) => u !== url);
+        if (activeUrl === url) activeUrl = mailList[0] || '';
+        renderMailList();
+        return;
+      }
+      const row = e.target.closest('.sp-mail-row');
+      if (row) { activeUrl = row.dataset.url; renderMailList(); }
+    };
+
+    function addMailUrl() {
+      const v = normalize(mailAddInput.value);
+      if (!v) {
+        mailAddInput.focus();
+        mailAddInput.classList.add('sp-mail-add-err');
+        setTimeout(() => mailAddInput.classList.remove('sp-mail-add-err'), 800);
+        return;
+      }
+      if (mailList.indexOf(v) < 0) mailList.push(v);
+      activeUrl = v; // newly added becomes the selected one
+      mailAddInput.value = '';
+      renderMailList();
+      mailAddInput.focus();
+    }
+    mailAddBtn.onclick = addMailUrl;
+    mailAddInput.onkeydown = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addMailUrl(); }
+    };
+
     resetBtn.onclick = () => {
-      const d = State.normalizeMailAccess('');
-      input.value = d;
+      mailList = ((App.Config && App.Config.DEFAULT_MAIL_LIST) || []).map(normalize).filter(Boolean);
+      activeUrl = mailList[0] || '';
+      renderMailList();
       pickTheme(THEMES[0]);
       localStorage.removeItem('fgptTheme');
     };
     applyBtn.onclick = () => {
-      const next = normalize(input.value);
-      if (Core?.setMailAccess) Core.setMailAccess(next);
-      else if (State?.setMailAccess) State.setMailAccess(next);
+      if (State?.setMailAccessList) State.setMailAccessList(mailList, activeUrl);
+      else if (State?.setMailAccess) State.setMailAccess(activeUrl);
       if (pendingTheme) saveTheme(pendingTheme);
       Core?.rerun && Core.rerun();
       close();
