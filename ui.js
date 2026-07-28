@@ -99,14 +99,22 @@
 
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:16px 0"></div>
 
-        <!-- Mail Access URLs -->
+        <!-- Mail Access URLs (collapsible dropdown) -->
         <div>
           <label class="sp-settings-label">Mail Access URL</label>
-          <div id="sp-mail-list" class="sp-mail-list"></div>
-          <div class="sp-mail-add">
-            <input id="sp-mail-add" class="sp-mail-add-input" type="text" spellcheck="false"
-              placeholder="Add another mail URL…" autocomplete="off" />
-            <button id="sp-mail-add-btn" type="button" class="sp-mail-add-btn">Add</button>
+          <div id="sp-mail-dd" class="sp-mail-dd">
+            <button id="sp-mail-dd-btn" type="button" class="sp-mail-dd-btn" aria-haspopup="listbox" aria-expanded="false">
+              <span id="sp-mail-current" class="sp-mail-current"></span>
+              <svg class="sp-mail-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="sp-mail-panel" class="sp-mail-panel">
+              <div id="sp-mail-list" class="sp-mail-list" role="listbox"></div>
+              <div class="sp-mail-add">
+                <input id="sp-mail-add" class="sp-mail-add-input" type="text" spellcheck="false"
+                  placeholder="Add another mail URL…" autocomplete="off" />
+                <button id="sp-mail-add-btn" type="button" class="sp-mail-add-btn">Add</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -127,6 +135,10 @@
 
   function showSettings() {
     const panel = createSettingsPanel();
+    const card = $('#sp-card');
+    const mailDd = $('#sp-mail-dd');
+    const mailDdBtn = $('#sp-mail-dd-btn');
+    const mailCurrent = $('#sp-mail-current');
     const mailListEl = $('#sp-mail-list');
     const mailAddInput = $('#sp-mail-add');
     const mailAddBtn = $('#sp-mail-add-btn');
@@ -178,8 +190,21 @@
       return 'https://' + v;
     }
 
-    // ----- Mail URL list: select the active one, remove, add -----
+    // ----- Mail URL dropdown: pick the active one, add, remove -----
+    function setMailOpen(open) {
+      if (!mailDd) return;
+      mailDd.classList.toggle('sp-mail-open', !!open);
+      if (mailDdBtn) mailDdBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function updateMailCurrent() {
+      if (!mailCurrent) return;
+      mailCurrent.textContent = activeUrl || 'No URL selected';
+      mailCurrent.classList.toggle('sp-mail-current-empty', !activeUrl);
+    }
+
     function renderMailList() {
+      updateMailCurrent();
       if (!mailListEl) return;
       if (!mailList.length) {
         mailListEl.innerHTML = '<div class="sp-mail-empty">No mail URLs yet — add one below.</div>';
@@ -187,7 +212,7 @@
       }
       mailListEl.innerHTML = mailList.map((url) => {
         const on = url === activeUrl;
-        return '<div class="sp-mail-row' + (on ? ' sp-mail-on' : '') + '" data-url="' + escHtml(url) + '">' +
+        return '<div class="sp-mail-row' + (on ? ' sp-mail-on' : '') + '" role="option" aria-selected="' + (on ? 'true' : 'false') + '" data-url="' + escHtml(url) + '">' +
                  '<span class="sp-mail-radio" aria-hidden="true"></span>' +
                  '<span class="sp-mail-url" title="' + escHtml(url) + '">' + escHtml(url) + '</span>' +
                  '<button type="button" class="sp-mail-del" title="Remove this URL" aria-label="Remove">✕</button>' +
@@ -195,8 +220,15 @@
       }).join('');
     }
     renderMailList();
+    setMailOpen(false); // always start collapsed (panel is reused across opens)
 
-    // Click a row → make it active; click its ✕ → remove it.
+    // Toggle the dropdown.
+    mailDdBtn.onclick = (e) => {
+      e.stopPropagation();
+      setMailOpen(!mailDd.classList.contains('sp-mail-open'));
+    };
+
+    // Click a row → make it active & collapse; click its ✕ → remove (stay open).
     mailListEl.onclick = (e) => {
       const del = e.target.closest('.sp-mail-del');
       if (del) {
@@ -209,7 +241,7 @@
         return;
       }
       const row = e.target.closest('.sp-mail-row');
-      if (row) { activeUrl = row.dataset.url; renderMailList(); }
+      if (row) { activeUrl = row.dataset.url; renderMailList(); setMailOpen(false); }
     };
 
     function addMailUrl() {
@@ -229,6 +261,13 @@
     mailAddBtn.onclick = addMailUrl;
     mailAddInput.onkeydown = (e) => {
       if (e.key === 'Enter') { e.preventDefault(); addMailUrl(); }
+    };
+
+    // Click anywhere else in the modal (outside the dropdown) collapses it.
+    if (card) card.onclick = (e) => {
+      if (mailDd && mailDd.classList.contains('sp-mail-open') && !e.target.closest('#sp-mail-dd')) {
+        setMailOpen(false);
+      }
     };
 
     resetBtn.onclick = () => {
@@ -253,7 +292,12 @@
       pendingTheme = null;
       close();
     };
-    panel.onkeydown = (e) => { if (e.key === 'Escape') closeBtn.onclick(); };
+    panel.onkeydown = (e) => {
+      if (e.key !== 'Escape') return;
+      // Escape collapses an open mail dropdown first, then closes the modal.
+      if (mailDd && mailDd.classList.contains('sp-mail-open')) { setMailOpen(false); return; }
+      closeBtn.onclick();
+    };
   }
 
   function syncReorderPanel(mode) {
