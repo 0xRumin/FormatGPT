@@ -87,14 +87,14 @@
 
   // Find & Replace — applied to each row before classification, so users can
   // normalize wonky inputs (e.g. ; → :) without editing the input box.
-  if (typeof state.reorderFindStr !== 'string') {
-    var savedFind = localStorage.getItem('reorderFindStr');
-    state.reorderFindStr = savedFind == null ? '' : savedFind;
-  }
-  if (typeof state.reorderReplStr !== 'string') {
-    var savedRepl = localStorage.getItem('reorderReplStr');
-    state.reorderReplStr = savedRepl == null ? '' : savedRepl;
-  }
+  // Intentionally NOT persisted: it resets on every page load so a stale
+  // ";→:" rule doesn't silently rewrite tomorrow's input. In-memory only.
+  state.reorderFindStr = '';
+  state.reorderReplStr = '';
+  try {
+    localStorage.removeItem('reorderFindStr');
+    localStorage.removeItem('reorderReplStr');
+  } catch (e) {}
 
   // Field Swap — purely positional ops (swap/move/delete). Intentionally NOT
   // persisted: the queue resets on every page load so a stale "Delete pos 4"
@@ -107,10 +107,9 @@
     localStorage.setItem('reorderEnabled', JSON.stringify(state.reorderEnabled));
     localStorage.setItem('reorderSep', state.reorderSep);
     localStorage.setItem('reorderPreset', state.reorderPreset);
-    localStorage.setItem('reorderFindStr', state.reorderFindStr || '');
-    localStorage.setItem('reorderReplStr', state.reorderReplStr || '');
     localStorage.setItem('reorderPersist', state.reorderPersist ? '1' : '0');
-    // reorderFieldOps is intentionally session-only — never written.
+    // reorderFindStr / reorderReplStr / reorderFieldOps are intentionally
+    // session-only — never written to localStorage.
   }
 
   function applyFindReplace(s) {
