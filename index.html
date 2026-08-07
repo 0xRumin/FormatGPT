@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202607210005">
+  <link rel="stylesheet" href="theme.css?v=202607210008">
 </head>
 <body>
 
@@ -199,6 +199,18 @@
           </label>
         </div>
       </div>
+      <!-- Separator mode tabs (CSS-gated via body[data-mode="separator"]).
+           Switches #out between the Phone-only and Mail-only groups. -->
+      <div class="sep-tabs" id="separatorTabs" role="tablist" aria-label="Account groups">
+        <button type="button" class="sep-tab sep-tab-on" data-tab="phone" role="tab" aria-selected="true">
+          <span class="sep-tab-icon" aria-hidden="true">📱</span> Phone
+          <span class="sep-tab-count" id="sepPhoneCount">0</span>
+        </button>
+        <button type="button" class="sep-tab" data-tab="mail" role="tab" aria-selected="false">
+          <span class="sep-tab-icon" aria-hidden="true">📧</span> Mail
+          <span class="sep-tab-count" id="sepMailCount">0</span>
+        </button>
+      </div>
       <pre id="out"></pre>
       <!-- Editable List 2 input, revealed only when crosscheck mode is active -->
       <textarea id="ccList2" class="cc-list2" spellcheck="false"
@@ -249,7 +261,7 @@
 <script defer src="reorder.js?v=202607210006"></script>
 <script defer src="filter.js?v=202607061000"></script>
 <script defer src="sorter.js?v=202607150002"></script>
-<script defer src="separator.js?v=202607210007"></script>
+<script defer src="separator.js?v=202607210008"></script>
 <script defer src="crosscheck.js?v=202607061000"></script>
 <script defer src="dam.js?v=202607061000"></script>
 <script defer src="deliver.js?v=202607140001"></script>
