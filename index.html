@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202607210008">
+  <link rel="stylesheet" href="theme.css?v=202607210009">
 </head>
 <body>
 
@@ -317,33 +317,48 @@
     if (!out) return;
     const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     let lastSig = '';
+    // FAST PATH for big outputs: render the text as fixed-size chunks tagged
+    // with `content-visibility:auto` (see .out-chunk in theme.css). The browser
+    // only lays out / paints chunks in or near the viewport, so a 10k-line
+    // paste appears near-instantly and scrolls smoothly instead of laying out
+    // every line up front. Newlines are kept between chunks so out.textContent
+    // still equals the full output (Copy / Save-as-txt read that).
+    const OUT_CHUNK_LINES = 200;
+    function buildChunks(lines){
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < lines.length; i += OUT_CHUNK_LINES){
+        const d = document.createElement('div');
+        d.className = 'out-chunk';
+        d.textContent = lines.slice(i, i + OUT_CHUNK_LINES).join('\n')
+                      + (i + OUT_CHUNK_LINES < lines.length ? '\n' : '');
+        frag.appendChild(d);
+      }
+      return frag;
+    }
+    function renderChunked(lines){
+      mo.disconnect();
+      out.replaceChildren(buildChunks(lines));
+      mo.observe(out, { childList: true });
+    }
     function render(){
       const firstChild = out.firstElementChild;
-      const looksRendered = firstChild && firstChild.classList && firstChild.classList.contains('out-row');
+      const looksRendered = !!(firstChild && firstChild.classList && firstChild.classList.contains('out-row'));
+      const looksChunked  = !!(firstChild && firstChild.classList && firstChild.classList.contains('out-chunk'));
       // Reconstruct raw text from the rendered DOM (so we can re-render idempotently)
       const raw = looksRendered
         ? Array.from(out.children).map(d => d.dataset.raw || '').join('\n\n').replace(/\n+$/, '')
         : (out.textContent || '');
 
-      // Large plain outputs are already in their cheapest DOM form. Keep the
-      // full text, but avoid splitting and writing it back a second time.
-      if (!looksRendered && raw.length > ROW_WRAP_MAX_CHARS) {
-        lastSig = '\u0003' + raw.length;
-        return;
-      }
       const lines = raw.split(/\r?\n/);
 
       // FAST PATH — plain text for big outputs. No DOM wrapping, no per-row
       // buttons. The top Copy + Save-as-txt buttons still work (they fall back
       // to out.textContent when no .out-row children are found).
-      if (lines.length > ROW_WRAP_MAX_LINES) {
+      if (lines.length > ROW_WRAP_MAX_LINES || raw.length > ROW_WRAP_MAX_CHARS) {
         const sig = '\u0003' + raw;
-        if (sig === lastSig) return;
+        if (sig === lastSig && looksChunked) return;
         lastSig = sig;
-        if (!looksRendered) return;
-        mo.disconnect();
-        out.textContent = raw;
-        mo.observe(out, { childList: true });
+        renderChunked(lines);
         return;
       }
 
@@ -361,16 +376,14 @@
 
       if (blocks.length > ROW_WRAP_MAX_BLOCKS){
         const sig = '\u0003' + raw;
-        if (sig === lastSig) return;
+        if (sig === lastSig && looksChunked) return;
         lastSig = sig;
-        mo.disconnect();
-        out.textContent = raw;
-        mo.observe(out, { childList: true });
+        renderChunked(lines);
         return;
       }
 
       const sig = blocks.map(b => b.join('\u0002')).join('\u0001');
-      if (sig === lastSig) return;
+      if (sig === lastSig && looksRendered) return;
       lastSig = sig;
 
       const html = !blocks.length ? '' : blocks.map((block) => {
