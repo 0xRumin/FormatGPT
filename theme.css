@@ -899,6 +899,32 @@ body[data-mode="reorder"] .persist-toggle-wrap{
   }
 }
 
+/* ===== Separator mode tabs (Phone / Mail) — CSS-gated to that mode ===== */
+.sep-tabs{ display:none; }
+body[data-mode="separator"] .sep-tabs{
+  display:flex; gap:8px; margin:0 0 14px;
+}
+.sep-tab{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--line);background:transparent;color:var(--muted);
+  font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;
+  transition:all .18s;user-select:none;
+}
+.sep-tab:hover{color:var(--fg);border-color:var(--line-strong)}
+.sep-tab.sep-tab-on{color:var(--fg);border-color:var(--accent);background:rgba(var(--accent-rgb),0.10)}
+.sep-tab-icon{font-size:13px;line-height:1}
+.sep-tab-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:18px;padding:0 6px;border-radius:999px;
+  background:rgba(var(--tint-rgb),0.12);color:var(--muted);
+  font-size:10px;font-weight:700;letter-spacing:0
+}
+.sep-tab.sep-tab-on .sep-tab-count{background:var(--accent);color:var(--ink,#04110e)}
+/* Each tab shows a subset of input lines, so the "N missing" badge would be
+   misleading here (those lines are just in the other tab, not lost). Hide it. */
+body[data-mode="separator"] #outMissing{ display:none !important; }
+
 #clearBtn{
   display:inline-flex;align-items:center;padding:9px 16px;
   border-radius:999px;
