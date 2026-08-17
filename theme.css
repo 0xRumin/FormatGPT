@@ -288,12 +288,14 @@ body[data-mode="dam"] .add-mail{display:none !important}
 }
 /* Big outputs are rendered as ~200-line chunks (inline script). content-visibility
    lets the browser skip layout/paint of chunks outside the scroll viewport, so
-   huge pastes appear instantly and scroll without jank. contain-intrinsic-size
-   (~200 lines × ~22px) reserves height for un-rendered chunks so the scrollbar
-   stays accurate. */
+   huge pastes appear instantly and scroll without jank. Reserve only the HEIGHT
+   (~200 lines × ~22px) so the scrollbar stays accurate — width MUST stay normal
+   (contain-intrinsic-width:none), otherwise off-screen chunks take the reserved
+   width and blow the output pane out sideways (crushing the input pane). */
 #out .out-chunk{
   content-visibility:auto;
-  contain-intrinsic-size:auto 4400px;
+  contain-intrinsic-width:none;
+  contain-intrinsic-height:auto 4400px;
 }
 /* Per-account block (wrapped by inline script). Border ONLY between accounts. */
 #out .out-row{
