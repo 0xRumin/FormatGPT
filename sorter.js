@@ -579,8 +579,13 @@
     else                     step = 5000;
 
     for (var lo = 0; lo <= maxVal; lo += step) {
-      var hi = lo + step - 1;
-      ranges.push({ lo: lo, hi: hi, label: lo + ' – ' + hi });
+      // Clamp each bin's top to the real max so a label never implies values
+      // that don't exist. When the top bin collapses to a single value (the max
+      // sits on a bin boundary, e.g. max 10 with step 5) show "Exact N" instead
+      // of "10 – 14". Counts are unaffected — nothing lives above maxVal.
+      var hi = Math.min(lo + step - 1, maxVal);
+      var label = (lo === hi) ? ('Exact ' + lo) : (lo + ' – ' + hi);
+      ranges.push({ lo: lo, hi: hi, label: label });
     }
     return ranges;
   }
