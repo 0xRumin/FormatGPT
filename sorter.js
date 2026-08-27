@@ -319,14 +319,25 @@
       App.App.rerun();
     });
 
-    // Breakdown: Remove + Download buttons (event delegation)
+    // Breakdown: Remove + Copy + Download buttons (event delegation)
     $('#spBdBody').addEventListener('click', function (e) {
-      var btn = e.target.closest('.sp-bd-remove, .sp-bd-download');
+      var btn = e.target.closest('.sp-bd-remove, .sp-bd-download, .sp-bd-copy');
       if (!btn) return;
       if (!lastFormat) return;
       var isDownload = btn.classList.contains('sp-bd-download');
+      var isCopy     = btn.classList.contains('sp-bd-copy');
       var col = lastSortCol;
       var totalCols = lastFormat.totalColumns;
+
+      // Copy the matched lines to the clipboard, with brief "Copied" feedback.
+      function copyMatched(lines) {
+        if (!lines.length) return;
+        navigator.clipboard.writeText(lines.join('\n')).then(function () {
+          var orig = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = orig; }, 900);
+        }).catch(function () { alert('Copy failed.'); });
+      }
 
       // Counts row carries a range (data-lo / data-hi); Year row carries a
       // single value (data-year). Handle the range case first.
@@ -334,7 +345,7 @@
         var lo = parseInt(btn.dataset.lo, 10);
         var hi = parseInt(btn.dataset.hi, 10);
         var rLabel = btn.dataset.label;
-        if (isDownload) {
+        if (isDownload || isCopy) {
           var inpR = $('#inp'); if (!inpR) return;
           var rowsR = inpR.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
           var matchR = [];
@@ -345,7 +356,8 @@
             if (!isNaN(nvR) && nvR >= lo && nvR <= hi) matchR.push(rowsR[ir]);
           }
           if (!matchR.length) return;
-          downloadTxt(matchR, 'count_' + lo + '-' + hi + '_' + U.randToken(5) + '.txt');
+          if (isCopy) copyMatched(matchR);
+          else downloadTxt(matchR, 'count_' + lo + '-' + hi + '_' + U.randToken(5) + '.txt');
         } else {
           if (excludedRanges[rLabel]) delete excludedRanges[rLabel];
           else excludedRanges[rLabel] = { lo: lo, hi: hi };
@@ -357,7 +369,7 @@
       // Year value row
       var yearVal = btn.dataset.year;
       if (!yearVal) return;
-      if (isDownload) {
+      if (isDownload || isCopy) {
         var inp = $('#inp'); if (!inp) return;
         var rows = inp.value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
         var matching = [];
@@ -368,7 +380,8 @@
           }
         }
         if (!matching.length) return;
-        downloadTxt(matching, 'year_' + yearVal + '_' + U.randToken(5) + '.txt');
+        if (isCopy) copyMatched(matching);
+        else downloadTxt(matching, 'year_' + yearVal + '_' + U.randToken(5) + '.txt');
       } else {
         // Toggle exclusion from output (input stays untouched)
         if (excludedYears[yearVal]) delete excludedYears[yearVal];
@@ -654,6 +667,7 @@
         h += '<span class="sp-bd-pct">' + pctT + '%</span>';
         var isExcl = excludedYears[years[j]] ? ' sp-bd-excluded' : '';
         h += '<button class="sp-bd-remove' + isExcl + '" data-year="' + years[j] + '" title="Remove ' + years[j] + ' from output">' + (excludedYears[years[j]] ? 'Undo' : '✕') + '</button>';
+        h += '<button class="sp-bd-copy" data-year="' + years[j] + '" title="Copy ' + years[j] + ' accounts">Copy</button>';
         h += '<button class="sp-bd-download" data-year="' + years[j] + '" title="Download ' + years[j] + ' accounts">Save</button>';
         h += '</div>';
       }
@@ -710,6 +724,7 @@
         h += '<span class="sp-bd-count">' + rangeCounts[g] + '</span>';
         h += '<span class="sp-bd-pct">' + pT + '%</span>';
         h += '<button class="sp-bd-remove' + rExcl + '" data-lo="' + rlo + '" data-hi="' + rhi + '" data-label="' + rLabel + '" title="Remove ' + rLabel + ' from output">' + (excludedRanges[rLabel] ? 'Undo' : '✕') + '</button>';
+        h += '<button class="sp-bd-copy" data-lo="' + rlo + '" data-hi="' + rhi + '" data-label="' + rLabel + '" title="Copy ' + rLabel + ' accounts">Copy</button>';
         h += '<button class="sp-bd-download" data-lo="' + rlo + '" data-hi="' + rhi + '" data-label="' + rLabel + '" title="Download ' + rLabel + ' accounts">Save</button>';
         h += '</div>';
       }
