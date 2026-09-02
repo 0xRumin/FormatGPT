@@ -1353,6 +1353,36 @@
     return parsed.map(function (r) { return r.cols.join(':'); });
   }
 
+  // Order ALL rows the same way the sorted output is ordered (no exclusion
+  // filtering, so bucket counts stay complete), so the breakdown's range tabs
+  // and download list follow the chosen direction instead of raw input order.
+  function orderRowsForDisplay(rows, format) {
+    var order = state.sorterOrder;
+    if (order === 'reverse') return rows.slice().reverse();
+    if (order === 'random') return rows.slice();
+    var sortBy = state.sorterColumn;
+    var colTypes = format.columnTypes;
+    var colType = colTypes[sortBy] || '';
+    var isNumeric = (colType === 'counts' || colType === 'year');
+    var reverse = (order === 'desc' || order === 'za');
+    var dec = rows.map(function (line) {
+      return { line: line, sv: sortValueFor(line.split(':'), sortBy, colTypes) };
+    });
+    dec.sort(function (a, b) {
+      var av = a.sv || '', bv = b.sv || '';
+      if (isNumeric) {
+        var an = parseInt(av, 10); if (isNaN(an)) an = reverse ? -Infinity : Infinity;
+        var bn = parseInt(bv, 10); if (isNaN(bn)) bn = reverse ? -Infinity : Infinity;
+        return reverse ? bn - an : an - bn;
+      }
+      var al = av.toLowerCase(), bl = bv.toLowerCase();
+      if (al < bl) return reverse ? 1 : -1;
+      if (al > bl) return reverse ? -1 : 1;
+      return 0;
+    });
+    return dec.map(function (d) { return d.line; });
+  }
+
   /* ======== Register mode ======== */
   App.App.registerMode({
     id: 'sorter',
@@ -1412,7 +1442,12 @@
       }
       renderMismatch(mism, format.totalColumns);
 
-      renderBreakdown(rows, format);
+      // Feed display-ordered rows to the breakdown so its range tabs / download
+      // list follow the chosen sort direction (Small→Big etc.); lastRows drives
+      // the slider re-renders too. Buckets are order-independent.
+      var displayRows = orderRowsForDisplay(rows, format);
+      lastRows = displayRows;
+      renderBreakdown(displayRows, format);
       var sorted = sortLines(rows, format);
       return sorted.join('\n');
     }
