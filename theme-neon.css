@@ -288,3 +288,55 @@ html[data-theme="neon"] *::-webkit-scrollbar-track{ background:#0c0e14; }
 html[data-theme="neon"] *::-webkit-scrollbar-thumb{ background:#2c313d; border:2px solid #0c0e14; }
 html[data-theme="neon"] *::-webkit-scrollbar-thumb:hover{ background:#3b4150; }
 html[data-theme="neon"] *{ scrollbar-color:#2c313d #0c0e14; }
+
+/* ---------- 11. ALL-CAPS display headings ---------- */
+/* Uppercase the hero ("Formatgpt" → "FORMATGPT") and pane/section titles.
+   Deliberately NOT applied to #out / #inp — that data is case-sensitive
+   (usernames, emails, tokens) and must never be transformed. */
+html[data-theme="neon"] .hero h1,
+html[data-theme="neon"] .pane__title,
+html[data-theme="neon"] .sp-title,
+html[data-theme="neon"] .card__title{
+  text-transform:uppercase !important;
+  letter-spacing:.04em !important;
+}
+/* The hero keeps its tight tracking but goes caps. */
+html[data-theme="neon"] .hero h1{ letter-spacing:.02em !important; }
+
+/* ---------- 12. Smoother feel (eased motion, crisp text) ---------- */
+/* Antialias the mono type so the caps read clean, not chunky. */
+html[data-theme="neon"] body{
+  -webkit-font-smoothing:antialiased !important;
+  -moz-osx-font-smoothing:grayscale !important;
+  text-rendering:optimizeLegibility !important;
+}
+html[data-theme="neon"]{ scroll-behavior:smooth; }
+
+/* Gentle, eased transitions on everything interactive (was a snappy .05s).
+   Keeps the brutalist press but makes hover/active glide instead of snap. */
+html[data-theme="neon"] button,
+html[data-theme="neon"] .rp-sep,
+html[data-theme="neon"] .rp-preset,
+html[data-theme="neon"] .sp-order,
+html[data-theme="neon"] .sp-col,
+html[data-theme="neon"] .sp-tab,
+html[data-theme="neon"] .dd-item,
+html[data-theme="neon"] .rp-fs-dd-item,
+html[data-theme="neon"] .menu button,
+html[data-theme="neon"] .rp-field-row,
+html[data-theme="neon"] .sp-mail-row,
+html[data-theme="neon"] .blue-btn .slider,
+html[data-theme="neon"] .blue-btn .knob,
+html[data-theme="neon"] #inp,
+html[data-theme="neon"] #out,
+html[data-theme="neon"] input,
+html[data-theme="neon"] textarea{
+  transition:background-color .18s ease, color .18s ease,
+             border-color .18s ease, box-shadow .18s ease,
+             transform .12s cubic-bezier(.2,.8,.3,1) !important;
+}
+/* Respect users who ask for reduced motion. */
+@media (prefers-reduced-motion: reduce){
+  html[data-theme="neon"]{ scroll-behavior:auto; }
+  html[data-theme="neon"] *{ transition-duration:.01ms !important; }
+}
