@@ -266,7 +266,7 @@ body[data-mode="dam"] .add-mail{display:none !important}
   width:100%;height:420px;
   background:transparent;border:none;outline:none;resize:none;overflow-y:auto;
   font-family:var(--font-mono);font-size:13.5px;line-height:1.75;color:var(--fg);
-  padding:6px 0 64px;letter-spacing:0.005em;   /* bottom padding so text never hides under Paste/Copy */
+  padding:6px 12px 64px;letter-spacing:0.005em;   /* h-pad = breathing space; bottom pad keeps text off Paste/Copy */
   scrollbar-gutter:stable;
 }
 #inp::placeholder, textarea::placeholder{
@@ -276,7 +276,7 @@ body[data-mode="dam"] .add-mail{display:none !important}
 /* =================== Output (kept as <pre>) — fixed height, scroll inside =================== */
 #out{
   height:420px;margin:0;overflow-y:auto;
-  background:transparent;border:none;border-radius:0;padding:6px 0;
+  background:transparent;border:none;border-radius:0;padding:6px 12px;   /* h-pad = breathing space from the pane edge */
   font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--fg);
   white-space:pre-wrap;word-break:break-word;
   scrollbar-gutter:stable;
@@ -1738,11 +1738,11 @@ body[data-mode="separator"] #outMissing{ display:none !important; }
   color:#9fb0c6;font-weight:600;text-transform:uppercase
 }
 .sp-theme-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px
 }
 .sp-swatch{
-  display:flex;align-items:center;gap:8px;
-  padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;gap:7px;
+  padding:7px 9px;border-radius:8px;border:1.5px solid rgba(255,255,255,.06);
   background:rgba(255,255,255,.03);cursor:pointer;transition:all .18s
 }
 .sp-swatch:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}
@@ -1751,14 +1751,20 @@ body[data-mode="separator"] #outMissing{ display:none !important; }
   box-shadow:0 0 12px var(--glow,rgba(var(--accent-rgb),.2))
 }
 .sp-swatch-color{
-  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  width:16px;height:16px;border-radius:50%;flex-shrink:0;
   box-shadow:0 2px 6px rgba(0,0,0,.3)
 }
 .sp-swatch-name{
-  font-size:11px;font-weight:600;color:rgba(255,255,255,.7);
+  font-size:10.5px;font-weight:600;color:rgba(255,255,255,.7);
   font-family:var(--font-mono,monospace);letter-spacing:.3px
 }
 .sp-swatch.sp-swatch-on .sp-swatch-name{color:#fff}
+/* Custom color chip — the whole chip is a clickable native color picker. */
+.sp-swatch-custom{position:relative;overflow:hidden}
+.sp-swatch-custom input[type="color"]{
+  position:absolute;inset:0;width:100%;height:100%;
+  margin:0;padding:0;border:0;opacity:0;cursor:pointer
+}
 
 /* ---- App theme switch (Aurora / Neon Terminal) ---- */
 .sp-appthemes{display:flex;gap:8px}
