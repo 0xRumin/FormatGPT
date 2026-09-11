@@ -74,7 +74,7 @@
     // preview to that swatch's neon accent (theme-neon.css §14) while Neon is
     // active; Aurora keeps the inline gradient below.
     let swatchHtml = THEMES.map((t, i) =>
-      `<button class="sp-swatch" data-idx="${i}" title="${t.name}">
+      `<button class="sp-swatch" data-idx="${i}" data-sw="${t.name.toLowerCase()}" title="${t.name}">
         <span class="sp-swatch-color" data-sw="${t.name.toLowerCase()}" style="background:${t.swatch}"></span>
         <span class="sp-swatch-name">${t.name}</span>
       </button>`

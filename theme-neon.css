@@ -401,3 +401,16 @@ html[data-theme="neon"] .sp-swatch-color[data-sw="pink"]    { background:var(--s
 html[data-theme="neon"] .sp-swatch-color[data-sw="amber"]   { background:var(--sw-amber) !important; }
 html[data-theme="neon"] .sp-swatch-color[data-sw="emerald"] { background:var(--sw-emerald) !important; }
 html[data-theme="neon"] .sp-swatch-color[data-sw="mono"]    { background:var(--sw-mono) !important; }
+
+/* The SELECTED chip's ring matches ITS OWN neon accent, not the global one —
+   so the highlight always agrees with the chip's color even before a swatch
+   has been applied (global --accent would otherwise still be the lime default). */
+html[data-theme="neon"] .sp-swatch[data-sw="ocean"].sp-swatch-on   { border-color:var(--sw-ocean) !important;    box-shadow:3px 3px 0 var(--sw-ocean) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="midnight"].sp-swatch-on{ border-color:var(--sw-midnight) !important; box-shadow:3px 3px 0 var(--sw-midnight) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="violet"].sp-swatch-on  { border-color:var(--sw-violet) !important;   box-shadow:3px 3px 0 var(--sw-violet) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="ember"].sp-swatch-on   { border-color:var(--sw-ember) !important;    box-shadow:3px 3px 0 var(--sw-ember) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="rose"].sp-swatch-on    { border-color:var(--sw-rose) !important;     box-shadow:3px 3px 0 var(--sw-rose) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="pink"].sp-swatch-on    { border-color:var(--sw-pink) !important;     box-shadow:3px 3px 0 var(--sw-pink) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="amber"].sp-swatch-on   { border-color:var(--sw-amber) !important;    box-shadow:3px 3px 0 var(--sw-amber) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="emerald"].sp-swatch-on { border-color:var(--sw-emerald) !important;  box-shadow:3px 3px 0 var(--sw-emerald) !important; }
+html[data-theme="neon"] .sp-swatch[data-sw="mono"].sp-swatch-on    { border-color:var(--sw-mono) !important;     box-shadow:3px 3px 0 var(--sw-mono) !important; }
