@@ -25,8 +25,47 @@
     line:'--line', glow:'--glow', muted:'--muted', ok:'--ok', bad:'--bad'
   };
 
+  // Accent vars a custom color writes inline; cleared before applying a preset
+  // so a previous custom (which may be inline !important) never sticks.
+  var CUSTOM_ACCENT_VARS = ['--accent','--accent-2','--accent-3','--accent-rgb',
+    '--accent2-rgb','--mint','--violet','--glow','--nb-hard-lime','--nb-accent-hi','--ink'];
+
+  function hexToRgbStr(hex) {
+    hex = String(hex || '').trim().replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+    var n = parseInt(hex, 16);
+    if (!isFinite(n)) return '45,212,191';
+    return ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255);
+  }
+  function relLum(hex) {
+    var p = hexToRgbStr(hex).split(',').map(Number);
+    return (0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]) / 255;
+  }
+
+  // Apply a single free-picked accent color across the UI, in whichever theme
+  // is active. Under Neon the palette tokens are !important, so custom writes
+  // inline with 'important' priority to win; under Aurora normal inline is enough.
+  function applyCustomAccent(hex) {
+    var root = document.documentElement;
+    var rgb = hexToRgbStr(hex);
+    var prio = root.getAttribute('data-theme') === 'neon' ? 'important' : '';
+    var set = function (n, v) { root.style.setProperty(n, v, prio); };
+    root.setAttribute('data-swatch', 'custom');
+    set('--accent', hex); set('--accent-2', hex); set('--accent-3', hex);
+    set('--accent-rgb', rgb); set('--accent2-rgb', rgb);
+    set('--mint', hex); set('--violet', hex);
+    set('--glow', 'rgba(' + rgb + ',.18)');
+    set('--nb-hard-lime', hex);   /* neon accent-colored offset shadow */
+    set('--nb-accent-hi', hex);   /* neon button :hover fill            */
+    /* Readable text on accent-filled buttons: dark ink on a light pick, light on a dark one. */
+    set('--ink', relLum(hex) > 0.55 ? '#0a0c10' : '#ffffff');
+    root.style.setProperty('--fg', 'hsl(0,0%,100%)');
+  }
+
   function applyTheme(t) {
     var root = document.documentElement;
+    // Clear any custom inline accent (possibly !important) so a preset applies cleanly.
+    CUSTOM_ACCENT_VARS.forEach(function (v) { root.style.removeProperty(v); });
     // Expose the chosen swatch as an attribute so the Neon theme can retint its
     // accent per swatch (theme-neon.css reads html[data-theme="neon"][data-swatch=…]).
     // Aurora ignores it — nothing there is scoped to [data-swatch].
@@ -43,20 +82,41 @@
     if (aur) aur.style.background = 'radial-gradient(ellipse at 50% 0%,' + t.glow + ' 0%,transparent 70%)';
   }
 
-  function loadSavedTheme() {
-    var saved = localStorage.getItem('fgptTheme');
-    if (!saved) return;
-    try {
-      var t = JSON.parse(saved);
-      if (t && t.accent) applyTheme(t);
-    } catch(e) {}
+  // Color choice is stored PER UI THEME so a color picked in Neon never leaks
+  // into Aurora and vice-versa. Aurora keeps the legacy 'fgptTheme' key for
+  // back-compat; Neon uses 'fgptTheme_neon'.
+  function curUi() {
+    return document.documentElement.getAttribute('data-theme') === 'neon' ? 'neon' : 'aurora';
+  }
+  function colorKeyFor(ui) { return ui === 'neon' ? 'fgptTheme_neon' : 'fgptTheme'; }
+  function loadColorFor(ui) {
+    try { var s = localStorage.getItem(colorKeyFor(ui)); return s ? JSON.parse(s) : null; }
+    catch (e) { return null; }
+  }
+  function saveColorFor(ui, t) {
+    try { localStorage.setItem(colorKeyFor(ui), JSON.stringify(t)); } catch (e) {}
   }
 
-  function saveTheme(t) {
-    localStorage.setItem('fgptTheme', JSON.stringify(t));
+  // The default when a UI theme has no saved color: Aurora → first swatch;
+  // Neon → its built-in lime (no swatch, cleared inline accents).
+  function applyDefaultColor() {
+    if (curUi() === 'neon') {
+      var root = document.documentElement;
+      CUSTOM_ACCENT_VARS.forEach(function (v) { root.style.removeProperty(v); });
+      root.removeAttribute('data-swatch');
+    } else {
+      applyTheme(THEMES[0]);
+    }
+  }
+  // Apply a stored color choice (preset object, {custom,accent}, or null=default).
+  function applyChoice(t) {
+    if (t && t.custom && t.accent) applyCustomAccent(t.accent);
+    else if (t && t.accent) applyTheme(t);
+    else applyDefaultColor();
   }
 
-  loadSavedTheme();
+  // On load, apply the color saved for whichever UI theme the boot script chose.
+  applyChoice(loadColorFor(curUi()));
 
   function createSettingsPanel() {
     if ($('#settingsPanel')) return $('#settingsPanel');
@@ -74,11 +134,18 @@
     // preview to that swatch's neon accent (theme-neon.css §14) while Neon is
     // active; Aurora keeps the inline gradient below.
     let swatchHtml = THEMES.map((t, i) =>
-      `<button class="sp-swatch" data-idx="${i}" title="${t.name}">
+      `<button class="sp-swatch" data-idx="${i}" data-sw="${t.name.toLowerCase()}" title="${t.name}">
         <span class="sp-swatch-color" data-sw="${t.name.toLowerCase()}" style="background:${t.swatch}"></span>
         <span class="sp-swatch-name">${t.name}</span>
       </button>`
     ).join('');
+    // Custom color picker — pick any accent and apply it to the UI (both themes).
+    swatchHtml += `
+      <label class="sp-swatch sp-swatch-custom" id="sp-custom-swatch" title="Pick a custom accent color">
+        <span class="sp-swatch-color" id="sp-custom-dot" style="background:conic-gradient(from 0deg,#ff5c78,#ffc23d,#2fe38f,#2df0d0,#4d9bff,#a06bff,#ff5cc0,#ff5c78)"></span>
+        <span class="sp-swatch-name">Custom</span>
+        <input type="color" id="sp-custom-input" value="#2dd4bf" aria-label="Pick a custom accent color">
+      </label>`;
 
     panel.innerHTML = `
       <div id="sp-backdrop" style="position:absolute;inset:0;background:#0006;backdrop-filter:blur(4px)"></div>
@@ -164,16 +231,27 @@
     const closeBtn = $('#sp-close');
     const back = $('#sp-backdrop');
     const swatches = $('#sp-swatches');
+    const customSwatch = $('#sp-custom-swatch');
+    const customInput = $('#sp-custom-input');
+    const customDot = $('#sp-custom-dot');
 
     // Working copies — persisted only on Save, discarded on close/cancel.
     let mailList = (State?.state?.mailAccessList || []).slice();
     let activeUrl = State?.state?.mailAccess || mailList[0] || '';
 
-    let pendingTheme = null;
-    const savedRaw = localStorage.getItem('fgptTheme');
-    let currentTheme = savedRaw ? JSON.parse(savedRaw) : THEMES[0];
+    // Color state is tracked PER UI THEME. savedColors is the on-disk baseline
+    // captured at open (for cancel/revert); pending holds unsaved live edits.
+    const savedColors = { aurora: loadColorFor('aurora'), neon: loadColorFor('neon') };
+    const pending = { aurora: null, neon: null };
+    const effChoice = (ui) => (pending[ui] !== null ? pending[ui] : savedColors[ui]);
 
-    syncSwatchActive(currentTheme.accent);
+    // Reflect the current UI theme's selection in the chips.
+    function refreshChips(t) {
+      if (t && t.custom && t.accent) setCustomActive(t.accent);
+      else if (t && t.accent) syncSwatchActive(t.accent);
+      else syncSwatchActive(null);           // default (Neon lime): nothing highlighted
+    }
+    refreshChips(effChoice(curUi()));
     panel.style.display = 'block';
 
     // App theme switch — Aurora (default) vs Neon Terminal. Applies immediately
@@ -199,29 +277,51 @@
         else localStorage.removeItem('fgpt_theme');
       } catch (e2) {}
       syncAppThemeBtns();
+      // Switch to the newly-active UI theme's OWN color choice, so Neon and
+      // Aurora keep independent palettes.
+      var t = effChoice(curUi());
+      applyChoice(t);
+      refreshChips(t);
     };
 
     function close() { panel.style.display = 'none'; }
 
+    // Highlight a preset chip (and clear the Custom chip).
     function syncSwatchActive(accent) {
       const all = swatches?.querySelectorAll('.sp-swatch') || [];
       for (const s of all) {
         const idx = +s.dataset.idx;
-        s.classList.toggle('sp-swatch-on', THEMES[idx]?.accent === accent);
+        s.classList.toggle('sp-swatch-on', Number.isFinite(idx) && THEMES[idx]?.accent === accent);
       }
     }
 
+    // Highlight the Custom chip and seed its swatch + picker with `hex`.
+    function setCustomActive(hex) {
+      syncSwatchActive(null);               // clear preset chips
+      if (customInput) customInput.value = hex;
+      if (customDot) customDot.style.background = hex;
+      if (customSwatch) customSwatch.classList.add('sp-swatch-on');
+    }
+
     function pickTheme(t) {
-      pendingTheme = t;
+      pending[curUi()] = t;                  // pending for THIS UI theme only
       applyTheme(t);
-      syncSwatchActive(t.accent);
+      syncSwatchActive(t.accent);           // also clears the Custom chip
     }
 
     swatches?.addEventListener('click', (e) => {
       const btn = e.target.closest('.sp-swatch');
-      if (!btn) return;
+      if (!btn || !btn.dataset.idx) return; // ignore the Custom label
       const t = THEMES[+btn.dataset.idx];
       if (t) pickTheme(t);
+    });
+
+    // Custom color picker: apply live as the user drags, persist on Save.
+    customInput?.addEventListener('input', () => {
+      const hex = customInput.value;
+      applyCustomAccent(hex);
+      pending[curUi()] = { custom: true, accent: hex };
+      setCustomActive(hex);
     });
 
     function normalize(url) {
@@ -316,22 +416,29 @@
       mailList = ((App.Config && App.Config.DEFAULT_MAIL_LIST) || []).map(normalize).filter(Boolean);
       activeUrl = mailList[0] || '';
       renderMailList();
-      pickTheme(THEMES[0]);
-      localStorage.removeItem('fgptTheme');
+      // Forget both UI themes' colors and return the current one to its default.
+      try { localStorage.removeItem('fgptTheme'); localStorage.removeItem('fgptTheme_neon'); } catch (e) {}
+      savedColors.aurora = null; savedColors.neon = null;
+      pending.aurora = null; pending.neon = null;
+      applyDefaultColor();
+      refreshChips(null);
     };
     applyBtn.onclick = () => {
       if (State?.setMailAccessList) State.setMailAccessList(mailList, activeUrl);
       else if (State?.setMailAccess) State.setMailAccess(activeUrl);
-      if (pendingTheme) saveTheme(pendingTheme);
+      // Persist each UI theme's color independently (only if it was changed).
+      ['aurora', 'neon'].forEach((ui) => {
+        if (pending[ui] !== null) saveColorFor(ui, pending[ui]);
+      });
       Core?.rerun && Core.rerun();
       close();
     };
     closeBtn.onclick = back.onclick = () => {
-      if (pendingTheme) {
-        const prev = savedRaw ? JSON.parse(savedRaw) : THEMES[0];
-        applyTheme(prev);
+      // Discard unsaved edits: restore the current UI theme's saved baseline.
+      if (pending.aurora !== null || pending.neon !== null) {
+        applyChoice(savedColors[curUi()]);
       }
-      pendingTheme = null;
+      pending.aurora = null; pending.neon = null;
       close();
     };
     panel.onkeydown = (e) => {
