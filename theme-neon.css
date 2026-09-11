@@ -414,3 +414,39 @@ html[data-theme="neon"] .sp-swatch[data-sw="pink"].sp-swatch-on    { border-colo
 html[data-theme="neon"] .sp-swatch[data-sw="amber"].sp-swatch-on   { border-color:var(--sw-amber) !important;    box-shadow:3px 3px 0 var(--sw-amber) !important; }
 html[data-theme="neon"] .sp-swatch[data-sw="emerald"].sp-swatch-on { border-color:var(--sw-emerald) !important;  box-shadow:3px 3px 0 var(--sw-emerald) !important; }
 html[data-theme="neon"] .sp-swatch[data-sw="mono"].sp-swatch-on    { border-color:var(--sw-mono) !important;     box-shadow:3px 3px 0 var(--sw-mono) !important; }
+
+/* =====================================================================
+   15. NEON TICKER — terminal-style status bar, driven by the accent.
+   Everything accent-colored uses var(--accent)/var(--accent-rgb), so it
+   retints instantly when the color theme (or custom pick) changes. The
+   "REV 05 · NEON BUILD" label is swapped by ui.js per UI theme.
+   ===================================================================== */
+html[data-theme="neon"] .ticker{
+  border:2px solid rgba(var(--accent-rgb),.40) !important;
+  box-shadow:4px 4px 0 var(--nb-hard), inset 0 0 0 1px rgba(var(--accent-rgb),.06) !important;
+}
+/* Step numbers glow in the accent. */
+html[data-theme="neon"] .ticker .scroll__inner b{
+  color:var(--accent) !important;
+  text-shadow:0 0 8px rgba(var(--accent-rgb),.55);
+}
+/* Build label rides the accent too. */
+html[data-theme="neon"] .ticker .tk-build{
+  color:var(--accent) !important; font-weight:700;
+}
+/* LIVE badge → bracketed terminal chip. */
+html[data-theme="neon"] .ticker .pill{
+  border:1px solid rgba(var(--accent-rgb),.55) !important;
+  background:rgba(var(--accent-rgb),.08) !important;
+  color:var(--accent) !important;
+  padding:2px 8px !important; letter-spacing:.14em;
+}
+html[data-theme="neon"] .ticker .pill .live{
+  background:var(--accent) !important;
+  box-shadow:0 0 8px var(--accent), 0 0 2px var(--accent) !important;
+}
+/* Clock reads like a terminal readout. */
+html[data-theme="neon"] .ticker .clock{
+  color:var(--accent) !important;
+  text-shadow:0 0 8px rgba(var(--accent-rgb),.40);
+}
