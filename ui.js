@@ -99,6 +99,17 @@
 
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:16px 0"></div>
 
+        <!-- App theme (structural look): Aurora (default) vs Neon Terminal -->
+        <div style="margin-bottom:18px">
+          <label class="sp-settings-label">Theme</label>
+          <div id="sp-appthemes" class="sp-appthemes">
+            <button type="button" class="sp-apptheme" data-apptheme="">Aurora</button>
+            <button type="button" class="sp-apptheme" data-apptheme="neon">Neon Terminal</button>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid rgba(255,255,255,.06);margin:16px 0"></div>
+
         <!-- Mail Access URLs (collapsible dropdown) -->
         <div>
           <label class="sp-settings-label">Mail Access URL</label>
@@ -158,6 +169,31 @@
 
     syncSwatchActive(currentTheme.accent);
     panel.style.display = 'block';
+
+    // App theme switch — Aurora (default) vs Neon Terminal. Applies immediately
+    // (sets <html data-theme>), highlights the active choice, and persists to
+    // the "fgpt_theme" key (read by the no-flash boot script in index.html).
+    var appThemes = $('#sp-appthemes');
+    function syncAppThemeBtns() {
+      var cur = document.documentElement.getAttribute('data-theme') || '';
+      var btns = appThemes ? appThemes.querySelectorAll('.sp-apptheme') : [];
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('active', (btns[i].dataset.apptheme || '') === cur);
+      }
+    }
+    syncAppThemeBtns();
+    if (appThemes) appThemes.onclick = function (e) {
+      var btn = e.target.closest('.sp-apptheme');
+      if (!btn) return;
+      var val = btn.dataset.apptheme || '';
+      if (val) document.documentElement.setAttribute('data-theme', val);
+      else document.documentElement.removeAttribute('data-theme');
+      try {
+        if (val) localStorage.setItem('fgpt_theme', val);
+        else localStorage.removeItem('fgpt_theme');
+      } catch (e2) {}
+      syncAppThemeBtns();
+    };
 
     function close() { panel.style.display = 'none'; }
 
