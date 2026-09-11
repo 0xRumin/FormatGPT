@@ -43,14 +43,15 @@ html[data-theme="neon"]{
   --glow:rgba(0,0,0,0) !important;             /* kill soft glows */
   --shadow:4px 4px 0 #05070c !important;       /* hard offset shadow */
   --radius:0 !important;
-  --ink:#0d1500 !important;                      /* text ON the lime accent */
+  --ink:#0a0c10 !important;                      /* dark text ON the accent (works for every swatch) */
   color-scheme:dark;
 }
 
 /* Handy locals */
 html[data-theme="neon"]{
   --nb-hard:#05070c;
-  --nb-hard-lime:#c3ff3e;
+  --nb-hard-lime:#c3ff3e;   /* accent-colored offset shadow (retinted per swatch below) */
+  --nb-accent-hi:#d4ff6e;   /* brighter accent for button :hover fills */
 }
 
 /* ---------- 2. Solid background; kill glass + motion layers ---------- */
@@ -181,7 +182,7 @@ html[data-theme="neon"] .sp-range-download:hover,
 html[data-theme="neon"] .sp-mail-add-btn:hover,
 html[data-theme="neon"] #sp-apply:hover,
 html[data-theme="neon"] #dpExtract:hover{
-  background:#d4ff6e !important;
+  background:var(--nb-accent-hi) !important;
   color:var(--ink) !important;
   box-shadow:3px 3px 0 var(--nb-hard) !important;
 }
@@ -340,3 +341,38 @@ html[data-theme="neon"] textarea{
   html[data-theme="neon"]{ scroll-behavior:auto; }
   html[data-theme="neon"] *{ transition-duration:.01ms !important; }
 }
+
+/* =====================================================================
+   13. COLOR SWATCH VARIANTS
+   The Aurora "Color Theme" swatches (Ocean, Midnight, …) also retint the
+   Neon accent. ui.js writes the chosen swatch as html[data-swatch="<name>"];
+   each block below sets a punchy, neon-bright accent for that swatch.
+   Only --accent + --accent-rgb (+ a brighter hover fill) change per swatch;
+   every other accent-derived token follows via var() in the shared block.
+   Two attribute selectors (0,2,1) outrank the base neon palette (0,1,1),
+   so these win even though both are !important. No data-swatch → lime.
+   ===================================================================== */
+
+/* Shared: all accent-derived tokens track whatever --accent the swatch sets. */
+html[data-theme="neon"][data-swatch]{
+  --accent-2:var(--accent) !important;
+  --accent-3:var(--accent) !important;
+  --accent2-rgb:var(--accent-rgb) !important;
+  --ok-rgb:var(--accent-rgb) !important;
+  --mint:var(--accent) !important;
+  --violet:var(--accent) !important;
+  --ok:var(--accent) !important;
+  --nb-hard-lime:var(--accent) !important;                              /* accent-colored offset shadow */
+  --nb-accent-hi:color-mix(in srgb, var(--accent) 74%, #ffffff) !important; /* brighter :hover fill */
+}
+
+/* Per-swatch accents (bright, tuned for the dark neon ground + dark ink). */
+html[data-theme="neon"][data-swatch="ocean"]   { --accent:#2df0d0 !important; --accent-rgb:45,240,208 !important; }
+html[data-theme="neon"][data-swatch="midnight"]{ --accent:#4d9bff !important; --accent-rgb:77,155,255 !important; }
+html[data-theme="neon"][data-swatch="violet"]  { --accent:#a06bff !important; --accent-rgb:160,107,255 !important; }
+html[data-theme="neon"][data-swatch="ember"]   { --accent:#ff8a3d !important; --accent-rgb:255,138,61 !important; }
+html[data-theme="neon"][data-swatch="rose"]    { --accent:#ff5c78 !important; --accent-rgb:255,92,120 !important; }
+html[data-theme="neon"][data-swatch="pink"]    { --accent:#ff5cc0 !important; --accent-rgb:255,92,192 !important; }
+html[data-theme="neon"][data-swatch="amber"]   { --accent:#ffc23d !important; --accent-rgb:255,194,61 !important; }
+html[data-theme="neon"][data-swatch="emerald"] { --accent:#2fe38f !important; --accent-rgb:47,227,143 !important; }
+html[data-theme="neon"][data-swatch="mono"]    { --accent:#c8ccd6 !important; --accent-rgb:200,204,214 !important; }
