@@ -27,6 +27,10 @@
 
   function applyTheme(t) {
     var root = document.documentElement;
+    // Expose the chosen swatch as an attribute so the Neon theme can retint its
+    // accent per swatch (theme-neon.css reads html[data-theme="neon"][data-swatch=…]).
+    // Aurora ignores it — nothing there is scoped to [data-swatch].
+    if (t && t.name) root.setAttribute('data-swatch', t.name.toLowerCase());
     for (var k in CSS_MAP) {
       if (t[k]) root.style.setProperty(CSS_MAP[k], t[k]);
     }
