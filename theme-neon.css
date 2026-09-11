@@ -1,0 +1,290 @@
+/* =====================================================================
+   Neon Terminal — a dark neo-brutalist / terminal theme for FormatGPT.
+   EVERYTHING is scoped under html[data-theme="neon"] so the default
+   "Aurora" theme is never touched. Loaded AFTER theme.css.
+
+   Note: the Aurora "Color Theme" swatches write CSS vars as INLINE styles
+   on <html> (ui.js applyTheme), which outrank stylesheet rules — so the
+   palette tokens below use !important to guarantee the neon palette wins.
+   ===================================================================== */
+
+/* ---------- 1. Palette ---------- */
+html[data-theme="neon"]{
+  --background: 222 24% 8%;
+  --bg0:#101219 !important;
+  --bg1:#101219 !important;
+  --panel:#181b24 !important;
+  --panel-2:#1e222d;
+  --card-rgb:24,27,36 !important;
+
+  --fg:#e9ebf2 !important;
+  --foreground:0 0% 91%;
+  --muted:#868da0 !important;
+  --muted-foreground:227 11% 58%;
+
+  --accent:#c3ff3e !important;
+  --accent-2:#c3ff3e !important;
+  --accent-3:#ffb64d !important;
+  --accent-rgb:195,255,62 !important;
+  --accent2-rgb:195,255,62 !important;
+  --ok-rgb:195,255,62 !important;
+  --tint-rgb:233,235,242 !important;
+
+  --line:#2c313d !important;
+  --line-strong:#3b4150 !important;
+  --input-bg:#0c0e14 !important;
+
+  --mint:#c3ff3e !important;
+  --violet:#ffb64d !important;
+  --ok:#c3ff3e !important;
+  --ok-dark:#8fbf1f !important;
+  --bad:#ff6b6b !important;
+
+  --glow:rgba(0,0,0,0) !important;             /* kill soft glows */
+  --shadow:4px 4px 0 #05070c !important;       /* hard offset shadow */
+  --radius:0 !important;
+  --ink:#0d1500 !important;                      /* text ON the lime accent */
+  color-scheme:dark;
+}
+
+/* Handy locals */
+html[data-theme="neon"]{
+  --nb-hard:#05070c;
+  --nb-hard-lime:#c3ff3e;
+}
+
+/* ---------- 2. Solid background; kill glass + motion layers ---------- */
+html[data-theme="neon"],
+html[data-theme="neon"] body{ background:#101219 !important; }
+html[data-theme="neon"] .aur,
+html[data-theme="neon"] .grid-lines,
+html[data-theme="neon"] .bg-video__tint{ display:none !important; }
+/* Remove every blur everywhere (glass → solid). */
+html[data-theme="neon"] *{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+
+/* ---------- 3. Square everything (neo-brutalist) ---------- */
+html[data-theme="neon"] *{ border-radius:0 !important; }
+
+/* ---------- 4. Mono type everywhere ---------- */
+html[data-theme="neon"] body,
+html[data-theme="neon"] button,
+html[data-theme="neon"] input,
+html[data-theme="neon"] textarea,
+html[data-theme="neon"] select,
+html[data-theme="neon"] .hero h1,
+html[data-theme="neon"] .hero__sigma,
+html[data-theme="neon"] .pane__title,
+html[data-theme="neon"] .colo__c{
+  font-family:var(--font-mono) !important;
+}
+/* Hero + title accents go lime (were coral/teal). */
+html[data-theme="neon"] .hero h1 em,
+html[data-theme="neon"] .pane__title em{ color:var(--accent) !important; -webkit-text-fill-color:var(--accent) !important; }
+html[data-theme="neon"] .hero h1{ letter-spacing:-.01em !important; }
+
+/* ---------- 5. Containers: solid panel + 2px border + hard shadow ---------- */
+html[data-theme="neon"] .work,
+html[data-theme="neon"] .pane,
+html[data-theme="neon"] .card,
+html[data-theme="neon"] .work-panel,
+html[data-theme="neon"] .ticker,
+html[data-theme="neon"] .rail,
+html[data-theme="neon"] #sp-card,
+html[data-theme="neon"] .gear-pop{
+  background:#181b24 !important;
+  border:2px solid var(--line-strong) !important;
+  box-shadow:4px 4px 0 var(--nb-hard) !important;
+}
+/* The two panes sit inside .work — keep the outer frame the shadowed one. */
+html[data-theme="neon"] .pane{ box-shadow:none !important; }
+html[data-theme="neon"] .pane--out{ background:#181b24 !important; }
+html[data-theme="neon"] .pane--in{ border-right:2px solid var(--line-strong) !important; }
+
+/* Inputs / output surfaces */
+html[data-theme="neon"] #inp,
+html[data-theme="neon"] #out,
+html[data-theme="neon"] textarea,
+html[data-theme="neon"] .cc-list2,
+html[data-theme="neon"] input[type=text],
+html[data-theme="neon"] input[type=number],
+html[data-theme="neon"] input[type=search]{
+  background:#0c0e14 !important;
+  color:var(--fg) !important;
+  border:2px solid var(--line) !important;
+}
+html[data-theme="neon"] #inp:focus,
+html[data-theme="neon"] #out:focus,
+html[data-theme="neon"] textarea:focus,
+html[data-theme="neon"] input:focus{
+  border-color:var(--accent) !important;
+  box-shadow:0 0 0 2px rgba(var(--accent-rgb),.25) !important;
+  outline:none !important;
+}
+/* #out / #inp are full-height surfaces — no need for a drop shadow. */
+html[data-theme="neon"] #inp,
+html[data-theme="neon"] #out{ box-shadow:none !important; }
+
+/* ---------- 6. Buttons: square, bordered, hard-shadow, press-in ---------- */
+html[data-theme="neon"] button,
+html[data-theme="neon"] .rp-sep,
+html[data-theme="neon"] .rp-preset,
+html[data-theme="neon"] .sp-order,
+html[data-theme="neon"] .sp-col,
+html[data-theme="neon"] .sp-tab{
+  border:2px solid var(--line-strong) !important;
+  background:#1e222d !important;
+  color:var(--fg) !important;
+  font-family:var(--font-mono) !important;
+  box-shadow:3px 3px 0 var(--nb-hard) !important;
+  transition:transform .05s ease, box-shadow .05s ease, background .12s, color .12s, border-color .12s !important;
+}
+html[data-theme="neon"] button:hover,
+html[data-theme="neon"] .rp-sep:hover,
+html[data-theme="neon"] .rp-preset:hover,
+html[data-theme="neon"] .sp-order:hover,
+html[data-theme="neon"] .sp-col:hover,
+html[data-theme="neon"] .sp-tab:hover{
+  border-color:var(--accent) !important;
+  color:var(--accent) !important;
+  box-shadow:3px 3px 0 var(--nb-hard-lime) !important;
+}
+html[data-theme="neon"] button:active,
+html[data-theme="neon"] .rp-sep:active,
+html[data-theme="neon"] .rp-preset:active,
+html[data-theme="neon"] .sp-order:active,
+html[data-theme="neon"] .sp-col:active,
+html[data-theme="neon"] .sp-tab:active{
+  transform:translate(2px,2px) !important;
+  box-shadow:1px 1px 0 var(--nb-hard) !important;
+}
+
+/* Primary / accent buttons: solid lime, dark text, lime shadow */
+html[data-theme="neon"] .btn-main,
+html[data-theme="neon"] .btn-main-copy,
+html[data-theme="neon"] .head-copy,
+html[data-theme="neon"] .rp-fs-add-btn,
+html[data-theme="neon"] .sp-range-download,
+html[data-theme="neon"] .sp-mail-add-btn,
+html[data-theme="neon"] #sp-apply,
+html[data-theme="neon"] #dpExtract,
+html[data-theme="neon"] .dp-extract{
+  background:var(--accent) !important;
+  color:var(--ink) !important;
+  border-color:var(--accent) !important;
+  font-weight:700 !important;
+}
+html[data-theme="neon"] .btn-main:hover,
+html[data-theme="neon"] .btn-main-copy:hover,
+html[data-theme="neon"] .head-copy:hover,
+html[data-theme="neon"] .rp-fs-add-btn:hover,
+html[data-theme="neon"] .sp-range-download:hover,
+html[data-theme="neon"] .sp-mail-add-btn:hover,
+html[data-theme="neon"] #sp-apply:hover,
+html[data-theme="neon"] #dpExtract:hover{
+  background:#d4ff6e !important;
+  color:var(--ink) !important;
+  box-shadow:3px 3px 0 var(--nb-hard) !important;
+}
+
+/* Danger buttons stay rose */
+html[data-theme="neon"] #clearBtn,
+html[data-theme="neon"] .sp-bd-remove,
+html[data-theme="neon"] .sp-mail-del{
+  color:var(--bad) !important;
+  border-color:var(--bad) !important;
+  background:#1e222d !important;
+}
+
+/* ---------- 7. Dropdowns / menus ---------- */
+html[data-theme="neon"] .mode-dd,
+html[data-theme="neon"] .dd-btn,
+html[data-theme="neon"] .dd-menu,
+html[data-theme="neon"] .menu,
+html[data-theme="neon"] .rp-fs-dd-menu,
+html[data-theme="neon"] .rp-fs-dd-btn,
+html[data-theme="neon"] .sp-mail-dd-btn,
+html[data-theme="neon"] .sp-mail-panel{
+  background:#1e222d !important;
+  border:2px solid var(--line-strong) !important;
+  box-shadow:4px 4px 0 var(--nb-hard) !important;
+}
+html[data-theme="neon"] .dd-item:hover,
+html[data-theme="neon"] .menu button:hover,
+html[data-theme="neon"] .rp-fs-dd-item:hover{
+  background:rgba(var(--accent-rgb),.12) !important;
+  color:var(--accent) !important;
+}
+/* Active / selected → lime */
+html[data-theme="neon"] .dd-item.active,
+html[data-theme="neon"] .rp-fs-dd-item.active{
+  background:rgba(var(--accent-rgb),.16) !important;
+  color:var(--accent) !important;
+}
+
+/* ---------- 8. Accent-driven bits ---------- */
+/* Active preset / separator / sort / column → lime fill */
+html[data-theme="neon"] .rp-preset.rp-active,
+html[data-theme="neon"] .rp-sep.rp-active,
+html[data-theme="neon"] .sp-order.sp-active,
+html[data-theme="neon"] .sp-col.sp-active,
+html[data-theme="neon"] .sp-tab.sp-tab-on,
+html[data-theme="neon"] .sp-mail-row.sp-mail-on,
+html[data-theme="neon"] .sp-apptheme.active,
+html[data-theme="neon"] .sp-swatch.sp-swatch-on{
+  background:rgba(var(--accent-rgb),.16) !important;
+  border-color:var(--accent) !important;
+  color:var(--accent) !important;
+  box-shadow:3px 3px 0 var(--nb-hard-lime) !important;
+}
+/* Ticker live dot + any accent chips */
+html[data-theme="neon"] .live{ background:var(--accent) !important; box-shadow:0 0 0 3px rgba(var(--accent-rgb),.25) !important; }
+html[data-theme="neon"] .pill{ border:2px solid var(--line-strong) !important; background:#1e222d !important; }
+html[data-theme="neon"] .pane__count,
+html[data-theme="neon"] .sp-tab-count,
+html[data-theme="neon"] .sep-tab-count{ border:2px solid var(--line-strong) !important; background:#0c0e14 !important; color:var(--fg) !important; }
+
+/* Blue toggle ON state → lime */
+html[data-theme="neon"] .blue-btn.is-on .slider,
+html[data-theme="neon"] .blue-btn[aria-pressed="true"] .slider{ background:var(--accent) !important; }
+html[data-theme="neon"] .blue-btn.is-on .knob,
+html[data-theme="neon"] .blue-btn[aria-pressed="true"] .knob{ background:var(--ink) !important; }
+/* Pill toggles (chunk / persist) checked → lime */
+html[data-theme="neon"] .chunk-toggle input[type=checkbox]:checked{ background:var(--accent) !important; border-color:var(--accent) !important; }
+html[data-theme="neon"] .chunk-toggle input[type=checkbox]:checked::after{ background:var(--ink) !important; }
+
+/* Reorder V2 field rows / bars */
+html[data-theme="neon"] .rp-field-row.rp-on{ border-color:var(--accent) !important; }
+html[data-theme="neon"] .sp-bd-bar,
+html[data-theme="neon"] .rp-bar{ background:var(--accent) !important; }
+html[data-theme="neon"] .sp-mail-radio{ border-color:var(--line-strong) !important; }
+html[data-theme="neon"] .sp-mail-row.sp-mail-on .sp-mail-radio{ border-color:var(--accent) !important; box-shadow:inset 0 0 0 3px var(--accent) !important; }
+
+/* Axis / center piece — kill the teal conic gradient + glow, go flat lime. */
+html[data-theme="neon"] .axis__pulse{ display:none !important; }
+html[data-theme="neon"] .axis__core .ring{
+  background:#1e222d !important;
+  border:2px solid var(--line-strong) !important;
+  box-shadow:none !important;
+  animation:none !important;
+}
+html[data-theme="neon"] .axis__core .inner{
+  background:#181b24 !important;
+  color:var(--accent) !important;
+  font-family:var(--font-mono) !important;
+  box-shadow:none !important;
+}
+html[data-theme="neon"] .axis__core .inner::after{ display:none !important; }
+
+/* Settings backdrop → solid-ish */
+html[data-theme="neon"] #sp-backdrop{ background:rgba(5,7,12,.7) !important; }
+
+/* ---------- 9. Shortcut pill + colophon ---------- */
+html[data-theme="neon"] .shortcut{ background:#181b24 !important; border:2px solid var(--line-strong) !important; box-shadow:3px 3px 0 var(--nb-hard) !important; }
+html[data-theme="neon"] .shortcut kbd{ background:var(--accent) !important; color:var(--ink) !important; }
+
+/* ---------- 10. Dark scrollbars ---------- */
+html[data-theme="neon"] *::-webkit-scrollbar{ width:12px; height:12px; }
+html[data-theme="neon"] *::-webkit-scrollbar-track{ background:#0c0e14; }
+html[data-theme="neon"] *::-webkit-scrollbar-thumb{ background:#2c313d; border:2px solid #0c0e14; }
+html[data-theme="neon"] *::-webkit-scrollbar-thumb:hover{ background:#3b4150; }
+html[data-theme="neon"] *{ scrollbar-color:#2c313d #0c0e14; }

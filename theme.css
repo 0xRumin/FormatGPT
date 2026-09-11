@@ -1757,6 +1757,16 @@ body[data-mode="separator"] #outMissing{ display:none !important; }
 }
 .sp-swatch.sp-swatch-on .sp-swatch-name{color:#fff}
 
+/* ---- App theme switch (Aurora / Neon Terminal) ---- */
+.sp-appthemes{display:flex;gap:8px}
+.sp-apptheme{
+  flex:1;padding:10px 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.03);color:rgba(255,255,255,.7);cursor:pointer;transition:all .18s;
+  font-family:var(--font-mono,monospace);font-size:12px;font-weight:600;letter-spacing:.3px
+}
+.sp-apptheme:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);color:#fff}
+.sp-apptheme.active{border-color:var(--accent);background:rgba(var(--accent-rgb),.12);color:var(--accent)}
+
 /* ---- Mail Access URL dropdown (Settings) ---- */
 .sp-mail-dd{position:relative}
 .sp-mail-dd-btn{
