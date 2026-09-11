@@ -747,6 +747,25 @@
       refresh();
     });
 
+    // Tapping anywhere on a field row toggles its selection. The drag handle
+    // is excluded (that's for reordering), and taps on the checkbox itself are
+    // left to the native control + the 'change' handler above (no double flip).
+    $('#rpFields').addEventListener('click', function (e) {
+      if (e.target.closest('.rp-drag')) return;
+      if (e.target.classList.contains('rp-check')) return;
+      var row = e.target.closest('.rp-field-row');
+      if (!row) return;
+      var box = row.querySelector('.rp-check');
+      if (!box) return;
+      box.checked = !box.checked;
+      state.reorderEnabled[row.dataset.field] = box.checked;
+      row.classList.toggle('rp-on', box.checked);
+      state.reorderPreset = 'custom';
+      saveState();
+      syncPresetBtns();
+      refresh();
+    });
+
     // Select all / Deselect all
     $('#rpSelectAll').addEventListener('click', function (e) {
       e.preventDefault();

@@ -1232,8 +1232,11 @@ body[data-mode="separator"] #outMissing{ display:none !important; }
   display:flex;align-items:center;gap:12px;
   padding:11px 14px;border-radius:14px;
   background:rgba(var(--tint-rgb),0.03);border:1px solid transparent;
-  transition:background .18s, border-color .18s
+  transition:background .18s, border-color .18s;
+  cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent
 }
+.rp-field-row:hover{background:rgba(var(--tint-rgb),0.06)}
+.rp-field-row.rp-on:hover{background:rgba(var(--accent-rgb),0.10)}
 .rp-field-row.rp-on{background:rgba(var(--accent-rgb),0.06);border-color:rgba(var(--accent-rgb),0.25)}
 .rp-field-row.rp-dragging{opacity:.7;background:rgba(var(--accent-rgb),0.12);border-color:var(--accent)}
 
