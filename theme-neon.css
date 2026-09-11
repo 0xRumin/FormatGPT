@@ -52,6 +52,12 @@ html[data-theme="neon"]{
   --nb-hard:#05070c;
   --nb-hard-lime:#c3ff3e;   /* accent-colored offset shadow (retinted per swatch below) */
   --nb-accent-hi:#d4ff6e;   /* brighter accent for button :hover fills */
+
+  /* Per-swatch neon accent hexes — shared by §13 (the live accent) and §14
+     (the Settings chip previews) so the two never drift apart. */
+  --sw-ocean:#2df0d0;  --sw-midnight:#4d9bff; --sw-violet:#a06bff;
+  --sw-ember:#ff8a3d;  --sw-rose:#ff5c78;     --sw-pink:#ff5cc0;
+  --sw-amber:#ffc23d;  --sw-emerald:#2fe38f;  --sw-mono:#c8ccd6;
 }
 
 /* ---------- 2. Solid background; kill glass + motion layers ---------- */
@@ -366,13 +372,32 @@ html[data-theme="neon"][data-swatch]{
   --nb-accent-hi:color-mix(in srgb, var(--accent) 74%, #ffffff) !important; /* brighter :hover fill */
 }
 
-/* Per-swatch accents (bright, tuned for the dark neon ground + dark ink). */
-html[data-theme="neon"][data-swatch="ocean"]   { --accent:#2df0d0 !important; --accent-rgb:45,240,208 !important; }
-html[data-theme="neon"][data-swatch="midnight"]{ --accent:#4d9bff !important; --accent-rgb:77,155,255 !important; }
-html[data-theme="neon"][data-swatch="violet"]  { --accent:#a06bff !important; --accent-rgb:160,107,255 !important; }
-html[data-theme="neon"][data-swatch="ember"]   { --accent:#ff8a3d !important; --accent-rgb:255,138,61 !important; }
-html[data-theme="neon"][data-swatch="rose"]    { --accent:#ff5c78 !important; --accent-rgb:255,92,120 !important; }
-html[data-theme="neon"][data-swatch="pink"]    { --accent:#ff5cc0 !important; --accent-rgb:255,92,192 !important; }
-html[data-theme="neon"][data-swatch="amber"]   { --accent:#ffc23d !important; --accent-rgb:255,194,61 !important; }
-html[data-theme="neon"][data-swatch="emerald"] { --accent:#2fe38f !important; --accent-rgb:47,227,143 !important; }
-html[data-theme="neon"][data-swatch="mono"]    { --accent:#c8ccd6 !important; --accent-rgb:200,204,214 !important; }
+/* Per-swatch accents (bright, tuned for the dark neon ground + dark ink).
+   The hex comes from the shared --sw-* vars; --accent-rgb stays inline because
+   a triple can't be derived from a hex custom property for rgba() tints. */
+html[data-theme="neon"][data-swatch="ocean"]   { --accent:var(--sw-ocean) !important;    --accent-rgb:45,240,208 !important; }
+html[data-theme="neon"][data-swatch="midnight"]{ --accent:var(--sw-midnight) !important; --accent-rgb:77,155,255 !important; }
+html[data-theme="neon"][data-swatch="violet"]  { --accent:var(--sw-violet) !important;   --accent-rgb:160,107,255 !important; }
+html[data-theme="neon"][data-swatch="ember"]   { --accent:var(--sw-ember) !important;    --accent-rgb:255,138,61 !important; }
+html[data-theme="neon"][data-swatch="rose"]    { --accent:var(--sw-rose) !important;     --accent-rgb:255,92,120 !important; }
+html[data-theme="neon"][data-swatch="pink"]    { --accent:var(--sw-pink) !important;     --accent-rgb:255,92,192 !important; }
+html[data-theme="neon"][data-swatch="amber"]   { --accent:var(--sw-amber) !important;    --accent-rgb:255,194,61 !important; }
+html[data-theme="neon"][data-swatch="emerald"] { --accent:var(--sw-emerald) !important;  --accent-rgb:47,227,143 !important; }
+html[data-theme="neon"][data-swatch="mono"]    { --accent:var(--sw-mono) !important;     --accent-rgb:200,204,214 !important; }
+
+/* =====================================================================
+   14. SETTINGS SWATCH CHIPS
+   While Neon is active, each "Color Theme" chip previews that swatch's neon
+   accent instead of the Aurora gradient (which is an inline style on the
+   span, so !important is needed to win). Aurora keeps the gradient.
+   ===================================================================== */
+html[data-theme="neon"] .sp-swatch-color{ border:1px solid var(--line-strong) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="ocean"]   { background:var(--sw-ocean) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="midnight"]{ background:var(--sw-midnight) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="violet"]  { background:var(--sw-violet) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="ember"]   { background:var(--sw-ember) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="rose"]    { background:var(--sw-rose) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="pink"]    { background:var(--sw-pink) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="amber"]   { background:var(--sw-amber) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="emerald"] { background:var(--sw-emerald) !important; }
+html[data-theme="neon"] .sp-swatch-color[data-sw="mono"]    { background:var(--sw-mono) !important; }
