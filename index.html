@@ -76,14 +76,10 @@
           <li class="dd-item"        data-value="sorter"        role="option">Sorter</li>
           <li class="dd-item"        data-value="separator"     role="option">Separator</li>
           <li class="dd-item"        data-value="crosscheck"    role="option">Crosscheck</li>
-          <li class="dd-item"        data-value="dam"           role="option">DAM</li>
           <li class="dd-item"        data-value="deliver"       role="option">Deliver</li>
           <li class="dd-item"        data-value="plinksWith"    role="option">Plinks with counts</li>
           <li class="dd-item"        data-value="plinksPrices"  role="option">Plinks with prices</li>
           <li class="dd-item"        data-value="plinksWithout" role="option">Plinks w/o counts</li>
-          <li class="dd-item"        data-value="convertUsers"  role="option">Usernames → Plinks</li>
-          <li class="dd-item"        data-value="plinksToUsers" role="option">Plinks → Usernames</li>
-          <li class="dd-item"        data-value="xfly"          role="option">Xfly</li>
           <li class="dd-item"        data-value="reverse"       role="option">Reverse</li>
         </ul>
       </div>
@@ -231,7 +227,6 @@
   <section class="card work-panel" id="sorterPanel"     style="display:none"></section>
   <section class="card work-panel" id="plinksPricesPanel" style="display:none"></section>
   <section class="card work-panel" id="crosscheckPanel" style="display:none"></section>
-  <section class="card work-panel dam-panel" id="damPanel" style="display:none"></section>
   <section class="card work-panel deliver-panel" id="deliverPanel" style="display:none"></section>
 
   <!-- Colophon -->
@@ -257,21 +252,17 @@
 
 <script defer src="standard.js?v=202607110001"></script>
 <script defer src="reverse.js?v=202607061000"></script>
-<script defer src="xfly.js?v=202607110001"></script>
 <script defer src="plinks-with.js?v=202607110001"></script>
 <script defer src="plinks-prices.js?v=202607110001"></script>
 <script defer src="plinks-without.js?v=202607061000"></script>
-<script defer src="plinks-to-users.js?v=202607061000"></script>
-<script defer src="convert.js?v=202607061000"></script>
 <script defer src="reorder.js?v=202609110004"></script>
 <script defer src="filter.js?v=202607061000"></script>
 <script defer src="sorter.js?v=202607210014"></script>
 <script defer src="separator.js?v=202607210008"></script>
 <script defer src="crosscheck.js?v=202607061000"></script>
-<script defer src="dam.js?v=202607061000"></script>
 <script defer src="deliver.js?v=202607140001"></script>
 <script defer src="themes.js?v=202607061000"></script>
-<script defer src="ui.js?v=202609110008"></script>
+<script defer src="ui.js?v=202609110009"></script>
 <script defer src="boot.js?v=202607061000"></script>
 
 <!-- Visual polish (no JS files modified). Runs after defer scripts. -->
@@ -649,9 +640,6 @@
       'Sorter: Sort and group accounts by column type',
       'Crosscheck: Compare two lists, find what differs',
       'Plinks: Turn accounts into x.com profile links',
-      'Convert: Usernames to x.com plinks in one click',
-      'Extract: Pull usernames out of x.com plinks',
-      'Xfly: Quick twitter handle cleanup',
       'Reverse: Flip the field order of every line'
     ];
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
