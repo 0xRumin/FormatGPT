@@ -277,6 +277,7 @@
         else localStorage.removeItem('fgpt_theme');
       } catch (e2) {}
       syncAppThemeBtns();
+      syncTickerBuild();
       // Switch to the newly-active UI theme's OWN color choice, so Neon and
       // Aurora keep independent palettes.
       var t = effChoice(curUi());
@@ -723,9 +724,18 @@
       showSettings();
     });
 
+    syncTickerBuild();
+
     // Initial render — read mode from URL if present
     var initMode = readModeFromUrl();
     setModeFromDd(initMode);
+  }
+
+  // Ticker "build" label follows the active UI theme (AURORA / NEON).
+  function syncTickerBuild() {
+    var neon = document.documentElement.getAttribute('data-theme') === 'neon';
+    var txt = neon ? 'neon build' : 'aurora build';
+    document.querySelectorAll('.ticker .tk-build').forEach(function (el) { el.textContent = txt; });
   }
 
   window.App.UI = { boot };
