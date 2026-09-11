@@ -482,24 +482,12 @@
     if (panel) panel.style.display = mode === 'deliver' ? 'block' : 'none';
   }
 
-  function syncDamPanel(mode) {
-    const panel = $('#damPanel');
-    if (panel) panel.style.display = mode === 'dam' ? 'block' : 'none';
-    // Hide the entire workbench (input + axis + output) via JS too, not just
-    // CSS. Belt-and-suspenders: if the data-mode attribute gets out of sync
-    // or a cached stylesheet loses the rule, this guarantees the panes are
-    // gone while DAM is active.
-    const work = document.querySelector('.work');
-    if (work) work.style.display = mode === 'dam' ? 'none' : '';
-  }
-
   // URL ↔ mode mapping
   var MODE_SLUGS = {
     standard:'standard', reorder:'reorder', filter:'filter', sorter:'sorter', separator:'separator',
     plinksWith:'plinks-with', plinksPrices:'plinks-with-prices', plinksWithout:'plinks-without',
-    convertUsers:'usernames-to-plinks', plinksToUsers:'plinks-to-usernames',
-    mailChanger:'mail-changer', xfly:'xfly', reverse:'reverse',
-    crosscheck:'crosscheck', deliver:'deliver', dam:'dam'
+    mailChanger:'mail-changer', reverse:'reverse',
+    crosscheck:'crosscheck', deliver:'deliver'
   };
   var SLUG_TO_MODE = {};
   for (var k in MODE_SLUGS) SLUG_TO_MODE[MODE_SLUGS[k]] = k;
@@ -546,7 +534,6 @@
     syncPlinksPricesPanel(value);
     syncCrosscheckPanel(value);
     syncDeliverPanel(value);
-    syncDamPanel(value);
     document.body.dataset.mode = value;
     pushModeUrl(value);
     Core?.rerun && Core.rerun();
