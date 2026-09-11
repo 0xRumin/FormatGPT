@@ -1046,6 +1046,16 @@ body[data-mode="separator"] #outMissing{ display:none !important; }
 }
 .rp-sep:hover{background:rgba(var(--tint-rgb),0.08);color:var(--fg)}
 .rp-sep.rp-active{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent)}
+/* Free-text custom delimiter — matches the .rp-sep pill look. */
+.rp-sep-custom{
+  padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+  background:rgba(var(--tint-rgb),0.04);color:var(--fg);
+  font-family:var(--font-mono);font-size:13px;font-weight:600;
+  width:96px;min-width:0;outline:none;transition:all .18s
+}
+.rp-sep-custom::placeholder{color:var(--muted);opacity:.7;font-weight:500}
+.rp-sep-custom:hover{background:rgba(var(--tint-rgb),0.08)}
+.rp-sep-custom:focus{border-color:var(--accent);background:rgba(var(--accent-rgb),0.06)}
 
 /* Find & Replace */
 .rp-fr{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}

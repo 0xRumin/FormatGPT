@@ -390,6 +390,11 @@
       var cls = state.reorderSep === s ? ' rp-active' : '';
       h += '<button class="rp-sep' + cls + '" data-sep="' + encodeURIComponent(s) + '">' + SEP_LABELS[s] + '</button>';
     });
+    // Custom free-text delimiter — any string, incl. multi-char like "----".
+    // The presets are just shortcuts that fill this field; it drives the output
+    // join only (input parsing is unchanged). Restored from state on load.
+    var sepAttr = (state.reorderSep || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    h += '<input type="text" class="rp-sep-custom" id="rpSepCustom" placeholder="custom…" spellcheck="false" autocomplete="off" value="' + sepAttr + '">';
     h += '</div></div>';
 
     // Find & Replace
@@ -541,14 +546,30 @@
       applyPreset(btn.dataset.preset);
     });
 
-    // Separators
+    // Separators — presets are shortcuts that also fill the custom text field,
+    // so the two stay in sync.
     $('#rpSeps').addEventListener('click', function (e) {
       var btn = e.target.closest('.rp-sep');
       if (!btn) return;
       state.reorderSep = decodeURIComponent(btn.dataset.sep);
       state.reorderPreset = 'custom';
+      var ci = $('#rpSepCustom');
+      if (ci) ci.value = state.reorderSep;
       saveState();
       syncSepBtns();
+      syncPresetBtns();
+      refresh();
+    });
+
+    // Custom free-text delimiter — accepts ANY string (multi-char OK). Empty
+    // falls back to ":" so the output never joins with nothing. Same refresh
+    // path as the preset buttons. Does not touch input parsing.
+    var sepCustom = $('#rpSepCustom');
+    if (sepCustom) sepCustom.addEventListener('input', function () {
+      state.reorderSep = sepCustom.value === '' ? ':' : sepCustom.value;
+      state.reorderPreset = 'custom';
+      saveState();
+      syncSepBtns();      // un-highlights presets when the value is custom
       syncPresetBtns();
       refresh();
     });
