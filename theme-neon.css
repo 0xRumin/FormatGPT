@@ -491,14 +491,19 @@ html[data-theme="neon"] .sp-mm-save:disabled{
   box-shadow:none !important;
 }
 
-/* (3) Clear button ALWAYS glows RED — a fixed red, never the color-theme accent. */
+/* (3) Clear button: same brutalist button design as the accent buttons, but a
+   FIXED red — never the color-theme accent. No soft glow: dark hard-offset
+   shadow at rest, red hard-offset on hover, red press-in on active. */
 html[data-theme="neon"] #clearBtn{
   color:#ff6b6b !important;
   border-color:#ff6b6b !important;
-  box-shadow:0 0 14px rgba(255,107,107,.5) !important;
+  box-shadow:3px 3px 0 var(--nb-hard) !important;
 }
 html[data-theme="neon"] #clearBtn:hover{
   color:#ff6b6b !important;
   border-color:#ff6b6b !important;
-  box-shadow:0 0 20px rgba(255,107,107,.8) !important;
+  box-shadow:3px 3px 0 #ff6b6b !important;
+}
+html[data-theme="neon"] #clearBtn:active{
+  box-shadow:1px 1px 0 #ff6b6b !important;
 }
