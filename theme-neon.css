@@ -466,26 +466,31 @@ html[data-theme="neon"] .sp-tab.sp-tab-active{
   box-shadow:3px 3px 0 var(--nb-hard-lime) !important;
 }
 
-/* (2) "Save .txt" buttons ALWAYS carry the lime neon glow (fixed lime, not the
-   color theme), and glow a touch stronger on hover. */
+/* (2) "Save .txt" buttons match the ACTIVE/selected option exactly (§8): same
+   accent-tinted fill, accent border/text, and accent hard-offset shadow — so
+   they retint together with the color theme. Uses the same tokens as
+   .sp-order.sp-active above, so the two always look identical. */
 html[data-theme="neon"] .fp-btn-save,
 html[data-theme="neon"] .sp-tab-save,
-html[data-theme="neon"] .sp-mm-save{
-  border-color:#c3ff3e !important;
-  color:#c3ff3e !important;
-  box-shadow:0 0 14px rgba(195,255,62,.5) !important;
-}
+html[data-theme="neon"] .sp-mm-save,
 html[data-theme="neon"] .fp-btn-save:hover,
 html[data-theme="neon"] .sp-tab-save:hover,
 html[data-theme="neon"] .sp-mm-save:hover{
-  border-color:#c3ff3e !important;
-  color:#c3ff3e !important;
-  box-shadow:0 0 20px rgba(195,255,62,.75) !important;
+  background:rgba(var(--accent-rgb),.16) !important;
+  border-color:var(--accent) !important;
+  color:var(--accent) !important;
+  box-shadow:3px 3px 0 var(--nb-hard-lime) !important;
 }
-/* A disabled Save button (no rows to save) stays quiet — no glow. */
+html[data-theme="neon"] .fp-btn-save:active,
+html[data-theme="neon"] .sp-tab-save:active,
+html[data-theme="neon"] .sp-mm-save:active{
+  box-shadow:1px 1px 0 var(--nb-hard-lime) !important;
+}
+/* A disabled Save button (no rows to save) stays quiet. */
 html[data-theme="neon"] .fp-btn-save:disabled,
 html[data-theme="neon"] .sp-tab-save:disabled,
 html[data-theme="neon"] .sp-mm-save:disabled{
+  background:#1e222d !important;
   border-color:var(--line-strong) !important;
   color:var(--muted) !important;
   box-shadow:none !important;
