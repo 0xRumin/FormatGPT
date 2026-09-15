@@ -514,13 +514,17 @@ html[data-theme="neon"] #clearBtn:active{
 }
 
 /* =====================================================================
-   17. AUTO-SELECTED SEGMENTED CONTROLS — the currently-selected choice shows
-   the same highlight as a hovered button, so it reads as selected at rest
-   instead of looking like a plain dark button. Mirrors the neon button:hover
-   treatment (accent border + text + lime offset shadow). Covers Deliver's
-   direction toggle (default Bottom → Top) and Crosscheck's result tabs. */
+   17. AUTO-SELECTED SEGMENTED CONTROLS / RESULT TABS — the currently-selected
+   choice shows the same highlight as a hovered button, so it reads as selected
+   at rest instead of a plain dark (or white) button. Mirrors the neon
+   button:hover treatment (accent border + text + lime offset shadow). Covers:
+     Deliver direction toggle · Crosscheck tabs · Filter view tabs · Separator tabs
+   (each base theme sets its own active look that the generic neon button rules
+   flatten — so we re-apply the accent highlight here.) */
 html[data-theme="neon"] .deliver-panel .dp-dir-btn.is-active,
-html[data-theme="neon"] .cc-tab.cc-active{
+html[data-theme="neon"] .cc-tab.cc-active,
+html[data-theme="neon"] .fp-view.fp-v-active,
+html[data-theme="neon"] .sep-tab.sep-tab-on{
   border-color:var(--accent) !important;
   color:var(--accent) !important;
   background:#1e222d !important;
