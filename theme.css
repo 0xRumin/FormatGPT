@@ -936,6 +936,12 @@ body[data-mode="separator"] .sep-tabs{
    misleading here (those lines are just in the other tab, not lost). Hide it. */
 body[data-mode="separator"] #outMissing{ display:none !important; }
 
+/* ===== Duplicate Finder tabs (Unique / Duplicates) — reuse .sep-tab styling,
+   CSS-gated to that mode. Unique + Duplicates == every scanned line. ===== */
+.dup-tabs{ display:none; }
+body[data-mode="duplicate"] .dup-tabs{ display:flex; gap:8px; margin:0 0 14px; }
+body[data-mode="duplicate"] #outMissing{ display:none !important; }
+
 #clearBtn{
   display:inline-flex;align-items:center;padding:9px 16px;
   border-radius:999px;

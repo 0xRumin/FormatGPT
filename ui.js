@@ -486,6 +486,7 @@
   // URL ↔ mode mapping
   var MODE_SLUGS = {
     standard:'standard', reorder:'reorder', filter:'filter', sorter:'sorter', separator:'separator',
+    duplicate:'duplicate-finder',
     plinksWith:'plinks-with', plinksPrices:'plinks-with-prices', plinksWithout:'plinks-without',
     mailChanger:'mail-changer', reverse:'reverse',
     crosscheck:'crosscheck', deliver:'deliver'

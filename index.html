@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202609110007">
+  <link rel="stylesheet" href="theme.css?v=202609200001">
   <link rel="stylesheet" href="theme-neon.css?v=202609150002">
 </head>
 <body>
@@ -74,6 +74,7 @@
           <li class="dd-item"        data-value="reorder"       role="option">V2 Reorder</li>
           <li class="dd-item"        data-value="filter"        role="option">Filter</li>
           <li class="dd-item"        data-value="sorter"        role="option">Sorter</li>
+          <li class="dd-item"        data-value="duplicate"     role="option">Duplicate Finder</li>
           <li class="dd-item"        data-value="deliver"       role="option">Deliver</li>
           <li class="dd-item"        data-value="separator"     role="option">Separator</li>
           <li class="dd-item"        data-value="crosscheck"    role="option">Crosscheck</li>
@@ -212,6 +213,18 @@
           <span class="sep-tab-count" id="sepMailCount">0</span>
         </button>
       </div>
+      <!-- Duplicate Finder tabs (CSS-gated via body[data-mode="duplicate"]).
+           Switches #out between the Unique list and the removed Duplicates. -->
+      <div class="dup-tabs" id="dupTabs" role="tablist" aria-label="Duplicate results">
+        <button type="button" class="sep-tab sep-tab-on" data-tab="unique" role="tab" aria-selected="true">
+          <span class="sep-tab-icon" aria-hidden="true">✓</span> Unique
+          <span class="sep-tab-count" id="dupUniqueCount">0</span>
+        </button>
+        <button type="button" class="sep-tab" data-tab="duplicates" role="tab" aria-selected="false">
+          <span class="sep-tab-icon" aria-hidden="true">⧉</span> Duplicates
+          <span class="sep-tab-count" id="dupDupCount">0</span>
+        </button>
+      </div>
       <pre id="out"></pre>
       <!-- Editable List 2 input, revealed only when crosscheck mode is active -->
       <textarea id="ccList2" class="cc-list2" spellcheck="false"
@@ -259,10 +272,11 @@
 <script defer src="filter.js?v=202607061000"></script>
 <script defer src="sorter.js?v=202607210014"></script>
 <script defer src="separator.js?v=202607210008"></script>
+<script defer src="duplicate.js?v=202609200001"></script>
 <script defer src="crosscheck.js?v=202607061000"></script>
 <script defer src="deliver.js?v=202607140001"></script>
 <script defer src="themes.js?v=202607061000"></script>
-<script defer src="ui.js?v=202609110010"></script>
+<script defer src="ui.js?v=202609200001"></script>
 <script defer src="boot.js?v=202607061000"></script>
 
 <!-- Visual polish (no JS files modified). Runs after defer scripts. -->
