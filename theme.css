@@ -879,6 +879,8 @@ body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
   position:absolute; top:0; right:0;
   flex-wrap:nowrap; gap:8px; align-items:center;
 }
+/* Copy stays on the far right; Chunk Mode sits to its left. */
+.pane--out .pane__tools .chunk-toggle-wrap{ order:-1; }
 /* Trim the Copy split + Chunk pill so the single row fits comfortably. */
 .pane--out .split.small .btn-main-copy,
 .pane--out .split.small .btn-caret-copy{ min-height:30px; padding:6px 13px; }
