@@ -864,31 +864,34 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
    button (right-aligned). Only shown in Standard mode when the input actually
    contains a mail chunk (body.has-mail-chunk, set by standard.js). */
 .chunk-toggle-wrap{ display:none; }
-/* Chunk Mode sits INLINE with the Copy button (not on its own full-width row),
-   so the output header stays short. */
+/* Chunk Mode lives in the header's BOTTOM-RIGHT corner — below the Copy button,
+   in the otherwise-empty space beside the title — so it takes no extra rows.
+   It's a direct child of .pane__head (position:relative), like the Persistent
+   Mode toggle, so absolute positioning anchors to the header. */
 body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
-  display:inline-flex;flex-basis:auto;justify-content:flex-end;margin-top:0;
+  display:inline-flex; position:absolute; right:0; bottom:2px; margin:0;
 }
 
-/* ===== Compact output header: Copy + Chunk Mode pinned to the top-right =====
+/* ===== Compact output header: Copy pinned to the top-right =====
    Instead of stacking on their own lines below the title (which wasted a big
-   chunk of vertical space), the output tools float in the header's top-right
-   corner on a single row. .pane__head is position:relative, so this anchors to
-   it and takes NO flow height — the header collapses to just kick + title. */
+   chunk of vertical space), the Copy tools float in the header's top-right
+   corner. .pane__head is position:relative, so this anchors to it and takes NO
+   flow height — the header collapses to just kick + title. */
 .pane--out .pane__tools{
   position:absolute; top:0; right:0;
   flex-wrap:nowrap; gap:8px; align-items:center;
 }
-/* Copy stays on the far right; Chunk Mode sits to its left. */
-.pane--out .pane__tools .chunk-toggle-wrap{ order:-1; }
-/* Trim the Copy split + Chunk pill so the single row fits comfortably. */
+/* Trim the Copy split + Chunk pill. */
 .pane--out .split.small .btn-main-copy,
 .pane--out .split.small .btn-caret-copy{ min-height:30px; padding:6px 13px; }
 .pane--out .chunk-toggle{ padding:6px 11px; gap:8px; font-size:9.5px; }
 @media (max-width:760px){
-  /* Panes stack full-width here — let the tools flow/wrap normally so they
-     never overflow a narrow pane. */
+  /* Panes stack full-width here — let the tools flow normally so nothing
+     overflows a narrow pane. */
   .pane--out .pane__tools{ position:static; flex-wrap:wrap; justify-content:flex-end; }
+  body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
+    position:static; justify-content:flex-end; width:100%; margin-top:6px;
+  }
 }
 .chunk-toggle{
   display:inline-flex;align-items:center;gap:10px;padding:7px 13px;

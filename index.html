@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Sora:wght@500;600;700;800&amp;display=swap">
-  <link rel="stylesheet" href="theme.css?v=202609210002">
+  <link rel="stylesheet" href="theme.css?v=202609210003">
   <link rel="stylesheet" href="theme-neon.css?v=202609150002">
 </head>
 <body>
@@ -184,12 +184,15 @@
               </div>
             </div>
           </span>
-          <div class="chunk-toggle-wrap" id="chunkToggleWrap">
-            <label class="chunk-toggle" id="chunkToggle" title="Keep the mail chunk (email|pass|refresh|clientID) intact as one Mail line instead of splitting it — for mail reading">
-              <input type="checkbox" id="chunkChk">
-              <span class="chunk-toggle__label">Chunk Mode</span>
-            </label>
-          </div>
+        </div>
+        <!-- Chunk Mode (Standard + mail chunk). A direct child of .pane__head so
+             it can sit in the header's bottom-right corner — below the Copy
+             button — instead of on the top tools row. -->
+        <div class="chunk-toggle-wrap" id="chunkToggleWrap">
+          <label class="chunk-toggle" id="chunkToggle" title="Keep the mail chunk (email|pass|refresh|clientID) intact as one Mail line instead of splitting it — for mail reading">
+            <input type="checkbox" id="chunkChk">
+            <span class="chunk-toggle__label">Chunk Mode</span>
+          </label>
         </div>
         <!-- Persistent Mode (V2 Reorder only — CSS-gated via body[data-mode]).
              Sits on its own full-width header row so its pill width doesn't
