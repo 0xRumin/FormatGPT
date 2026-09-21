@@ -864,8 +864,29 @@ body[data-mode="crosscheck"] .pane--out .pane__title::after{ content:"List 2"; }
    button (right-aligned). Only shown in Standard mode when the input actually
    contains a mail chunk (body.has-mail-chunk, set by standard.js). */
 .chunk-toggle-wrap{ display:none; }
+/* Chunk Mode sits INLINE with the Copy button (not on its own full-width row),
+   so the output header stays short. */
 body[data-mode="standard"].has-mail-chunk .chunk-toggle-wrap{
-  display:flex;flex-basis:100%;justify-content:flex-end;margin-top:8px;
+  display:inline-flex;flex-basis:auto;justify-content:flex-end;margin-top:0;
+}
+
+/* ===== Compact output header: Copy + Chunk Mode pinned to the top-right =====
+   Instead of stacking on their own lines below the title (which wasted a big
+   chunk of vertical space), the output tools float in the header's top-right
+   corner on a single row. .pane__head is position:relative, so this anchors to
+   it and takes NO flow height — the header collapses to just kick + title. */
+.pane--out .pane__tools{
+  position:absolute; top:0; right:0;
+  flex-wrap:nowrap; gap:8px; align-items:center;
+}
+/* Trim the Copy split + Chunk pill so the single row fits comfortably. */
+.pane--out .split.small .btn-main-copy,
+.pane--out .split.small .btn-caret-copy{ min-height:30px; padding:6px 13px; }
+.pane--out .chunk-toggle{ padding:6px 11px; gap:8px; font-size:9.5px; }
+@media (max-width:760px){
+  /* Panes stack full-width here — let the tools flow/wrap normally so they
+     never overflow a narrow pane. */
+  .pane--out .pane__tools{ position:static; flex-wrap:wrap; justify-content:flex-end; }
 }
 .chunk-toggle{
   display:inline-flex;align-items:center;gap:10px;padding:7px 13px;
