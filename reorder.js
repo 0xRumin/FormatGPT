@@ -172,26 +172,7 @@
 
   // Split + find/replace + append ops → the parts every consumer classifies on.
   function preprocessParts(row) {
-    var line = applyFindReplace(row);
-    // Pure pipe mail-bundle: email|emailpassword|refresh_token|client_id.
-    // Only treated as a chunk when the chosen SEPARATOR is '|' — if the user has
-    // picked ':' (or anything else), a '|' is literal data, not a delimiter.
-    // When the FIRST pipe-segment is a CLEAN email (no ':'), split on '|'
-    // regardless of what detectDelim would guess — a refresh token or client_id
-    // can itself contain ':' ';' or ',', which would otherwise mis-split the
-    // line. The clean-email guard also stops a colon credential line that merely
-    // embeds a pipe bundle (whose first pipe-segment matches the loose email
-    // test) from being mistaken for a pure pipe bundle.
-    var pipeSegs = line.split('|');
-    var seg0 = (pipeSegs[0] || '').trim();
-    var isMailBundle = state.reorderSep === '|' &&
-                       pipeSegs.length >= 2 && seg0.indexOf(':') < 0 && U.isEmail(seg0);
-    var parts = applyAppendOps(
-      isMailBundle ? pipeSegs.map(function (s) { return s.trim(); })
-                   : U.splitFlexible(line)
-    );
-    if (isMailBundle) { try { parts.__mailBundle = true; } catch (e) {} }
-    return parts;
+    return applyAppendOps(U.splitFlexible(applyFindReplace(row)));
   }
 
   // Sub-label under the FIELD SWAP heading, reflecting the queued op mix.
@@ -216,32 +197,16 @@
 
   /* ======== Field Classification ======== */
   function classifyParts(parts) {
-    // Whole-line mail bundle: email|emailpassword|refresh_token|client_id
-    // (flagged by preprocessParts when the first pipe-segment is an email).
-    // Field 0 is the email, then mailpass / refresh / clientID in order.
-    if (parts && parts.__mailBundle && U.isEmail((parts[0] || '').trim())) {
-      var mb = {};
-      mb.mail = (parts[0] || '').trim();
-      if (parts[1] != null && String(parts[1]).trim()) mb.mailpass = String(parts[1]).trim();
-      if (parts[2] != null && String(parts[2]).trim()) mb.refresh  = String(parts[2]).trim();
-      if (parts[3] != null && String(parts[3]).trim()) mb.clientid = String(parts[3]).trim();
-      mb.__bundle = true;
-      return mb;
-    }
-
-    // Detect an embedded pipe-mail-bundle: mail|mailpass|refresh_token|clientID
-    // sitting inside one field. Only when the chosen SEPARATOR is '|' — with ':'
-    // (or any other) selected, a '|' is literal data and is never split off as a
-    // chunk. First sub-part must be an email.
+    // Detect a pipe-mail-bundle: mail|mailpass|refresh_token|clientID.
+    // First sub-part must be an email. Credential positions 1 and 2 cannot be
+    // mail bundles; short numeric field 2 values are classified below.
     var bundle = null, bundleIdx = -1;
-    if (state.reorderSep === '|') {
-      for (var bi = 2; bi < parts.length; bi++) {
-        var bp = (parts[bi] || '').trim();
-        if (bp.indexOf('|') < 0) continue;
-        var subs = bp.split('|');
-        if (subs.length >= 2 && U.isEmail((subs[0] || '').trim())) {
-          bundle = subs; bundleIdx = bi; break;
-        }
+    for (var bi = 2; bi < parts.length; bi++) {
+      var bp = (parts[bi] || '').trim();
+      if (bp.indexOf('|') < 0) continue;
+      var subs = bp.split('|');
+      if (subs.length >= 2 && U.isEmail((subs[0] || '').trim())) {
+        bundle = subs; bundleIdx = bi; break;
       }
     }
 
@@ -587,11 +552,7 @@
       var btn = e.target.closest('.rp-sep');
       if (!btn) return;
       state.reorderSep = decodeURIComponent(btn.dataset.sep);
-      // NOTE: do NOT switch the field preset here. The separator is orthogonal to
-      // the field selection, and it now decides whether '|' is a chunk delimiter
-      // — so on the "Original" preset the field auto-detection must re-run with
-      // the new separator (refresh → rerun → run re-detects when preset stays
-      // 'original'). Forcing 'custom' would freeze the previously-detected fields.
+      state.reorderPreset = 'custom';
       var ci = $('#rpSepCustom');
       if (ci) ci.value = state.reorderSep;
       saveState();
@@ -606,8 +567,7 @@
     var sepCustom = $('#rpSepCustom');
     if (sepCustom) sepCustom.addEventListener('input', function () {
       state.reorderSep = sepCustom.value === '' ? ':' : sepCustom.value;
-      // Keep the field preset as-is (see the preset-button note above) so
-      // "Original" keeps auto-detecting with the new separator.
+      state.reorderPreset = 'custom';
       saveState();
       syncSepBtns();      // un-highlights presets when the value is custom
       syncPresetBtns();
