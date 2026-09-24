@@ -174,19 +174,18 @@
   function preprocessParts(row) {
     var line = applyFindReplace(row);
     // Pure pipe mail-bundle: email|emailpassword|refresh_token|client_id.
-    // When the FIRST pipe-segment is an email, split on '|' regardless of what
-    // detectDelim would guess — a refresh token or client_id can itself contain
-    // ':' ';' or ',', which would otherwise mis-split the whole line and leave
-    // the chunk classified as a single "username". Flag it so classifyParts
-    // treats field 0 as the email (not a username).
+    // Only treated as a chunk when the chosen SEPARATOR is '|' — if the user has
+    // picked ':' (or anything else), a '|' is literal data, not a delimiter.
+    // When the FIRST pipe-segment is a CLEAN email (no ':'), split on '|'
+    // regardless of what detectDelim would guess — a refresh token or client_id
+    // can itself contain ':' ';' or ',', which would otherwise mis-split the
+    // line. The clean-email guard also stops a colon credential line that merely
+    // embeds a pipe bundle (whose first pipe-segment matches the loose email
+    // test) from being mistaken for a pure pipe bundle.
     var pipeSegs = line.split('|');
     var seg0 = (pipeSegs[0] || '').trim();
-    // Require a CLEAN leading email (no ':') so a colon credential line that
-    // merely embeds a pipe bundle later — e.g. "user:pass:mail@x.com|mp|rt|cid",
-    // whose first pipe-segment "user:pass:mail@x.com" also matches the loose
-    // email test — is NOT mistaken for a pure pipe bundle. That case falls
-    // through to splitFlexible + the existing embedded-bundle detection.
-    var isMailBundle = pipeSegs.length >= 2 && seg0.indexOf(':') < 0 && U.isEmail(seg0);
+    var isMailBundle = state.reorderSep === '|' &&
+                       pipeSegs.length >= 2 && seg0.indexOf(':') < 0 && U.isEmail(seg0);
     var parts = applyAppendOps(
       isMailBundle ? pipeSegs.map(function (s) { return s.trim(); })
                    : U.splitFlexible(line)
@@ -230,16 +229,19 @@
       return mb;
     }
 
-    // Detect a pipe-mail-bundle: mail|mailpass|refresh_token|clientID.
-    // First sub-part must be an email. Credential positions 1 and 2 cannot be
-    // mail bundles; short numeric field 2 values are classified below.
+    // Detect an embedded pipe-mail-bundle: mail|mailpass|refresh_token|clientID
+    // sitting inside one field. Only when the chosen SEPARATOR is '|' — with ':'
+    // (or any other) selected, a '|' is literal data and is never split off as a
+    // chunk. First sub-part must be an email.
     var bundle = null, bundleIdx = -1;
-    for (var bi = 2; bi < parts.length; bi++) {
-      var bp = (parts[bi] || '').trim();
-      if (bp.indexOf('|') < 0) continue;
-      var subs = bp.split('|');
-      if (subs.length >= 2 && U.isEmail((subs[0] || '').trim())) {
-        bundle = subs; bundleIdx = bi; break;
+    if (state.reorderSep === '|') {
+      for (var bi = 2; bi < parts.length; bi++) {
+        var bp = (parts[bi] || '').trim();
+        if (bp.indexOf('|') < 0) continue;
+        var subs = bp.split('|');
+        if (subs.length >= 2 && U.isEmail((subs[0] || '').trim())) {
+          bundle = subs; bundleIdx = bi; break;
+        }
       }
     }
 
