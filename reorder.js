@@ -587,7 +587,11 @@
       var btn = e.target.closest('.rp-sep');
       if (!btn) return;
       state.reorderSep = decodeURIComponent(btn.dataset.sep);
-      state.reorderPreset = 'custom';
+      // NOTE: do NOT switch the field preset here. The separator is orthogonal to
+      // the field selection, and it now decides whether '|' is a chunk delimiter
+      // — so on the "Original" preset the field auto-detection must re-run with
+      // the new separator (refresh → rerun → run re-detects when preset stays
+      // 'original'). Forcing 'custom' would freeze the previously-detected fields.
       var ci = $('#rpSepCustom');
       if (ci) ci.value = state.reorderSep;
       saveState();
@@ -602,7 +606,8 @@
     var sepCustom = $('#rpSepCustom');
     if (sepCustom) sepCustom.addEventListener('input', function () {
       state.reorderSep = sepCustom.value === '' ? ':' : sepCustom.value;
-      state.reorderPreset = 'custom';
+      // Keep the field preset as-is (see the preset-button note above) so
+      // "Original" keeps auto-detecting with the new separator.
       saveState();
       syncSepBtns();      // un-highlights presets when the value is custom
       syncPresetBtns();
