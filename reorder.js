@@ -879,8 +879,10 @@
   function updatePreview() {
     var pre = $('#rpPreview');
     if (!pre) return;
-    var inp  = $('#inp');
-    var text = inp ? inp.value : '';
+    // Preview the text the active mode actually fed through prepare() — in
+    // Separator mode that's the phone-normalized lines, not the raw input.
+    var text = lastRunText;
+    if (text == null) { var inp = $('#inp'); text = inp ? inp.value : ''; }
     var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
 
     var sub = $('#rpSubtitle');
@@ -960,55 +962,71 @@
     refresh();
   }
 
+  /* ======== Shared prepare step ========
+     Builds the panel, refreshes samples, applies the new-paste reset and the
+     "Original" auto-detect for `text`. Used by V2 Reorder itself and by
+     Separator mode (which reorders each Phone / Mail line the same way). */
+  function prepare(text) {
+    text = String(text || '');
+    if (!panelBuilt) buildPanel();
+
+    // Refresh the per-row sample previews from the current input.
+    lastSamples = computeSamples(text);
+
+    // A genuinely new/edited paste starts from a clean slate: drop any ad-hoc
+    // Field Swap ops (Swap / Move / Delete / Append) so they don't silently
+    // mangle differently-shaped data, and snap the preset back to "Original"
+    // so fresh input is auto-detected — even if the user had a Custom layout.
+    // Persistent Mode disables both resets so the whole setup sticks.
+    // (Ops are cleared BEFORE the auto-detect below, so a stale Append "+"
+    // never leaks into field detection for the new input.)
+    var changed = (text !== lastRunText);
+    lastRunText = text;
+    if (!state.reorderPersist && changed && text.trim()) {
+      if (state.reorderFieldOps && state.reorderFieldOps.length) {
+        state.reorderFieldOps = [];
+        if (panelBuilt) rebuildFieldOpRows();
+      }
+      if (state.reorderPreset !== 'original') {
+        state.reorderPreset = 'original';
+        state.reorderFields = ALL_FIELDS.slice();
+        saveState();
+        if (panelBuilt) { syncPresetBtns(); rebuildFieldRows(); }
+      }
+    }
+
+    // "Original" preset: auto-detect fields present in the input
+    if (state.reorderPreset === 'original') {
+      state.reorderEnabled = detectPresentFields(text);
+      saveState();
+      if (panelBuilt) syncFieldRows();
+    }
+
+    if (panelBuilt) updateFieldSamples();
+    updatePreview();
+  }
+
+  // Reorder a list of raw lines with the current panel layout.
+  function formatLines(lines) {
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var row = String(lines[i] || '').trim();
+      if (!row) continue;
+      var line = processLine(row);
+      if (line) out.push(line);
+    }
+    return out;
+  }
+
+  App.Reorder = { prepare: prepare, formatLines: formatLines };
+
   /* ======== Register mode ======== */
   App.App.registerMode({
     id: 'reorder',
     label: 'V2 Reorder',
     run: function (text) {
-      if (!panelBuilt) buildPanel();
-
-      // Refresh the per-row sample previews from the current input.
-      lastSamples = computeSamples(text);
-
-      // A genuinely new/edited paste starts from a clean slate: drop any ad-hoc
-      // Field Swap ops (Swap / Move / Delete / Append) so they don't silently
-      // mangle differently-shaped data, and snap the preset back to "Original"
-      // so fresh input is auto-detected — even if the user had a Custom layout.
-      // Persistent Mode disables both resets so the whole setup sticks.
-      // (Ops are cleared BEFORE the auto-detect below, so a stale Append "+"
-      // never leaks into field detection for the new input.)
-      var changed = (text !== lastRunText);
-      lastRunText = text;
-      if (!state.reorderPersist && changed && text.trim()) {
-        if (state.reorderFieldOps && state.reorderFieldOps.length) {
-          state.reorderFieldOps = [];
-          if (panelBuilt) rebuildFieldOpRows();
-        }
-        if (state.reorderPreset !== 'original') {
-          state.reorderPreset = 'original';
-          state.reorderFields = ALL_FIELDS.slice();
-          saveState();
-          if (panelBuilt) { syncPresetBtns(); rebuildFieldRows(); }
-        }
-      }
-
-      // "Original" preset: auto-detect fields present in the input
-      if (state.reorderPreset === 'original') {
-        state.reorderEnabled = detectPresentFields(text);
-        saveState();
-        if (panelBuilt) syncFieldRows();
-      }
-
-      if (panelBuilt) updateFieldSamples();
-      updatePreview();
-
-      var rows = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-      var out = [];
-      for (var i = 0; i < rows.length; i++) {
-        var line = processLine(rows[i]);
-        if (line) out.push(line);
-      }
-      return out.join('\n');
+      prepare(text);
+      return formatLines(text.split(/\r?\n/)).join('\n');
     }
   });
 

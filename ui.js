@@ -452,7 +452,7 @@
 
   function syncReorderPanel(mode) {
     const panel = $('#reorderPanel');
-    if (panel) panel.style.display = mode === 'reorder' ? 'block' : 'none';
+    if (panel) panel.style.display = (mode === 'reorder' || mode === 'separator') ? 'block' : 'none';
   }
 
   function syncFilterPanel(mode) {
