@@ -1,7 +1,9 @@
 // separator.js — "Separator" mode
 //
 // Ports main.py: split a mixed account list into PHONE vs MAIL groups.
-//   • A line containing '@' anywhere is a MAIL account.
+//   • A line with a '+'-prefixed phone field (+ and 7–15 digits) is a PHONE
+//     account, even when a mail address rides along in a later field.
+//   • Otherwise a line containing '@' anywhere is a MAIL account.
 //   • Otherwise, if any ':'-separated field is a phone number (optional leading
 //     '+', 7–15 digits) the line is a PHONE account, and every bare phone field
 //     (digits only, no '+') gets a leading '+'.
@@ -15,6 +17,7 @@
 (function () {
   var PHONE_ANY  = /^\+?\d{7,15}$/; // detects a phone field (with or without +)
   var PHONE_BARE = /^\d{7,15}$/;    // a phone field missing its leading +
+  var PHONE_PLUS = /^\+\d{7,15}$/;  // a phone field that already carries its +
 
   var activeTab = 'phone'; // 'phone' | 'mail' — which group #out is showing
   var tabsWired = false;
@@ -26,10 +29,18 @@
     var clean = (line || '').trim();
     if (!clean) return null;
 
+    var parts = clean.split(':');
+
+    // A '+'-prefixed phone field wins over '@': lines that carry a real phone
+    // number (e.g. user:pass:+91…:mail@x.com|pass|token|id) are PHONE accounts
+    // even though a mail address rides along in a later field, so they must not
+    // be swallowed by the '@' → mail rule below.
+    var hasPlusPhone = parts.some(function (p) { return PHONE_PLUS.test(p.trim()); });
+    if (hasPlusPhone) return { group: 'phone', line: clean };
+
     // Any '@' → treat the whole line as a mail account (matches main.py).
     if (clean.indexOf('@') >= 0) return { group: 'mail', line: clean };
 
-    var parts = clean.split(':');
     var isPhone = parts.some(function (p) { return PHONE_ANY.test(p); });
     if (isPhone) {
       var normalized = parts.map(function (p) {
