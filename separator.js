@@ -9,8 +9,11 @@
 //     (digits only, no '+') gets a leading '+'.
 //   • Anything else falls through to MAIL.
 //
-// Each group is then reordered with the V2 Reorder panel (field detection,
-// presets, drag order, separator), which is also shown in this mode.
+// The selected group is then reordered with the V2 Reorder panel (field
+// detection, presets, drag order, separator), which is also shown in this
+// mode. Detection runs on the ACTIVE tab's group only, so the Phone tab
+// detects phone-oriented fields and the Mail tab detects mail-oriented fields
+// independently; switching tabs re-detects for the newly-active group.
 //
 // The output pane shows two tabs — Phone / Mail — and #out holds only the
 // selected group. Tab counts update live; the tabs are CSS-gated to this mode.
@@ -96,21 +99,21 @@
         (r.group === 'phone' ? phones : mails).push(r.line);
       }
 
-      // Run both groups through the V2 Reorder field detection / layout (the
-      // Format & Export panel is shown in this mode too). Detection runs on
-      // the phone-normalized lines so bare numbers already carry their '+'.
-      var R = App.Reorder;
-      if (R) {
-        R.prepare(phones.concat(mails).join('\n'));
-        phones = R.formatLines(phones);
-        mails  = R.formatLines(mails);
-      }
-
+      // Counts reflect the raw split (before any field detection trims a line).
       updateCounts(phones.length, mails.length);
       setActiveTab(activeTab); // keep the tab highlight in sync
 
-      // #out shows ONLY the selected group (one account per line).
+      // #out shows ONLY the selected group. The Format & Export panel runs its
+      // field detection / layout on THAT group alone, so the Phone tab detects
+      // phone-oriented fields and the Mail tab detects mail-oriented fields —
+      // the two tabs are independent. Switching tabs re-runs detection for the
+      // newly-active group.
       var group = activeTab === 'mail' ? mails : phones;
+      var R = App.Reorder;
+      if (R) {
+        R.prepare(group.join('\n'));
+        group = R.formatLines(group);
+      }
       return group.join('\n');
     }
   });
